@@ -1,0 +1,1 @@
+declare module 'jstat';  // Waiting for https://github.com/jstat/jstat/pull/271
