@@ -93,6 +93,41 @@ class GenreAward extends BiasConfidenceAward {
     };
 }
 
+class SubjectAward extends BiasConfidenceAward {
+    public type = "subject";
+    private genre?: string;
+    private subject: string;
+    private animeWithSubject: Array<number>;
+
+    constructor(data: {name: string, description: string, subject: string, animeWithSubject: Array<number>, genre?: string, direction: -1 | 1}) {
+        super(data);
+
+        this.animeWithSubject = data.animeWithSubject;
+        this.subject = data.subject;
+        this.genre = data.genre;
+    }
+
+    shouldAnimeBeSampled(anime: AnalysedAnime) {
+        return !this.genre || anime.tags.includes(this.genre);
+    }
+    
+    doesAnimeMatch(anime: AnalysedAnime) {
+        return this.animeWithSubject.includes(anime.details.mal_id);
+    };
+
+    getReason(confidence: number): string {
+        if(this.genre) {
+            return `Awarded because you ${this.direction > 0 ? 'prefer' : 'disfavour'} ${this.genre} shows featuring ${this.subject}. (${confidence.toFixed(1)}% confidence)`;
+        } else {
+            return `Awarded because you ${this.direction > 0 ? 'prefer' : 'disfavour'} shows featuring ${this.subject}. (${confidence.toFixed(1)}% confidence)`;
+        }
+    };
+
+    getAward(anime: Array<AnalysedAnime>) {
+        return super.getAward(anime);
+    }
+}
+
 class ShowAward extends Award {
     public type = "show";
     private mal_id: number;
@@ -272,4 +307,40 @@ const awards: Array<Award> = [
             32, // EoE
         ]
     }),
+    new SubjectAward({
+        name: "Only Child",
+        description: "At least, I hope you are. Otherwise your tastes are concerning.",
+        subject: "incest",
+        direction: 1,
+        animeWithSubject: [
+            8769, // My Little Sister Can't Be This Cute
+            13659, // My Little Sister Can't Be This Cute 2
+            7593, // Kiss x Sis
+            38573, // Do You Love Your Mom And Her Two-Hit Multi-Target Attacks?
+            39326, // HenSuki
+            20785, // Irregular at Magic High School
+            40497, // Irregular at Magic High School: Visitor Arc
+            11597, // Nisemonogatari
+            6987, // Aki Sora
+            17777, // Recently, my sister is unusual
+            819, // I'm in Love With My Little Sister
+            16642, // Ane Koi
+            2129, // True Tears
+            12143, // Swing Out Sisters
+            22069, // Swing Out Sisters (2014)
+            7411, // Kanojo x Kanojo x Kanojo
+            24641, // Bombastic Sisters
+            21829, // Fela Pure
+            11879, // Oni Chichi: Re-born
+            21097, // Oni Chichi: Rebuild
+            10380, // Oni Chichi: Re-birth
+            36225, // Baku Ane!!
+            40746, // Overflow
+            28961, // Idol☆Sister
+            33505, // Tsumamigui 3 The Animation
+            32667, // Baka na Imouto wo Rikou ni Suru no wa Ore no xx dake na Ken ni Tsuite
+            11321, // Nee Summer
+            35936, // Imouto Bitch ni Shiboraretai
+        ]
+    })
 ];
