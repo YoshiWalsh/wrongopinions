@@ -9,7 +9,8 @@ export interface AwardedAward {
     reason: string;
 }
 
-abstract class Award {  
+export abstract class Award {
+    public type: string = "";
     public name: string;
     public description: string;
 
@@ -18,17 +19,24 @@ abstract class Award {
         this.description = data.description;
     }
 
-    /* I would've liked to make this static, but TS doesn't support abstract static methods. */
-    abstract prepare(awards: Array<this>, anime: Array<AnalysedAnime>): void;
-
     abstract getAward(anime: Array<AnalysedAnime>): AwardedAward | null;
 }
 
-export class GenreAward extends Award {
+function notNull<T>(value: T | null): value is T {
+    return value !== null;
+}
+
+export function getAwardedAwards(anime: Array<AnalysedAnime>): Array<AwardedAward> {
+    const awarded: Array<AwardedAward> = [];
+    return awards.map(a => a.getAward(anime)).filter(notNull);
+}
+
+class GenreAward extends Award {
+    public type = "genre";
     private genre: string;
     private direction: -1 | 1;
-    private allScoreDifferences?: Array<number>;
-    private allScoreDifferenceMean?: number;
+    private static allScoreDifferences?: Array<number>;
+    private static allScoreDifferenceMean?: number;
 
     constructor(data: {name: string, description: string, genre: string, direction: -1 | 1}) {
         super(data);
@@ -37,33 +45,90 @@ export class GenreAward extends Award {
         this.direction = data.direction;
     }
 
-    public prepare(awards: Array<GenreAward>, anime: Array<AnalysedAnime>) {
-        this.allScoreDifferences = anime.map(a => a.scoreDifference);
-        this.allScoreDifferenceMean = jstat.mean(this.allScoreDifferences);
-    }
-
     public getAward(anime: Array<AnalysedAnime>) {
-        if(!this.allScoreDifferences || !this.allScoreDifferenceMean) {
-            throw new Error("Must call 'prepare' method first!");
-        }
+        const allScoreDifferences = anime.map(a => a.scoreDifference);
+        const allScoreDifferenceMean = jstat.mean(allScoreDifferences);
 
         const animeWithGenre = anime.filter(a => a.tags.includes(this.genre));
         const genreScoreDifferences = animeWithGenre.map(a => a.scoreDifference);
 
-        const pValue = jstat.tukeyhsd([this.allScoreDifferences, genreScoreDifferences])[0][1];
-        const meanDifference = jstat.mean(genreScoreDifferences) - this.allScoreDifferenceMean;
+        const pValue = jstat.tukeyhsd([allScoreDifferences, genreScoreDifferences])[0][1];
+        const meanDifference = jstat.mean(genreScoreDifferences) - allScoreDifferenceMean;
         const confidence = (1-pValue) * 100;
 
-        if(confidence >= 95) {
-            const awardsForGenre = GenreAwards.filter(a => a.genre === this.genre);
-            for(const award of awardsForGenre) {
-                if(meanDifference * award.direction > 0) {
-                    return({
-                        name: this.name,
-                        description: this.description,
-                        reason: `Awarded because you disproportionately ${this.direction > 0 ? 'like' : 'dislike'} ${this.genre} shows. (${confidence.toFixed(1)}% confidence)`
-                    });
-                }
+        if(confidence >= 95 && meanDifference * this.direction > 0) {
+            return({
+                name: this.name,
+                description: this.description,
+                reason: `Awarded because you disproportionately ${this.direction > 0 ? 'like' : 'dislike'} ${this.genre} shows. (${confidence.toFixed(1)}% confidence)`
+            });
+        }
+
+        return null;
+    }
+}
+
+class ShowAward extends Award {
+    public type = "show";
+    private mal_id: number;
+    private score: number;
+    private direction: -1 | 1;
+
+    constructor(data: {name: string, description: string, mal_id: number, score: number, direction: -1 | 1}) {
+        super(data);
+
+        this.mal_id = data.mal_id;
+        this.score = data.score;
+        this.direction = data.direction;
+    }
+
+    public getAward(anime: Array<AnalysedAnime>) {
+        const show = anime.find(a => a.details.mal_id == this.mal_id);
+        const score = show?.watched?.score || NaN;
+        if(show && (score - this.score) * this.direction > 0) {
+            return({
+                name: this.name,
+                description: this.description,
+                reason: `Awarded because you rated ${show.details.title_japanese} ${this.direction > 0 ? 'highly' : 'poorly'}.`
+            });
+        }
+
+        return null;
+    }
+}
+
+class ComparisonAward extends Award {
+    public type = "comparison";
+    private reason: string;
+    private worseShowIds: Array<number>;
+    private betterShowIds: Array<number>;
+
+    constructor(data: {name: string, description: string, reason: string, worseShowIds: Array<number>, betterShowIds: Array<number>}) {
+        super(data);
+
+        this.reason = data.reason;
+        this.worseShowIds = data.worseShowIds;
+        this.betterShowIds = data.betterShowIds;
+    }
+
+    private getAverageScoreForShows(anime: Array<AnalysedAnime>, showIds: Array<number>): number | null {
+        const scores = showIds.map(s => anime.find(a => a.details.mal_id === s)?.watched?.score).filter(s => s !== null);
+        if(scores.length > 0) {
+            return jstat.mean(scores);
+        } else {
+            return null;
+        }
+    }
+
+    public getAward(anime: Array<AnalysedAnime>) {
+        const worseScore = this.getAverageScoreForShows(anime, this.worseShowIds);
+        const betterScore = this.getAverageScoreForShows(anime, this.betterShowIds);
+
+        if(worseScore !== null && betterScore !== null && worseScore > betterScore) {
+            return {
+                name: this.name,
+                description: this.description,
+                reason: this.reason
             }
         }
 
@@ -71,7 +136,7 @@ export class GenreAward extends Award {
     }
 }
 
-export const GenreAwards: Array<GenreAward> = [
+const awards: Array<Award> = [
     new GenreAward({
         genre: 'Dementia',
         direction: -1,
@@ -132,49 +197,27 @@ export const GenreAwards: Array<GenreAward> = [
         name: 'Objectifier',
         description: `Fetishising lesbians doesn't make you progressive.`,
     }),
-];
-
-export class ComparisonAward extends Award {
-    private reason: string;
-    private worseShowIds: Array<number>;
-    private betterShowIds: Array<number>;
-
-    constructor(data: {name: string, description: string, reason: string, worseShowIds: Array<number>, betterShowIds: Array<number>}) {
-        super(data);
-
-        this.reason = data.reason;
-        this.worseShowIds = data.worseShowIds;
-        this.betterShowIds = data.betterShowIds;
-    }
-
-    public prepare(awards: Array<ComparisonAward>, anime: Array<AnalysedAnime>) {}
-
-    private getAverageScoreForShows(anime: Array<AnalysedAnime>, showIds: Array<number>): number | null {
-        const scores = showIds.map(s => anime.find(a => a.details.mal_id === s)?.watched?.score).filter(s => s !== null);
-        if(scores.length > 0) {
-            return jstat.mean(scores);
-        } else {
-            return null;
-        }
-    }
-
-    public getAward(anime: Array<AnalysedAnime>) {
-        const worseScore = this.getAverageScoreForShows(anime, this.worseShowIds);
-        const betterScore = this.getAverageScoreForShows(anime, this.betterShowIds);
-
-        if(worseScore !== null && betterScore !== null && worseScore > betterScore) {
-            return {
-                name: this.name,
-                description: this.description,
-                reason: this.reason
-            }
-        }
-
-        return null;
-    }
-}
-
-export const ComparisonAwards: Array<ComparisonAward> = [
+    new ShowAward({
+        mal_id: 33255, // Saiki K
+        score: 6,
+        direction: -1,
+        name: "Humourless",
+        description: "The objectively funniest anime couldn’t even make you crack a smile? You are truly joyless."
+    }),
+    new ShowAward({
+        mal_id: 2924, // ef
+        score: 6,
+        direction: -1,
+        name: "Sociopath",
+        description: "You must be completely lacking in empathy if even the objectively-best drama anime couldn’t move you."
+    }),
+    new ShowAward({
+        mal_id: 33091, // Planetarian
+        score: 6,
+        direction: -1,
+        name: "Neo-Luddite",
+        description: "Your anti-AI prejudice has blinded you to the quality of the objectively-best robot anime."
+    }),
     new ComparisonAward({
         name: "Yaegerist",
         description: "You liked Attack on Titan when it was just about yelling and fighting, but not so much once it required you to think.",
@@ -203,38 +246,5 @@ export const ComparisonAwards: Array<ComparisonAward> = [
             30, // NGE
             32, // EoE
         ]
-    })
-]
-
-export type ShowAward = {
-    mal_id: number;
-    score: number;
-    direction: -1 | 1;
-    name: string;
-    description: string;
-}
-
-// These awards are fair and objective.
-export const ShowAwards: Array<ShowAward> = [
-    {
-        mal_id: 33255, // Saiki K
-        score: 6,
-        direction: -1,
-        name: "Humourless",
-        description: "The objectively funniest anime couldn’t even make you crack a smile? You are truly joyless."
-    },
-    {
-        mal_id: 2924, // ef
-        score: 6,
-        direction: -1,
-        name: "Sociopath",
-        description: "You must be completely lacking in empathy if even the objectively-best drama anime couldn’t move you."
-    },
-    {
-        mal_id: 33091, // Planetarian
-        score: 6,
-        direction: -1,
-        name: "Neo-Luddite",
-        description: "Your anti-AI prejudice has blinded you to the quality of the objectively-best robot anime."
-    },
+    }),
 ];

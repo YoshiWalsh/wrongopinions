@@ -9,7 +9,7 @@ import * as jstat from 'jstat';
 import { AnimeById } from 'jikants/dist/src/interfaces/anime/ById';
 import { Stats } from 'jikants/dist/src/interfaces/anime/Stats';
 import { AnimeList } from 'jikants/dist/src/interfaces/user/AnimeList';
-import { GenreAward, GenreAwards, ShowAward, ShowAwards } from './awards';
+import { getAwardedAwards } from './awards';
 import { Anime } from 'jikants/dist/src/interfaces/genre/Genre';
 import { title } from 'process';
 
@@ -20,7 +20,11 @@ function delay(t: number) {
 }
 
 const dynamoClient = new DynamoDBClient({region: 'us-east-1'});
-const documentClient = DynamoDBDocumentClient.from(dynamoClient);
+const documentClient = DynamoDBDocumentClient.from(dynamoClient, {
+    marshallOptions: {
+        removeUndefinedValues: true
+    }
+});
 
 async function getUserList(username: string, type: Parameters<typeof JikanTS.User.animeList>[1]) {
     let list: AnimeList["anime"] = [];
@@ -58,63 +62,6 @@ async function fetchInfoAboutAnime(ids: Array<number>) {
         });
     }
     return output;
-}
-
-interface AwardedGenreAward {
-    award: GenreAward;
-    confidence: number;
-};
-function getGenreAwards(anime: Array<AnalysedAnime>) {
-    const awarded: Array<AwardedGenreAward> = [];
-    const genres = [...new Set(GenreAwards.map(a => a.genre))];
-    const allScoreDifferences = anime.map(a => a.scoreDifference);
-    const allScoreDifferenceMean = jstat.mean(allScoreDifferences);
-
-    for(const genre of genres) {
-        const animeWithGenre = anime.filter(a => a.tags.includes(genre));
-        const genreScoreDifferences = animeWithGenre.map(a => a.scoreDifference);
-
-        const pValue = jstat.tukeyhsd([allScoreDifferences, genreScoreDifferences])[0][1];
-        const meanDifference = jstat.mean(genreScoreDifferences) - allScoreDifferenceMean;
-        const confidence = (1-pValue) * 100;
-
-        if(confidence >= 95) {
-            const awardsForGenre = GenreAwards.filter(a => a.genre === genre);
-            for(const award of awardsForGenre) {
-                if(meanDifference * award.direction > 0) {
-                    awarded.push({
-                        award,
-                        confidence
-                    });
-                }
-            }
-        }
-    }
-
-    return awarded;
-}
-
-interface AwardedShowAward {
-    award: ShowAward;
-    score: number;
-    anime: AnalysedAnime;
-};
-function getShowAwards(anime: Array<AnalysedAnime>) {
-    const awarded: Array<AwardedShowAward> = [];
-
-    for(const award of ShowAwards) {
-        const show = anime.find(a => a.details.mal_id === award.mal_id);
-        const score = show?.watched?.score || NaN;
-        if(show && (score - award.score) * award.direction > 0) {
-            awarded.push({
-                award,
-                score,
-                anime: show
-            });
-        }
-    }
-
-    return awarded;
 }
 
 type Awaited<T> = T extends PromiseLike<infer U> ? Awaited<U> : T;
@@ -179,9 +126,7 @@ async function processUser(username: string) {
     const tooHighRated = [...analysedAnime].sort((a, b) => b.scoreDifference - a.scoreDifference).filter(a => a.scoreDifference > 2);
     const tooLowRated = [...analysedAnime].sort((a, b) => a.scoreDifference - b.scoreDifference).filter(a => a.scoreDifference < -2);
     const leastPopularScore = [...analysedAnime].sort((a, b) => a.scorePopularity - b.scorePopularity).filter(a => a.scorePopularity < 10);
-    const awardedGenreAwards = getGenreAwards(analysedAnime);
-    const awardedShowAwards = getShowAwards(analysedAnime);
-
+    const awarded = getAwardedAwards(analysedAnime);
 
     if(tooHighRated.length > 0) {
         console.log(" ");
@@ -210,20 +155,14 @@ async function processUser(username: string) {
         console.log(`Your score: ${current.watched.score} | Global score: ${current.details.score.toFixed(2)} | Only ${current.scorePopularity.toFixed(2)}% of viewers agree with you.`);
         console.log("");
     }
-    if(awardedGenreAwards.length > 0) {
+    if(awarded.length > 0) {
         console.log(" ");
         console.log("Extra bad taste awards:");
     }
-    for(const current of awardedGenreAwards) {
-        console.log(current.award.name);
-        console.log(current.award.description);
-        console.log(`Awarded because you disproportionately ${current.award.direction > 0 ? 'like' : 'dislike'} ${current.award.genre} shows. (${current.confidence.toFixed(1)}% confidence)`);
-        console.log("");
-    }
-    for(const current of awardedShowAwards) {
-        console.log(current.award.name);
-        console.log(current.award.description);
-        console.log(`Awarded because you rated ${formatShowName(current.anime.details)} ${current.award.direction > 0 ? 'above' : 'below'} ${current.award.score}. (Your rating: ${current.score})`);
+    for(const current of awarded) {
+        console.log(current.name);
+        console.log(current.description);
+        console.log(current.reason);
         console.log("");
     }
 }
@@ -237,7 +176,7 @@ function formatShowName(details: AnimeById) {
 }
 
 
-processUser("codythecoder").then(function(res) {
+processUser("YM_Industries").then(function(res) {
     
 }).catch(function(ex) {
     console.error(ex);
