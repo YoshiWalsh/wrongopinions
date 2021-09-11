@@ -31,41 +31,66 @@ export function getAwardedAwards(anime: Array<AnalysedAnime>): Array<AwardedAwar
     return awards.map(a => a.getAward(anime)).filter(notNull);
 }
 
-class GenreAward extends Award {
-    public type = "genre";
-    private genre: string;
-    private direction: -1 | 1;
-    private static allScoreDifferences?: Array<number>;
-    private static allScoreDifferenceMean?: number;
+abstract class BiasConfidenceAward extends Award {
+    public type = "";
+    public direction: -1 | 1;
 
-    constructor(data: {name: string, description: string, genre: string, direction: -1 | 1}) {
+    constructor(data: {name: string, description: string, direction: -1 | 1}) {
         super(data);
 
-        this.genre = data.genre;
         this.direction = data.direction;
     }
 
-    public getAward(anime: Array<AnalysedAnime>) {
-        const allScoreDifferences = anime.map(a => a.scoreDifference);
-        const allScoreDifferenceMean = jstat.mean(allScoreDifferences);
+    shouldAnimeBeSampled(anime: AnalysedAnime): boolean {
+        return true; // By default, include all anime
+    };
 
-        const animeWithGenre = anime.filter(a => a.tags.includes(this.genre));
-        const genreScoreDifferences = animeWithGenre.map(a => a.scoreDifference);
+    abstract doesAnimeMatch(anime: AnalysedAnime): boolean;
 
-        const pValue = jstat.tukeyhsd([allScoreDifferences, genreScoreDifferences])[0][1];
-        const meanDifference = jstat.mean(genreScoreDifferences) - allScoreDifferenceMean;
+    abstract getReason(confidence: number): string;
+
+    public getAward(allWatchedAnime: Array<AnalysedAnime>) {
+        const sampleAnime = allWatchedAnime.filter(a => this.shouldAnimeBeSampled(a));
+
+        const matchingAnime = sampleAnime.filter(a => this.doesAnimeMatch(a));
+        const matchingScoreDifferences = matchingAnime.map(a => a.scoreDifference);
+
+        const nonMatchingAnime = sampleAnime.filter(a => !this.doesAnimeMatch(a));
+        const nonMatchingScoreDifferences = nonMatchingAnime.map(a => a.scoreDifference);
+
+        const pValue = jstat.tukeyhsd([nonMatchingScoreDifferences, matchingScoreDifferences])[0][1];
+        const meanDifference = jstat.mean(matchingScoreDifferences) - jstat.mean(nonMatchingScoreDifferences);
         const confidence = (1-pValue) * 100;
 
         if(confidence >= 95 && meanDifference * this.direction > 0) {
             return({
                 name: this.name,
                 description: this.description,
-                reason: `Awarded because you disproportionately ${this.direction > 0 ? 'like' : 'dislike'} ${this.genre} shows. (${confidence.toFixed(1)}% confidence)`
+                reason: this.getReason(confidence)
             });
         }
 
         return null;
     }
+}
+
+class GenreAward extends BiasConfidenceAward {
+    public type = "genre";
+    private genre: string;
+
+    constructor(data: {name: string, description: string, genre: string, direction: -1 | 1}) {
+        super(data);
+
+        this.genre = data.genre;
+    }
+
+    doesAnimeMatch(anime: AnalysedAnime) {
+        return anime.tags.includes(this.genre);
+    };
+
+    getReason(confidence: number): string {
+        return `Awarded because you disproportionately ${this.direction > 0 ? 'like' : 'dislike'} ${this.genre} shows. (${confidence.toFixed(1)}% confidence)`;
+    };
 }
 
 class ShowAward extends Award {
