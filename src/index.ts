@@ -83,26 +83,26 @@ async function processUser(username: string) {
     const animeNeedingStats = animeIds.filter(id => !animeInfo[id]?.stats);
     const animeNeedingUpdate = [...new Set([...animeNeedingDetails, ...animeNeedingStats])];
 
-    for(let i = 0; i < animeNeedingUpdate.length; i++) {
-        console.log(i, "/", animeNeedingUpdate.length);
+    // for(let i = 0; i < animeNeedingUpdate.length; i++) {
+    //     console.log(i, "/", animeNeedingUpdate.length);
 
-        const id = animeNeedingUpdate[i];
-        const info = animeInfo[id] = animeInfo[id] || { mal_id: id };
+    //     const id = animeNeedingUpdate[i];
+    //     const info = animeInfo[id] = animeInfo[id] || { mal_id: id };
 
-        if(!info.details) {
-            info.details = await JikanTS.Anime.byId(id);
-        }
-        if(!info.stats) {
-            info.stats = await JikanTS.Anime.stats(id);
-        }
+    //     if(!info.details) {
+    //         info.details = await JikanTS.Anime.byId(id);
+    //     }
+    //     if(!info.stats) {
+    //         info.stats = await JikanTS.Anime.stats(id);
+    //     }
 
-        info.updated = Date.now();
+    //     info.updated = Date.now();
 
-        await documentClient.send(new PutCommand({
-            TableName: 'MyAnimeListCache',
-            Item: info
-        }));
-    }
+    //     await documentClient.send(new PutCommand({
+    //         TableName: 'MyAnimeListCache',
+    //         Item: info
+    //     }));
+    // }
 
     const analysedAnime: Array<AnalysedAnime> = [];
     for(let i = 0; i < ratedList.length; i++) {
@@ -176,8 +176,26 @@ function formatShowName(details: AnimeById) {
 }
 
 
-processUser("YM_Industries").then(function(res) {
+// processUser("YM_Industries").then(function(res) {
     
+// }).catch(function(ex) {
+//     console.error(ex);
+// });
+
+
+import { DB } from './db';
+const db = new DB();
+(async function() {
+    console.log(await db.incrementQueueProperty("anime", "queueLength"));
+    console.log(await db.incrementQueueProperty("anime", "processedItems"));
+    console.log(await db.incrementQueueProperty("anime", "queueLength"));
+    console.log(await db.incrementQueueProperty("anime", "processedItems"));
+    console.log(await db.getQueueStatus("anime"));
+    await delay(5000);
+    console.log(await db.getQueueStatus("anime"));
+    console.log("done");
+})().then(res => {
+
 }).catch(function(ex) {
     console.error(ex);
 });
