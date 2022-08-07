@@ -184,15 +184,27 @@ function formatShowName(details: AnimeById) {
 
 
 import { DB } from './db';
+import { AnimeStatus } from './model/AnimeDetails';
+import { QueueStatus } from './model/QueueStatus';
 const db = new DB();
 (async function() {
-    console.log(await db.incrementQueueProperty("anime", "queueLength"));
-    console.log(await db.incrementQueueProperty("anime", "processedItems"));
-    console.log(await db.incrementQueueProperty("anime", "queueLength"));
-    console.log(await db.incrementQueueProperty("anime", "processedItems"));
-    console.log(await db.getQueueStatus("anime"));
-    await delay(5000);
-    console.log(await db.getQueueStatus("anime"));
+    await db.addAnime({
+        id: -1,
+        expires: 0,
+        animeStatus: AnimeStatus.Pending,
+    });
+    let queueStatus: QueueStatus;
+    let result: boolean;
+    queueStatus = await db.incrementQueueProperty('anime', 'queueLength');
+    result = await db.markAnimePending(-1, 'test', queueStatus.queueLength);
+    if(result) {
+        console.log("Pending anime at queue position", queueStatus.queueLength);
+    } else {
+        console.log("Unable to queue");
+        console.log(await db.incrementQueueProperty('anime', 'queueLength', true));
+    }
+
+    console.log(await db.addDependentJob(-1, 'test2'));
     console.log("done");
 })().then(res => {
 
