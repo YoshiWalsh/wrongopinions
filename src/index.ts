@@ -204,7 +204,7 @@ const db = new DB();
         console.log(await db.incrementQueueProperty('anime', 'queueLength', true));
     }
 
-    console.log(await db.addDependentJob(-1, 'test2'));
+    console.log(await db.addDependentJobToAnime(-1, 'test2'));
     console.log("done");
 })().then(res => {
 

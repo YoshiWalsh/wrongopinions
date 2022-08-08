@@ -1,6 +1,7 @@
 import { DynamoDB, ConditionalCheckFailedException, AttributeValue } from '@aws-sdk/client-dynamodb';
 import * as DynamoDBConverter from '@aws-sdk/util-dynamodb';
 import { AnimeDetails, AnimeStatus } from './model/AnimeDetails';
+import { JobStatus, PendingJob } from './model/PendingJob';
 import { QueueStatus } from './model/QueueStatus';
 
 type AttributeMap = {
@@ -60,7 +61,6 @@ export class DB {
     }
 
     async getAnime(id: number, stronglyConsistent: boolean): Promise<AnimeDetails | null> {
-        const key = `anime-${id}`;
         const result = await this.db.getItem({
             ConsistentRead: stronglyConsistent,
             TableName: this.tableName,
@@ -121,7 +121,7 @@ export class DB {
         }
     }
 
-    async addDependentJob(id: number, username: string): Promise<number | null> {
+    async addDependentJobToAnime(id: number, username: string): Promise<number | null> {
         try {
             const result = await this.db.updateItem({
                 TableName: this.tableName,
@@ -148,5 +148,138 @@ export class DB {
             }
             throw ex;
         }
+    }
+
+    async markAnimeSuccessful(id: number): Promise<AnimeDetails> {
+        const results = await this.db.updateItem({
+            TableName: this.tableName,
+            Key: this.pk(`anime-${id}`),
+            UpdateExpression: 'SET animeStatus = :s',
+            ExpressionAttributeValues: {
+                ':s': {
+                    'S': AnimeStatus.Cached,
+                },
+            },
+        });
+
+        return unmarshall(results.Attributes as AttributeMap) as AnimeDetails;
+    }
+
+    async markAnimeFailed(id: number): Promise<AnimeDetails> {
+        const results = await this.db.updateItem({
+            TableName: this.tableName,
+            Key: this.pk(`anime-${id}`),
+            UpdateExpression: 'SET animeStatus = :s',
+            ExpressionAttributeValues: {
+                ':s': {
+                    'S': AnimeStatus.Failed,
+                },
+            },
+        });
+
+        return unmarshall(results.Attributes as AttributeMap) as AnimeDetails;
+    }
+
+
+
+    async getJob(username: string, stronglyConsistent: boolean): Promise<PendingJob | null> {
+        const result = await this.db.getItem({
+            ConsistentRead: stronglyConsistent,
+            TableName: this.tableName,
+            Key: this.pk(`job-${username}`),
+        });
+
+        return result.Item ? unmarshall(result.Item) as PendingJob : null;
+    }
+
+    async addJob(job: PendingJob): Promise<boolean> {
+        try {
+            await this.db.putItem({
+                TableName: this.tableName,
+                Item: marshall({
+                    ...this.pk(`job-${job.username}`),
+                    ...job,
+                }),
+                ConditionExpression: 'attribute_not_exists(PK) OR jobStatus = :s',
+                ExpressionAttributeValues: {
+                    ':s': {
+                        'S': JobStatus.Processing,
+                    },
+                },
+            })
+            return true;
+        } catch (ex) {
+            return false;
+        };
+    }
+
+    async updateJobStatusAndDependencies(username: string, status: JobStatus, animeIds: Array<string>, lastDependencyQueuePosition: number): Promise<number> {
+        const results = await this.db.updateItem({
+            TableName: this.tableName,
+            Key: this.pk(`job-${username}`),
+            UpdateExpression: `SET jobStatus = :s, lastStateChange = :t, lastDependencyQueuePosition = :p DELETE dependsOn :a`,
+            ExpressionAttributeValues: {
+                ':s': {
+                    'S': status,
+                },
+                ':t': {
+                    'N': Date.now().toString(),
+                },
+                ':p': {
+                    'N': lastDependencyQueuePosition.toString(),
+                },
+                ':a': {
+                    'SS': animeIds,
+                },
+            },
+            ReturnValues: 'ALL_NEW',
+        });
+
+        const job = unmarshall(results.Attributes as AttributeMap) as PendingJob;
+        return job.dependsOn.length - 1;
+    }
+
+    async updateJobStatus(username: string, status: JobStatus): Promise<number> {
+        const results = await this.db.updateItem({
+            TableName: this.tableName,
+            Key: this.pk(`job-${username}`),
+            UpdateExpression: `SET jobStatus = :s, lastStateChange = :t`,
+            ExpressionAttributeValues: {
+                ':s': {
+                    'S': status,
+                },
+                ':t': {
+                    'N': Date.now().toString(),
+                },
+            },
+            ReturnValues: 'ALL_NEW',
+        });
+
+        const job = unmarshall(results.Attributes as AttributeMap) as PendingJob;
+        return job.dependsOn.length - 1;
+    }
+
+    async removeAnimeFromJob(username: string, animeId: string): Promise<number> {
+        const results = await this.db.updateItem({
+            TableName: this.tableName,
+            Key: this.pk(`job-${username}`),
+            UpdateExpression: `DELETE dependsOn :a`,
+            ExpressionAttributeValues: {
+                ':a': {
+                    'SS': [ animeId ],
+                }
+            },
+            ReturnValues: 'ALL_NEW',
+        });
+
+        const job = unmarshall(results.Attributes as AttributeMap) as PendingJob;
+        return job.dependsOn.length - 1;
+    }
+
+    async removeJob(username: string): Promise<void> {
+        await this.db.deleteItem({
+            TableName: this.tableName,
+            Key: this.pk(`job-${username}`),
+        });
     }
 }
