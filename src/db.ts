@@ -1,6 +1,7 @@
 import { DynamoDB, ConditionalCheckFailedException, AttributeValue } from '@aws-sdk/client-dynamodb';
 import * as DynamoDBConverter from '@aws-sdk/util-dynamodb';
 import { AnimeDetails, AnimeStatus } from './model/AnimeDetails';
+import { CompletedJob } from './model/CompletedJob';
 import { JobStatus, PendingJob } from './model/PendingJob';
 import { QueueStatus } from './model/QueueStatus';
 
@@ -209,7 +210,10 @@ export class DB {
             })
             return true;
         } catch (ex) {
-            return false;
+            if(ex instanceof ConditionalCheckFailedException) {
+                return false;
+            }
+            throw ex;
         };
     }
 
@@ -280,6 +284,29 @@ export class DB {
         await this.db.deleteItem({
             TableName: this.tableName,
             Key: this.pk(`job-${username}`),
+        });
+    }
+
+
+    
+
+    async getCompleted(username: string): Promise<CompletedJob | null> {
+        const result = await this.db.getItem({
+            ConsistentRead: true,
+            TableName: this.tableName,
+            Key: this.pk(`completed-${username}`),
+        });
+
+        return result.Item ? unmarshall(result.Item) as CompletedJob : null;
+    }
+
+    async addCompleted(job: CompletedJob): Promise<void> {
+        await this.db.putItem({
+            TableName: this.tableName,
+            Item: marshall({
+                ...this.pk(`completed-${job.username}`),
+                ...job,
+            }),
         });
     }
 }
