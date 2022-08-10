@@ -7,7 +7,7 @@ export enum AnimeStatus {
 export interface AnimeDetails {
     id: number;
     animeStatus: AnimeStatus;
-    expires: number;
+    expires: number | null;
     queuePosition?: number;
     dependentJobs?: Array<string>;
 }

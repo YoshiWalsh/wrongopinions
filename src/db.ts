@@ -33,13 +33,13 @@ export class DB {
         };
     }
     
-    async incrementQueueProperty(queueName: string, property: "queueLength" | "processedItems", decrement?: boolean): Promise<QueueStatus> {
+    async incrementQueueProperty(queueName: string, property: "queueLength" | "processedItems"): Promise<QueueStatus> {
         const result = await this.db.updateItem({
             TableName: this.tableName,
             Key: this.pk(`${queueName}-queue-status`),
             UpdateExpression: `ADD ${property} :q`,
             ExpressionAttributeValues: marshall({
-                ':q': decrement ? -1 : 1
+                ':q': 1
             }),
             ReturnValues: 'ALL_NEW',
         });
@@ -69,6 +69,19 @@ export class DB {
         });
 
         return result.Item ? unmarshall(result.Item) as AnimeDetails : null;
+    }
+
+    async getMultipleAnime(ids: Array<number>, stronglyConsistent: boolean): Promise<{[id: number]: AnimeDetails | null}> {
+        const retrievedAnime = await Promise.all(ids.map(id => this.getAnime(id, stronglyConsistent).catch(ex => null)));
+        return retrievedAnime.reduce((acc, cur) => {
+            if(cur) {
+                return {
+                    ...acc,
+                    [cur.id]: cur,
+                }
+            }
+            return acc;
+        }, {});
     }
 
     // Returns true if successful, false if unsuccessful
@@ -217,7 +230,7 @@ export class DB {
         };
     }
 
-    async updateJobStatusAndDependencies(username: string, status: JobStatus, animeIds: Array<string>, lastDependencyQueuePosition: number): Promise<number> {
+    async updateJobStatusAndRemoveDependencies(username: string, status: JobStatus, animeIdsToRemove: Array<string>, lastDependencyQueuePosition: number): Promise<number> {
         const results = await this.db.updateItem({
             TableName: this.tableName,
             Key: this.pk(`job-${username}`),
@@ -233,7 +246,7 @@ export class DB {
                     'N': lastDependencyQueuePosition.toString(),
                 },
                 ':a': {
-                    'SS': animeIds,
+                    'SS': animeIdsToRemove,
                 },
             },
             ReturnValues: 'ALL_NEW',
@@ -309,4 +322,9 @@ export class DB {
             }),
         });
     }
+
+
+
+
+
 }
