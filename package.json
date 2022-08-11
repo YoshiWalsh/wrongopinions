@@ -32,6 +32,7 @@
     "jikants": "^1.2.13",
     "jstat": "^1.9.4",
     "moment": "^2.27.0",
+    "myanimelist-api": "^1.0.1",
     "ts-demand": "^1.0.1"
   }
 }

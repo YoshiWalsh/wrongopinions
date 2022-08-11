@@ -12,6 +12,9 @@ import { AnimeList } from 'jikants/dist/src/interfaces/user/AnimeList';
 import { getAwardedAwards } from './awards';
 import { Anime } from 'jikants/dist/src/interfaces/genre/Genre';
 import { title } from 'process';
+import { default as MyAnimeList, UserListAnimeEntry } from 'myanimelist-api';
+
+const MAL_PAGE_SIZE = 1000;
 
 function delay(t: number) {
     return new Promise(function(resolve) { 
@@ -188,24 +191,54 @@ import { AnimeStatus } from './model/AnimeDetails';
 import { QueueStatus } from './model/QueueStatus';
 const db = new DB();
 (async function() {
-    await db.addAnime({
-        id: -1,
-        expires: 0,
-        animeStatus: AnimeStatus.Pending,
-    });
-    let queueStatus: QueueStatus;
-    let result: boolean;
-    queueStatus = await db.incrementQueueProperty('anime', 'queueLength');
-    result = await db.markAnimePending(-1, 'test', queueStatus.queueLength);
-    if(result) {
-        console.log("Pending anime at queue position", queueStatus.queueLength);
-    } else {
-        console.log("Unable to queue");
-        console.log(await db.incrementQueueProperty('anime', 'queueLength', true));
-    }
 
-    console.log(await db.addDependentJobToAnime(-1, 'test2'));
-    console.log("done");
+    const mal = new MyAnimeList({
+        clientId: process.env.MAL_CLIENT_ID as string,
+        clientSecret: process.env.MAL_CLIENT_SECRET as string,
+        axiosConfig: {
+            headers: {
+                'X-MAL-CLIENT-ID': process.env.MAL_CLIENT_ID,
+            }
+        },
+    });
+
+    let animeList: Array<UserListAnimeEntry> = [];
+    let offset = 0;
+    while(true) {
+        const result = await mal.user.listAnime("YM_Industries", {
+            limit: MAL_PAGE_SIZE,
+            offset,
+            fields: 'list_status',
+        });
+        animeList = animeList.concat(result.data.data);
+        if(!result.data.paging.next) {
+            break;
+        }
+        offset += MAL_PAGE_SIZE;
+    }
+    console.log(animeList);
+
+    const requiredAnime = animeList.filter(a => a.list_status?.status === "completed").map(a => a.node.id);
+    console.log(requiredAnime);
+
+    // await db.addAnime({
+    //     id: -1,
+    //     expires: 0,
+    //     animeStatus: AnimeStatus.Pending,
+    // });
+    // let queueStatus: QueueStatus;
+    // let result: boolean;
+    // queueStatus = await db.incrementQueueProperty('anime', 'queueLength');
+    // result = await db.markAnimePending(-1, 'test', queueStatus.queueLength);
+    // if(result) {
+    //     console.log("Pending anime at queue position", queueStatus.queueLength);
+    // } else {
+    //     console.log("Unable to queue");
+    //     console.log(await db.incrementQueueProperty('anime', 'queueLength', true));
+    // }
+
+    // console.log(await db.addDependentJobToAnime(-1, 'test2'));
+    // console.log("done");
 })().then(res => {
 
 }).catch(function(ex) {
