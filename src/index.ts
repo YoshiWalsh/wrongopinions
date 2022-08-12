@@ -13,8 +13,8 @@ import { getAwardedAwards } from './awards';
 import { Anime } from 'jikants/dist/src/interfaces/genre/Genre';
 import { title } from 'process';
 import { default as MyAnimeList, UserListAnimeEntry } from 'myanimelist-api';
+import { APIGatewayEvent, SQSEvent, Context, SQSBatchResponse, APIGatewayProxyEvent, APIGatewayProxyResultV2 } from 'aws-lambda';
 
-const MAL_PAGE_SIZE = 1000;
 
 function delay(t: number) {
     return new Promise(function(resolve) { 
@@ -185,41 +185,64 @@ function formatShowName(details: AnimeById) {
 //     console.error(ex);
 // });
 
+function isSQSEvent(event: any): event is SQSEvent {
+    return event?.Records;
+}
+
+function isAPIGatewayEvent(event: any): event is APIGatewayProxyEvent {
+    return event?.requestContext;
+}
+
+export async function handler<APIGatewayProxyEvent>(event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResultV2>
+export async function handler<SQSEvent>(event: SQSEvent, context: Context): Promise<SQSBatchResponse>
+export async function handler<T>(event: T, context: Context): Promise<any> {
+    const queue = new QueueDispatcher();
+    const db = new DB();
+
+    if(isSQSEvent(event)) {
+        const results = await Promise.all(event.Records.map(async item => {
+            try {
+                const message = JSON.parse(item.body) as QueueMessage;
+                
+                switch(message.type) {
+                    case QueueMessageType.Anime:
+                        await loadAnime(db, queue, message.id);
+                        break;
+                    case QueueMessageType.Processing:
+                        await processJob(db, queue, message.username);
+                        break;
+                }
+            } catch (ex) {
+                return item.messageId;
+            }
+            return null;
+        }));
+
+        const failedItems = results.filter(id => id !== null) as Array<string>; // Remove null records (successfully processed)
+        return demand<SQSBatchResponse>({
+            batchItemFailures: failedItems.map(i => ({ itemIdentifier: i })),
+        });
+    }
+    if(isAPIGatewayEvent(event)) {
+        return demand<APIGatewayProxyResultV2>({
+
+        });
+    }
+    throw new Error("Unsupported event");
+}
+
 
 import { DB } from './db';
 import { AnimeStatus } from './model/AnimeDetails';
 import { QueueStatus } from './model/QueueStatus';
+import { QueueDispatcher, QueueMessage, QueueMessageType } from './queueDispatcher';
+import { JobStatus } from './model/PendingJob';
+import { loadAnime } from './anime';
+import { initialiseJob, processJob } from './job';
 const db = new DB();
+const queue = new QueueDispatcher();
 (async function() {
-
-    const mal = new MyAnimeList({
-        clientId: process.env.MAL_CLIENT_ID as string,
-        clientSecret: process.env.MAL_CLIENT_SECRET as string,
-        axiosConfig: {
-            headers: {
-                'X-MAL-CLIENT-ID': process.env.MAL_CLIENT_ID,
-            }
-        },
-    });
-
-    let animeList: Array<UserListAnimeEntry> = [];
-    let offset = 0;
-    while(true) {
-        const result = await mal.user.listAnime("YM_Industries", {
-            limit: MAL_PAGE_SIZE,
-            offset,
-            fields: 'list_status',
-        });
-        animeList = animeList.concat(result.data.data);
-        if(!result.data.paging.next) {
-            break;
-        }
-        offset += MAL_PAGE_SIZE;
-    }
-    console.log(animeList);
-
-    const requiredAnime = animeList.filter(a => a.list_status?.status === "completed").map(a => a.node.id);
-    console.log(requiredAnime);
+    await initialiseJob(db, queue, "YM_Industries");
 
     // await db.addAnime({
     //     id: -1,

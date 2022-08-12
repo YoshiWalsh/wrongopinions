@@ -1,6 +1,6 @@
 import { DynamoDB, ConditionalCheckFailedException, AttributeValue } from '@aws-sdk/client-dynamodb';
 import * as DynamoDBConverter from '@aws-sdk/util-dynamodb';
-import { AnimeDetails, AnimeStatus } from './model/AnimeDetails';
+import { AnimeData, AnimeDetails, AnimeStatus } from './model/AnimeDetails';
 import { CompletedJob } from './model/CompletedJob';
 import { JobStatus, PendingJob } from './model/PendingJob';
 import { QueueStatus } from './model/QueueStatus';
@@ -61,6 +61,17 @@ export class DB {
         };
     }
 
+    deserialiseAnime(item: any): AnimeDetails | null {
+        if(!item) {
+            return null;
+        }
+        const unpacked = unmarshall(item);
+        return {
+            ...unpacked,
+            animeData: unpacked.animeData ? JSON.parse(unpacked.animeData) : undefined,
+        } as AnimeDetails;
+    }
+
     async getAnime(id: number, stronglyConsistent: boolean): Promise<AnimeDetails | null> {
         const result = await this.db.getItem({
             ConsistentRead: stronglyConsistent,
@@ -68,11 +79,11 @@ export class DB {
             Key: this.pk(`anime-${id}`),
         });
 
-        return result.Item ? unmarshall(result.Item) as AnimeDetails : null;
+        return this.deserialiseAnime(result.Item);
     }
 
-    async getMultipleAnime(ids: Array<number>, stronglyConsistent: boolean): Promise<{[id: number]: AnimeDetails | null}> {
-        const retrievedAnime = await Promise.all(ids.map(id => this.getAnime(id, stronglyConsistent).catch(ex => null)));
+    async getMultipleAnime(ids: Array<number>, stronglyConsistent: boolean): Promise<{[id: number]: AnimeDetails | undefined}> {
+        const retrievedAnime = await Promise.all(ids.map(id => this.getAnime(id, stronglyConsistent).catch(ex => undefined)));
         return retrievedAnime.reduce((acc, cur) => {
             if(cur) {
                 return {
@@ -164,19 +175,23 @@ export class DB {
         }
     }
 
-    async markAnimeSuccessful(id: number): Promise<AnimeDetails> {
+    async markAnimeSuccessful(id: number, data: AnimeData): Promise<AnimeDetails> {
         const results = await this.db.updateItem({
             TableName: this.tableName,
             Key: this.pk(`anime-${id}`),
-            UpdateExpression: 'SET animeStatus = :s',
+            UpdateExpression: 'SET animeStatus = :s, animeData = :d REMOVE dependentJobs',
             ExpressionAttributeValues: {
                 ':s': {
                     'S': AnimeStatus.Cached,
                 },
+                ':d': {
+                    'S': JSON.stringify(data),
+                }
             },
+            ReturnValues: 'ALL_OLD',
         });
 
-        return unmarshall(results.Attributes as AttributeMap) as AnimeDetails;
+        return this.deserialiseAnime(results.Attributes) as AnimeDetails;
     }
 
     async markAnimeFailed(id: number): Promise<AnimeDetails> {
@@ -189,9 +204,10 @@ export class DB {
                     'S': AnimeStatus.Failed,
                 },
             },
+            ReturnValues: 'ALL_OLD',
         });
 
-        return unmarshall(results.Attributes as AttributeMap) as AnimeDetails;
+        return this.deserialiseAnime(results.Attributes) as AnimeDetails;
     }
 
 
@@ -210,10 +226,10 @@ export class DB {
         try {
             await this.db.putItem({
                 TableName: this.tableName,
-                Item: marshall({
+                Item: {
                     ...this.pk(`job-${job.username}`),
-                    ...job,
-                }),
+                    ...marshall(job),
+                },
                 ConditionExpression: 'attribute_not_exists(PK) OR jobStatus = :s',
                 ExpressionAttributeValues: {
                     ':s': {
@@ -234,7 +250,7 @@ export class DB {
         const results = await this.db.updateItem({
             TableName: this.tableName,
             Key: this.pk(`job-${username}`),
-            UpdateExpression: `SET jobStatus = :s, lastStateChange = :t, lastDependencyQueuePosition = :p DELETE dependsOn :a`,
+            UpdateExpression: `SET jobStatus = :s, lastStateChange = :t, lastDependencyQueuePosition = :p${ animeIdsToRemove.length ? ` DELETE dependsOn :a` : '' }`,
             ExpressionAttributeValues: {
                 ':s': {
                     'S': status,
@@ -245,15 +261,19 @@ export class DB {
                 ':p': {
                     'N': lastDependencyQueuePosition.toString(),
                 },
-                ':a': {
-                    'SS': animeIdsToRemove,
-                },
+                ...(
+                    animeIdsToRemove.length ? {
+                        ':a': {
+                            'SS': animeIdsToRemove,
+                        },
+                    } : {}
+                ),
             },
             ReturnValues: 'ALL_NEW',
         });
 
         const job = unmarshall(results.Attributes as AttributeMap) as PendingJob;
-        return job.dependsOn.length - 1;
+        return job.dependsOn.size - 1;
     }
 
     async updateJobStatus(username: string, status: JobStatus): Promise<number> {
@@ -273,24 +293,24 @@ export class DB {
         });
 
         const job = unmarshall(results.Attributes as AttributeMap) as PendingJob;
-        return job.dependsOn.length - 1;
+        return job.dependsOn.size - 1;
     }
 
-    async removeAnimeFromJob(username: string, animeId: string): Promise<number> {
+    async removeAnimeFromJob(username: string, animeId: number): Promise<number> {
         const results = await this.db.updateItem({
             TableName: this.tableName,
             Key: this.pk(`job-${username}`),
             UpdateExpression: `DELETE dependsOn :a`,
             ExpressionAttributeValues: {
                 ':a': {
-                    'SS': [ animeId ],
+                    'SS': [ `anime-${animeId}` ],
                 }
             },
             ReturnValues: 'ALL_NEW',
         });
 
         const job = unmarshall(results.Attributes as AttributeMap) as PendingJob;
-        return job.dependsOn.length - 1;
+        return job.dependsOn.size - 1;
     }
 
     async removeJob(username: string): Promise<void> {
@@ -316,10 +336,10 @@ export class DB {
     async addCompleted(job: CompletedJob): Promise<void> {
         await this.db.putItem({
             TableName: this.tableName,
-            Item: marshall({
+            Item: {
                 ...this.pk(`completed-${job.username}`),
-                ...job,
-            }),
+                ...marshall(job),
+            },
         });
     }
 
