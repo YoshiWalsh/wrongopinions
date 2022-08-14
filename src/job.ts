@@ -126,7 +126,9 @@ export async function initialiseJob(db: DB, queue: QueueDispatcher, username: st
 
     const newlyRetrievedAnime = Object.values(await db.getMultipleAnime(newlyQueued, true)).filter(a => a?.expires && a.expires > now) as Array<AnimeDetails>;
 
-    const remainingAnime = await db.updateJobStatusAndRemoveDependencies(username, JobStatus.Processing, newlyRetrievedAnime.map(a => `anime-${a.id}`), lastQueuePosition);
+    const cachedAnimeIds = cached.concat(newlyRetrievedAnime.map(a => a.id));
+
+    const remainingAnime = await db.updateJobStatusAndRemoveDependencies(username, JobStatus.Processing, cachedAnimeIds.map(id => `anime-${id}`), lastQueuePosition);
 
 
     if(remainingAnime < 1) {

@@ -4,6 +4,7 @@ import { AnimeData, AnimeDetails, AnimeStatus } from './model/AnimeDetails';
 import { CompletedJob } from './model/CompletedJob';
 import { JobStatus, PendingJob } from './model/PendingJob';
 import { QueueStatus } from './model/QueueStatus';
+import { convert, LocalDate } from '@js-joda/core';
 
 type AttributeMap = {
     [key: string]: AttributeValue,
@@ -175,23 +176,31 @@ export class DB {
         }
     }
 
-    async markAnimeSuccessful(id: number, data: AnimeData): Promise<AnimeDetails> {
-        const results = await this.db.updateItem({
-            TableName: this.tableName,
-            Key: this.pk(`anime-${id}`),
-            UpdateExpression: 'SET animeStatus = :s, animeData = :d REMOVE dependentJobs',
-            ExpressionAttributeValues: {
-                ':s': {
-                    'S': AnimeStatus.Cached,
+    async markAnimeSuccessful(id: number, data: AnimeData, expires: LocalDate): Promise<AnimeDetails> {
+        try {
+            const results = await this.db.updateItem({
+                TableName: this.tableName,
+                Key: this.pk(`anime-${id}`),
+                UpdateExpression: 'SET animeStatus = :s, animeData = :d, expires = :e REMOVE dependentJobs',
+                ExpressionAttributeValues: {
+                    ':s': {
+                        'S': AnimeStatus.Cached,
+                    },
+                    ':d': {
+                        'S': JSON.stringify(data),
+                    },
+                    ':e': {
+                        'N': convert(expires).toEpochMilli().toString(),
+                    },
                 },
-                ':d': {
-                    'S': JSON.stringify(data),
-                }
-            },
-            ReturnValues: 'ALL_OLD',
-        });
+                ReturnValues: 'ALL_OLD',
+            });
 
-        return this.deserialiseAnime(results.Attributes) as AnimeDetails;
+            return this.deserialiseAnime(results.Attributes) as AnimeDetails;
+        } catch (ex) {
+            console.log(ex);
+            throw ex;
+        }
     }
 
     async markAnimeFailed(id: number): Promise<AnimeDetails> {
