@@ -34,13 +34,13 @@ export class DB {
         };
     }
     
-    async incrementQueueProperty(queueName: string, property: "queueLength" | "processedItems"): Promise<QueueStatus> {
+    async incrementQueueProperty(queueName: string, property: "queueLength" | "processedItems", decrement?: boolean): Promise<QueueStatus> {
         const result = await this.db.updateItem({
             TableName: this.tableName,
             Key: this.pk(`${queueName}-queue-status`),
             UpdateExpression: `ADD ${property} :q`,
             ExpressionAttributeValues: marshall({
-                ':q': 1
+                ':q': decrement ? -1 : 1
             }),
             ReturnValues: 'ALL_NEW',
         });

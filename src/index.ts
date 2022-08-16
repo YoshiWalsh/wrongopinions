@@ -242,8 +242,10 @@ import { initialiseJob, processJob } from './job';
 const db = new DB();
 const queue = new QueueDispatcher();
 (async function() {
-    await initialiseJob(db, queue, "YM_Industries");
-    await initialiseJob(db, queue, "codythecoder");
+    await Promise.all([
+        initialiseJob(db, queue, "YM_Industries"),
+        initialiseJob(db, queue, "codythecoder"),
+    ]);
 
     // await db.addAnime({
     //     id: -1,

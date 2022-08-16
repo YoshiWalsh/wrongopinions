@@ -96,8 +96,8 @@ export async function initialiseJob(db: DB, queue: QueueDispatcher, username: st
         if(!result) {
             // If we can't add the anime, it means it's already added. We should add this job as a dependency instead.
             queued.push(id);
-            // And increase the processedItems count, since we already increased the queue length.
-            await db.incrementQueueProperty("anime", "processedItems");
+            // Decrease the queue length since we won't be loading this anime after all
+            await db.incrementQueueProperty("anime", "queueLength", true);
         } else {
             await queue.queueAnime(id);
             newlyQueued.push(id);
@@ -111,8 +111,8 @@ export async function initialiseJob(db: DB, queue: QueueDispatcher, username: st
         if(!result) {
             // If we can't mark the anime as pending, it means it's already added. We should add this job as a dependency instead.
             queued.push(id);
-            // And increase the processedItems count, since we already increased the queue length.
-            await db.incrementQueueProperty("anime", "processedItems");
+            // Decrease the queue length since we won't be loading this anime after all
+            await db.incrementQueueProperty("anime", "queueLength", true);
         } else {
             await queue.queueAnime(id);
             newlyQueued.push(id);
