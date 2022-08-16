@@ -32,7 +32,16 @@ export async function initialiseJob(db: DB, queue: QueueDispatcher, username: st
         offset += MAL_PAGE_SIZE;
     }
 
-    const requiredAnime = animeList.filter(a => a.list_status?.status === "completed").map(a => a.node.id).slice(0, 1); // TODO: Remove slice
+    const requiredAnime = animeList.filter(a => a.list_status?.status === "completed").map(a => a.node.id).filter(a => 
+        [
+            35557,
+            7785,
+            6675,
+            34537,
+            329,
+            731,
+        ].indexOf(a) !== -1
+    ); // TODO: Remove filter
 
     const now = Date.now();
     const retrievedAnime = await db.getMultipleAnime(requiredAnime, false);
@@ -117,7 +126,6 @@ export async function initialiseJob(db: DB, queue: QueueDispatcher, username: st
             // If we can't add a job, it means the anime either failed or was successful. Either way, we won't re-request it in this request.
             cached.push(id);
         } else {
-            await queue.queueAnime(id);
             newlyQueued.push(id);
             lastQueuePosition = Math.max(lastQueuePosition, result);
         }

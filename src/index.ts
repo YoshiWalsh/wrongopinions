@@ -243,6 +243,7 @@ const db = new DB();
 const queue = new QueueDispatcher();
 (async function() {
     await initialiseJob(db, queue, "YM_Industries");
+    await initialiseJob(db, queue, "codythecoder");
 
     // await db.addAnime({
     //     id: -1,
