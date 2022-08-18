@@ -1,15 +1,28 @@
 import JikanTS from 'jikants';
 import { DB } from "./db";
 import { QueueDispatcher } from "./queueDispatcher";
-import { convert, LocalDate, ZoneOffset } from '@js-joda/core';
+import { LocalDate, ZonedDateTime, ZoneOffset } from '@js-joda/core';
+import { Anime as MarikaAnime, IAnime, IAnimeStats } from '@shineiichijo/marika';
+import { ratelimit } from './utils';
+
+const marika = {
+    anime: new MarikaAnime(),
+}
 
 export async function loadAnime(db: DB, queue: QueueDispatcher, id: number): Promise<void> {
-    const details = await JikanTS.Anime.byId(id);
-    if(!details) {
+    let details: IAnime;
+    let stats: IAnimeStats;
+    await ratelimit(2);
+    try {
+        details = await marika.anime.getAnimeById(id);
+    } catch (ex) {
+        console.error(ex);
         throw new Error(`Failed to get details for anime ${id}`);
     }
-    const stats = await JikanTS.Anime.stats(id);
-    if(!stats) {
+    try {
+        stats = await marika.anime.getAnimeStats(id);
+    } catch (ex) {
+        console.error(ex);
         throw new Error(`Failed to get stats for anime ${id}`);
     }
 
@@ -17,7 +30,7 @@ export async function loadAnime(db: DB, queue: QueueDispatcher, id: number): Pro
 
     if(details.status != "Finished Airing") { // If the show is still airing / not yet aired
         expires = LocalDate.now(ZoneOffset.UTC).plusWeeks(1);
-    } else if(details.aired.to > convert(LocalDate.now(ZoneOffset.UTC).minusYears(1)).toDate()) { // If the show finished airing within the past year
+    } else if(details.aired.to > ZonedDateTime.now(ZoneOffset.UTC).minusYears(1).toString()) { // If the show finished airing within the past year
         expires = LocalDate.now(ZoneOffset.UTC).plusMonths(1);
     } else { // If the show finished airing more than a year ago
         expires = LocalDate.now(ZoneOffset.UTC).plusMonths(3);

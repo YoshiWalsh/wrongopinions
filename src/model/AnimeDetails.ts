@@ -3,12 +3,11 @@ export enum AnimeStatus {
     Cached = "cached",
     Failed = "failed",
 }
-import { AnimeById } from 'jikants/dist/src/interfaces/anime/ById';
-import { Stats } from 'jikants/dist/src/interfaces/anime/Stats';
+import { IAnime, IAnimeStats } from '@shineiichijo/marika';
 
 export interface AnimeData {
-    details: AnimeById;
-    stats: Stats;
+    details: IAnime;
+    stats: IAnimeStats;
 }
 
 export interface AnimeDetails {
