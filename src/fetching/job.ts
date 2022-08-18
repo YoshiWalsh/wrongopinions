@@ -1,7 +1,7 @@
 import MyAnimeList, { UserListAnimeEntry } from "myanimelist-api";
-import { DB } from "./db";
-import { AnimeDetails, AnimeStatus } from "./model/AnimeDetails";
-import { JobStatus, PendingJob } from "./model/PendingJob";
+import { DB } from "../db";
+import { AnimeDetails, AnimeStatus } from "../model/AnimeDetails";
+import { JobStatus, PendingJob } from "../model/PendingJob";
 import { QueueDispatcher } from "./queueDispatcher";
 
 const MAL_PAGE_SIZE = 1000;
@@ -32,16 +32,7 @@ export async function initialiseJob(db: DB, queue: QueueDispatcher, username: st
         offset += MAL_PAGE_SIZE;
     }
 
-    const requiredAnime = animeList.filter(a => a.list_status?.status === "completed").map(a => a.node.id).filter(a => 
-        [
-            35557,
-            7785,
-            6675,
-            34537,
-            329,
-            731,
-        ].indexOf(a) !== -1
-    ); // TODO: Remove filter
+    const requiredAnime = animeList.filter(a => a.list_status?.status === "completed" && a.list_status?.score).map(a => a.node.id);
 
     const now = Date.now();
     const retrievedAnime = await db.getMultipleAnime(requiredAnime, false);
@@ -76,6 +67,7 @@ export async function initialiseJob(db: DB, queue: QueueDispatcher, username: st
         dependsOn: new Set([''].concat(requiredAnime.map(i => `anime-${i}`))),
         jobStatus: JobStatus.Creating,
         lastStateChange: now,
+        animeList,
     };
     if(!await db.addJob(job)) {
         throw new Error("Unable to create job"); // TODO: Improve error
@@ -151,8 +143,4 @@ export async function initialiseJob(db: DB, queue: QueueDispatcher, username: st
         jobsToWaitFor = lastQueuePosition - (queueStatus.processedItems ?? 0);
     }
     console.log(`Job requires loading ${remainingAnime} anime. Based on the current queue, this might take ${jobsToWaitFor * 2} seconds.`);
-}
-
-export async function processJob(db: DB, queue: QueueDispatcher, username: string): Promise<void> {
-    console.log("Finished loading anime for job", username);
 }

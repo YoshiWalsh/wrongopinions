@@ -1,3 +1,5 @@
+import { UserListAnimeEntry } from "myanimelist-api";
+
 export enum JobStatus {
     Creating = "creating",
     Waiting = "waiting",
@@ -12,4 +14,5 @@ export interface PendingJob {
     lastDependencyQueuePosition?: number;
     lastStateChange: number;
     processingQueuePosition?: number;
+    animeList: Array<UserListAnimeEntry>;
 }

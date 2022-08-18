@@ -9,7 +9,7 @@ import * as jstat from 'jstat';
 import { AnimeById } from 'jikants/dist/src/interfaces/anime/ById';
 import { Stats } from 'jikants/dist/src/interfaces/anime/Stats';
 import { AnimeList } from 'jikants/dist/src/interfaces/user/AnimeList';
-import { getAwardedAwards } from './awards';
+import { getAwardedAwards } from './crunching/awards';
 import { Anime } from 'jikants/dist/src/interfaces/genre/Genre';
 import { title } from 'process';
 import { default as MyAnimeList, UserListAnimeEntry } from 'myanimelist-api';
@@ -67,117 +67,6 @@ async function fetchInfoAboutAnime(ids: Array<number>) {
     return output;
 }
 
-type Awaited<T> = T extends PromiseLike<infer U> ? Awaited<U> : T;
-export interface AnalysedAnime {
-    watched: Awaited<ReturnType<typeof getUserList>>[0];
-    details: AnimeById;
-    stats: Stats;
-    scoreDifference: number;
-    scorePopularity: number;
-    tags: Array<string>;
-}
-
-async function processUser(username: string) {
-    const completedList = await getUserList(username, "completed");
-    const ratedList = completedList.filter(a => a.score);
-    const animeIds = ratedList.map(a => a.mal_id);
-    const animeInfo = await fetchInfoAboutAnime(animeIds);
-    const animeNeedingDetails = animeIds.filter(id => !animeInfo[id]?.details);
-    const animeNeedingStats = animeIds.filter(id => !animeInfo[id]?.stats);
-    const animeNeedingUpdate = [...new Set([...animeNeedingDetails, ...animeNeedingStats])];
-
-    // for(let i = 0; i < animeNeedingUpdate.length; i++) {
-    //     console.log(i, "/", animeNeedingUpdate.length);
-
-    //     const id = animeNeedingUpdate[i];
-    //     const info = animeInfo[id] = animeInfo[id] || { mal_id: id };
-
-    //     if(!info.details) {
-    //         info.details = await JikanTS.Anime.byId(id);
-    //     }
-    //     if(!info.stats) {
-    //         info.stats = await JikanTS.Anime.stats(id);
-    //     }
-
-    //     info.updated = Date.now();
-
-    //     await documentClient.send(new PutCommand({
-    //         TableName: 'MyAnimeListCache',
-    //         Item: info
-    //     }));
-    // }
-
-    const analysedAnime: Array<AnalysedAnime> = [];
-    for(let i = 0; i < ratedList.length; i++) {
-        const watched = ratedList[i];
-        const {details, stats} = animeInfo[watched.mal_id];
-
-        if(!details || !stats || !details.score) {
-            continue; // Skip any anime that we can't retrieve details about
-        } 
-
-        analysedAnime.push({
-            watched,
-            details,
-            stats,
-            scoreDifference: watched.score - details.score,
-            scorePopularity: stats.scores[watched.score].percentage,
-            tags: details.genres.map(g => g.name)
-        });
-    }
-
-    const tooHighRated = [...analysedAnime].sort((a, b) => b.scoreDifference - a.scoreDifference).filter(a => a.scoreDifference > 2);
-    const tooLowRated = [...analysedAnime].sort((a, b) => a.scoreDifference - b.scoreDifference).filter(a => a.scoreDifference < -2);
-    const leastPopularScore = [...analysedAnime].sort((a, b) => a.scorePopularity - b.scorePopularity).filter(a => a.scorePopularity < 10);
-    const awarded = getAwardedAwards(analysedAnime);
-
-    if(tooHighRated.length > 0) {
-        console.log(" ");
-        console.log("Worse than you think:");
-    }
-    for(const current of tooHighRated.slice(0, 5)) {
-        console.log(formatShowName(current.details));
-        console.log(`Your score: ${current.watched.score} | Global score: ${current.details.score.toFixed(2)}`);
-        console.log("");
-    }
-    if(tooLowRated.length > 0) {
-        console.log(" ");
-        console.log("Better than you think:");
-    }
-    for(const current of tooLowRated.slice(0, 5)) {
-        console.log(formatShowName(current.details));
-        console.log(`Your score: ${current.watched.score} | Global score: ${current.details.score.toFixed(2)}`);
-        console.log("");
-    }
-    if(leastPopularScore.length > 0) {
-        console.log(" ");
-        console.log("Your absolute worst takes:");
-    }
-    for(const current of leastPopularScore.slice(0, 5)) {
-        console.log(formatShowName(current.details));
-        console.log(`Your score: ${current.watched.score} | Global score: ${current.details.score.toFixed(2)} | Only ${current.scorePopularity.toFixed(2)}% of viewers agree with you.`);
-        console.log("");
-    }
-    if(awarded.length > 0) {
-        console.log(" ");
-        console.log("Extra bad taste awards:");
-    }
-    for(const current of awarded) {
-        console.log(current.name);
-        console.log(current.description);
-        console.log(current.reason);
-        console.log("");
-    }
-}
-
-function formatShowName(details: AnimeById) {
-    let output = details.title;
-    if(details.title_english) {
-        output += ` (${details.title_english})`;
-    }
-    return output;
-}
-
 
 // processUser("YM_Industries").then(function(res) {
     
@@ -213,6 +102,7 @@ export async function handler<T>(event: T, context: Context): Promise<any> {
                         break;
                 }
             } catch (ex) {
+                console.error(ex);
                 return item.messageId;
             }
             return null;
@@ -235,36 +125,18 @@ export async function handler<T>(event: T, context: Context): Promise<any> {
 import { DB } from './db';
 import { AnimeStatus } from './model/AnimeDetails';
 import { QueueStatus } from './model/QueueStatus';
-import { QueueDispatcher, QueueMessage, QueueMessageType } from './queueDispatcher';
+import { QueueDispatcher, QueueMessage, QueueMessageType } from './fetching/queueDispatcher';
 import { JobStatus } from './model/PendingJob';
-import { loadAnime } from './anime';
-import { initialiseJob, processJob } from './job';
+import { loadAnime } from './fetching/anime';
+import { initialiseJob } from './fetching/job';
+import { processJob } from './crunching/cruncher';
 const db = new DB();
 const queue = new QueueDispatcher();
 (async function() {
     await Promise.all([
-        initialiseJob(db, queue, "YM_Industries"),
+        // initialiseJob(db, queue, "YM_Industries"),
         initialiseJob(db, queue, "codythecoder"),
     ]);
-
-    // await db.addAnime({
-    //     id: -1,
-    //     expires: 0,
-    //     animeStatus: AnimeStatus.Pending,
-    // });
-    // let queueStatus: QueueStatus;
-    // let result: boolean;
-    // queueStatus = await db.incrementQueueProperty('anime', 'queueLength');
-    // result = await db.markAnimePending(-1, 'test', queueStatus.queueLength);
-    // if(result) {
-    //     console.log("Pending anime at queue position", queueStatus.queueLength);
-    // } else {
-    //     console.log("Unable to queue");
-    //     console.log(await db.incrementQueueProperty('anime', 'queueLength', true));
-    // }
-
-    // console.log(await db.addDependentJobToAnime(-1, 'test2'));
-    // console.log("done");
 })().then(res => {
 
 }).catch(function(ex) {

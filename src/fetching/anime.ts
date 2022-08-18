@@ -1,9 +1,9 @@
 import JikanTS from 'jikants';
-import { DB } from "./db";
+import { DB } from "../db";
 import { QueueDispatcher } from "./queueDispatcher";
 import { LocalDate, ZonedDateTime, ZoneOffset } from '@js-joda/core';
 import { Anime as MarikaAnime, IAnime, IAnimeStats } from '@shineiichijo/marika';
-import { ratelimit } from './utils';
+import { ratelimit, retry } from '../utils';
 
 const marika = {
     anime: new MarikaAnime(),
@@ -12,15 +12,15 @@ const marika = {
 export async function loadAnime(db: DB, queue: QueueDispatcher, id: number): Promise<void> {
     let details: IAnime;
     let stats: IAnimeStats;
-    await ratelimit(2);
+    await ratelimit(1.5 * 2); // We need to make two requests, so we double the ratelimit. Also see https://github.com/jikan-me/jikan/issues/469
     try {
-        details = await marika.anime.getAnimeById(id);
+        details = await retry(() => marika.anime.getAnimeById(id), 3);
     } catch (ex) {
         console.error(ex);
         throw new Error(`Failed to get details for anime ${id}`);
     }
     try {
-        stats = await marika.anime.getAnimeStats(id);
+        stats = await retry(() => marika.anime.getAnimeStats(id), 3);
     } catch (ex) {
         console.error(ex);
         throw new Error(`Failed to get stats for anime ${id}`);

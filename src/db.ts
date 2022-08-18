@@ -221,6 +221,17 @@ export class DB {
 
 
 
+    deserialiseJob(item: any): PendingJob | null {
+        if(!item) {
+            return null;
+        }
+        const unpacked = unmarshall(item);
+        return {
+            ...unpacked,
+            animeList: unpacked.animeList ? JSON.parse(unpacked.animeList) : undefined,
+        } as PendingJob;
+    }
+
     async getJob(username: string, stronglyConsistent: boolean): Promise<PendingJob | null> {
         const result = await this.db.getItem({
             ConsistentRead: stronglyConsistent,
@@ -228,7 +239,7 @@ export class DB {
             Key: this.pk(`job-${username}`),
         });
 
-        return result.Item ? unmarshall(result.Item) as PendingJob : null;
+        return this.deserialiseJob(result.Item);
     }
 
     async addJob(job: PendingJob): Promise<boolean> {
@@ -237,7 +248,10 @@ export class DB {
                 TableName: this.tableName,
                 Item: {
                     ...this.pk(`job-${job.username}`),
-                    ...marshall(job),
+                    ...marshall({
+                        ...job,
+                        animeList: JSON.stringify(job.animeList),
+                    }),
                 },
                 ConditionExpression: 'attribute_not_exists(PK) OR jobStatus = :s',
                 ExpressionAttributeValues: {

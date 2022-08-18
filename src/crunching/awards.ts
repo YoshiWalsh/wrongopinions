@@ -1,5 +1,5 @@
 import * as jstat from 'jstat';
-import { AnalysedAnime } from ".";
+import { AnalysedAnime } from "./cruncher";
 
 type Constructor<T> = { new (): T }
 
@@ -144,7 +144,7 @@ class ShowAward extends Award {
 
     public getAward(anime: Array<AnalysedAnime>) {
         const show = anime.find(a => a.details.mal_id == this.mal_id);
-        const score = show?.watched?.score || NaN;
+        const score = show?.watched?.list_status.score || NaN;
         if(show && (score - this.score) * this.direction > 0) {
             return({
                 name: this.name,
@@ -172,7 +172,7 @@ class ComparisonAward extends Award {
     }
 
     private getAverageScoreForShows(anime: Array<AnalysedAnime>, showIds: Array<number>): number | null {
-        const scores = showIds.map(s => anime.find(a => a.details.mal_id === s)?.watched?.score).filter(s => s !== null);
+        const scores = showIds.map(s => anime.find(a => a.details.mal_id === s)?.watched?.list_status.score).filter(s => s !== null);
         if(scores.length > 0) {
             return jstat.mean(scores);
         } else {

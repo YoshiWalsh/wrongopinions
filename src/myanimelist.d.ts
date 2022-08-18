@@ -56,6 +56,9 @@ declare module 'myanimelist-api' {
         }
     }
 
+    type WithRequired<T, K extends keyof T> = T & { [P in K]-?: T[P] }
+    export type UserListAnimeEntryWatched = WithRequired<UserListAnimeEntry, 'list_status'>;
+
     export default class MyAnimeList {
         constructor(options: ClientOptions)
 

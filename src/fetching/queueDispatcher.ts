@@ -2,7 +2,7 @@ import { SQS } from '@aws-sdk/client-sqs';
 import { Context, SQSEvent } from 'aws-lambda';
 import { stringify } from 'querystring';
 import { demand } from 'ts-demand';
-import { handler } from '.';
+import { handler } from '..';
 
 export enum QueueMessageType {
     Anime = 'anime',
