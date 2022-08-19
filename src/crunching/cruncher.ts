@@ -3,6 +3,7 @@ import { UserListAnimeEntry, UserListAnimeEntryWatched } from "myanimelist-api";
 import { DB } from "../db";
 import { QueueDispatcher } from "../fetching/queueDispatcher";
 import { getAwardedAwards } from "./awards";
+import { calculateBakaScore, getBakaRank } from "./bakaScore";
 
 export interface AnalysedAnime {
     watched: UserListAnimeEntryWatched;
@@ -10,6 +11,7 @@ export interface AnalysedAnime {
     stats: IAnimeStats;
     scoreDifference: number;
     scorePopularity: number;
+    scoreRank: number;
     tags: Array<string>;
 }
 
@@ -35,14 +37,18 @@ export async function processJob(db: DB, queue: QueueDispatcher, username: strin
 
         if(!details || !stats || !details.score) {
             continue; // Skip any anime that we can't retrieve details about
-        } 
+        }
+
+        stats.scores.sort((a, b) => b.votes - a.votes);
+        const scoreIndex = stats.scores.findIndex(s => s.score == watched.list_status.score);
 
         analysedAnime.push({
             watched,
             details,
             stats,
             scoreDifference: watched.list_status.score - details.score,
-            scorePopularity: stats.scores.find(s => s.score == watched.list_status.score)!.percentage,
+            scorePopularity: stats.scores[scoreIndex].percentage,
+            scoreRank: scoreIndex,
             tags: details.genres.map(g => g.name)
         });
     }
@@ -89,6 +95,12 @@ export async function processJob(db: DB, queue: QueueDispatcher, username: strin
         console.log(current.reason);
         console.log("");
     }
+
+    const bakaScore = calculateBakaScore(analysedAnime);
+    const bakaRank = getBakaRank(bakaScore);
+    console.log("Baka score:", bakaScore);
+    console.log(bakaRank.name);
+    console.log(bakaRank.description);
 }
 
 function formatShowName(details: IAnime) {

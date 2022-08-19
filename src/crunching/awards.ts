@@ -62,7 +62,7 @@ abstract class BiasConfidenceAward extends Award {
         const meanDifference = jstat.mean(matchingScoreDifferences) - jstat.mean(nonMatchingScoreDifferences);
         const confidence = (1-pValue) * 100;
 
-        if(confidence >= 95 && meanDifference * this.direction > 0) {
+        if(confidence >= 90 && meanDifference * this.direction > 0) {
             return({
                 name: this.name,
                 description: this.description,
