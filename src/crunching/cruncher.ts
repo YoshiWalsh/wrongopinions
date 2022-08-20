@@ -4,6 +4,7 @@ import { DB } from "../db";
 import { QueueDispatcher } from "../fetching/queueDispatcher";
 import { getAwardedAwards } from "./awards";
 import { calculateBakaScore, getBakaRank } from "./bakaScore";
+import { getSeriesDirectionCorrelations } from "./seriesDirection";
 
 export interface AnalysedAnime {
     watched: UserListAnimeEntryWatched;
@@ -14,6 +15,8 @@ export interface AnalysedAnime {
     scoreRank: number;
     tags: Array<string>;
 }
+
+export type AnalysedById = {[mal_id: string]: AnalysedAnime};
 
 export async function processJob(db: DB, queue: QueueDispatcher, username: string): Promise<void> {
     console.log("Finished loading anime for job", username);
@@ -53,6 +56,12 @@ export async function processJob(db: DB, queue: QueueDispatcher, username: strin
             tags: details.genres.map(g => g.name)
         });
     }
+
+    
+    const analysedById: AnalysedById = analysedAnime.reduce((acc, cur) => ({
+        ...acc,
+        [cur.details.mal_id]: cur,
+    }), {});
 
     const tooHighRated = [...analysedAnime].sort((a, b) => b.scoreDifference - a.scoreDifference).filter(a => a.scoreDifference > 2);
     const tooLowRated = [...analysedAnime].sort((a, b) => a.scoreDifference - b.scoreDifference).filter(a => a.scoreDifference < -2);
@@ -104,9 +113,10 @@ export async function processJob(db: DB, queue: QueueDispatcher, username: strin
     console.log(bakaRank.description);
 
     console.log("Series:");
-    console.log(getAllWatchOrders(analysedAnime)
-        .filter(wo => wo.length > 1)
-        .map(wo => wo.map(a => a.details.title_english).join(" -> "))
+    console.log(getSeriesDirectionCorrelations(analysedById)
+        .sort((a, b) => a.correlationScore - b.correlationScore)
+        .slice(0, 5)
+        .map(s => s.correlationCoefficient + " " + s.sequence.map(a => `${a.details.title} (${a.watched.list_status.score} / ${a.details.score})`).join(" -> "))
         .join("\n")
     );
 }
@@ -119,29 +129,8 @@ function formatShowName(details: IAnimeFull) {
     return output;
 }
 
-function getWatchedAnimeByRelationship(animeById: {[mal_id: string]: AnalysedAnime}, relatedTo: AnalysedAnime, relationshipType: string): Array<AnalysedAnime> {
+export function getWatchedAnimeByRelationship(animeById: {[mal_id: string]: AnalysedAnime}, relatedTo: AnalysedAnime, relationshipType: string): Array<AnalysedAnime> {
     const relatedIds = relatedTo.details.relations.filter(r => r.relation == relationshipType).flatMap(r => r.entry.map(e => e.mal_id));
     const relatedAnime = relatedIds.map(id => animeById[id]).filter(s => s); // Only include anime that has been watched/rated
     return relatedAnime;
-}
-
-function getAllWatchOrders(anime: Array<AnalysedAnime>) {
-    const getChildWatchOrders = (seriesSoFar: Array<AnalysedAnime>): Array<Array<AnalysedAnime>> => {
-        const currentAnime = seriesSoFar[seriesSoFar.length-1];
-        const sequels = getWatchedAnimeByRelationship(animeById, currentAnime, "Sequel");
-        
-        if(sequels.length < 1) {
-            return [seriesSoFar];
-        } else {
-            return sequels.flatMap(s => getChildWatchOrders([...seriesSoFar, s]));
-        }
-    }
-
-    const animeById: {[mal_id: string]: AnalysedAnime} = anime.reduce((acc, cur) => ({
-        ...acc,
-        [cur.details.mal_id]: cur,
-    }), {});
-
-    const startingAnime = anime.filter(a => getWatchedAnimeByRelationship(animeById, a, "Prequel").length < 1); // Any anime where the user hasn't watched the prequel
-    return startingAnime.flatMap(a => getChildWatchOrders([a]));
 }
