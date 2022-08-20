@@ -62,12 +62,12 @@ export async function initialiseJob(db: DB, queue: QueueDispatcher, username: st
         notQueued.push(id);
     }
 
+    await db.saveAnimeList(username, animeList);
     const job: PendingJob = {
         username,
         dependsOn: new Set([''].concat(requiredAnime.map(i => `anime-${i}`))),
         jobStatus: JobStatus.Creating,
         lastStateChange: now,
-        animeList,
     };
     if(!await db.addJob(job)) {
         throw new Error("Unable to create job"); // TODO: Improve error
@@ -142,5 +142,5 @@ export async function initialiseJob(db: DB, queue: QueueDispatcher, username: st
         const queueStatus = await db.getQueueStatus("anime");
         jobsToWaitFor = lastQueuePosition - (queueStatus.processedItems ?? 0);
     }
-    console.log(`Job requires loading ${remainingAnime} anime. Based on the current queue, this might take ${jobsToWaitFor * 2} seconds.`);
+    console.log(`Job requires loading ${remainingAnime} anime. Based on the current queue, this might take ${jobsToWaitFor * 4} seconds.`);
 }

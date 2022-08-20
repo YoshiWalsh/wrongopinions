@@ -10,7 +10,7 @@ export function ratelimit(seconds: number): Promise<void> {
     });
 }
 
-export async function retry<T>(func: () => Promise<T>, maxAttempts: number): Promise<T> {
+export async function retry<T>(func: () => Promise<T>, maxAttempts: number, ratelimitSeconds?: number): Promise<T> {
     let attempt = 0;
     while(true) {
         attempt++;
@@ -19,6 +19,9 @@ export async function retry<T>(func: () => Promise<T>, maxAttempts: number): Pro
         } catch (ex) {
             if(attempt >= maxAttempts) {
                 throw ex;
+            }
+            if(ratelimitSeconds) {
+                await ratelimit(ratelimitSeconds);
             }
         }
     }

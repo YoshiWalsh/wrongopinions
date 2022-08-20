@@ -22,7 +22,8 @@ export async function processJob(db: DB, queue: QueueDispatcher, username: strin
     if(!job) {
         throw new Error(`Attempt to process unknown job '${username}'`);
     }
-    const completedRatedAnime = job.animeList.filter(a => a.list_status?.status === "completed" && a.list_status?.score) as Array<UserListAnimeEntryWatched>;
+    const animeList = await db.loadAnimeList(username);
+    const completedRatedAnime = animeList.filter(a => a.list_status?.status === "completed" && a.list_status?.score) as Array<UserListAnimeEntryWatched>;
 
     const now = Date.now();
     const retrievedAnime = await db.getMultipleAnime(completedRatedAnime.map(a => a.node.id), true);

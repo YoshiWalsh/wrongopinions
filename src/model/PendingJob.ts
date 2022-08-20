@@ -14,5 +14,4 @@ export interface PendingJob {
     lastDependencyQueuePosition?: number;
     lastStateChange: number;
     processingQueuePosition?: number;
-    animeList: Array<UserListAnimeEntry>;
 }

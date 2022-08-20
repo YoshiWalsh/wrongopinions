@@ -5,6 +5,10 @@ import { CompletedJob } from './model/CompletedJob';
 import { JobStatus, PendingJob } from './model/PendingJob';
 import { QueueStatus } from './model/QueueStatus';
 import { convert, LocalDate } from '@js-joda/core';
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { UserListAnimeEntry } from 'myanimelist-api';
+import consumers from 'stream/consumers';
+import { Readable } from 'stream';
 
 type AttributeMap = {
     [key: string]: AttributeValue,
@@ -19,11 +23,15 @@ const unmarshall = (data: AttributeMap) => DynamoDBConverter.unmarshall(data, co
 
 export class DB {
     db: DynamoDB;
+    s3: S3Client;
     tableName: string;
+    bucketName: string;
 
     constructor() {
         this.db = new DynamoDB({region: 'us-east-1'});
+        this.s3 = new S3Client({region: 'us-east-1'});
         this.tableName = process.env.TABLE_NAME as string;
+        this.bucketName = process.env.BUCKET_NAME as string;
     }
 
     private pk(key: string): AttributeMap {
@@ -225,11 +233,7 @@ export class DB {
         if(!item) {
             return null;
         }
-        const unpacked = unmarshall(item);
-        return {
-            ...unpacked,
-            animeList: unpacked.animeList ? JSON.parse(unpacked.animeList) : undefined,
-        } as PendingJob;
+        return unmarshall(item) as PendingJob;
     }
 
     async getJob(username: string, stronglyConsistent: boolean): Promise<PendingJob | null> {
@@ -248,10 +252,7 @@ export class DB {
                 TableName: this.tableName,
                 Item: {
                     ...this.pk(`job-${job.username}`),
-                    ...marshall({
-                        ...job,
-                        animeList: JSON.stringify(job.animeList),
-                    }),
+                    ...marshall(job),
                 },
                 ConditionExpression: 'attribute_not_exists(PK) OR jobStatus = :s',
                 ExpressionAttributeValues: {
@@ -367,7 +368,26 @@ export class DB {
     }
 
 
+    async saveAnimeList(username: string, animeList: Array<UserListAnimeEntry>): Promise<void> {
+        const result = await this.s3.send(new PutObjectCommand({
+            Bucket: this.bucketName,
+            Key: `animeList-${username}.json`,
+            Body: JSON.stringify(animeList),
+        }));
+    }
 
+    async loadAnimeList(username: string): Promise<Array<UserListAnimeEntry>> {
+        const object = await this.s3.send(new GetObjectCommand({
+            Bucket: this.bucketName,
+            Key: `animeList-${username}.json`,
+        }));
+        return await consumers.json(object.Body as Readable) as Array<UserListAnimeEntry>;
+    }
 
-
+    async deleteAnimeList(username: string): Promise<void> {
+        await this.s3.send(new DeleteObjectCommand({
+            Bucket: this.bucketName,
+            Key: `animeList-${username}.json`,
+        }));
+    }
 }
