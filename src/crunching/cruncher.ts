@@ -110,4 +110,4 @@ function formatShowName(details: IAnime) {
         output += ` (${details.title_english})`;
     }
     return output;
-}
+} 
