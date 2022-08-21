@@ -503,7 +503,7 @@ const awards: Array<Award> = [
         name: "Geriatric",
         description: "I’m surprised you can access the internet from the nursing home.",
         reason: "Awarded for mostly watching anime released before 2000.",
-        predicate: a => !!a.details.aired.to && ZonedDateTime.parse(a.details.aired.to).isBefore(ZonedDateTime.parse("2000-01-01T00:00:00+08:00")),
+        predicate: a => !!a.details.aired.from && ZonedDateTime.parse(a.details.aired.to ?? a.details.aired.from).isBefore(ZonedDateTime.parse("2000-01-01T00:00:00+08:00")),
         threshold: 0.5
     }),
     new ProportionListedAward({
