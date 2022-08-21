@@ -1,5 +1,5 @@
 import { IAnimeFull, IAnimeStats } from "@shineiichijo/marika";
-import { UserListAnimeEntry, UserListAnimeEntryWatched } from "myanimelist-api";
+import { UserListAnimeEntry } from "myanimelist-api";
 import { DB } from "../db";
 import { QueueDispatcher } from "../fetching/queueDispatcher";
 import { getAwardedAwards } from "./awards";
@@ -7,7 +7,7 @@ import { calculateBakaScore, getBakaRank } from "./bakaScore";
 import { getSeriesDirectionCorrelations } from "./seriesDirection";
 
 export interface AnalysedAnime {
-    watched: UserListAnimeEntryWatched;
+    watched: UserListAnimeEntry;
     details: IAnimeFull;
     stats: IAnimeStats;
     scoreDifference: number;
@@ -26,7 +26,7 @@ export async function processJob(db: DB, queue: QueueDispatcher, username: strin
         throw new Error(`Attempt to process unknown job '${username}'`);
     }
     const animeList = await db.loadAnimeList(username);
-    const completedRatedAnime = animeList.filter(a => a.list_status?.status === "completed" && a.list_status?.score) as Array<UserListAnimeEntryWatched>;
+    const completedRatedAnime = animeList.filter(a => a.list_status.status === "completed" && a.list_status.score) as Array<UserListAnimeEntry>;
 
     const now = Date.now();
     const retrievedAnime = await db.getMultipleAnime(completedRatedAnime.map(a => a.node.id), true);
@@ -54,6 +54,9 @@ export async function processJob(db: DB, queue: QueueDispatcher, username: strin
             scorePopularity: stats.scores[scoreIndex].percentage,
             scoreRank: scoreIndex,
             tags: details.genres.map(g => g.name)
+                .concat(details.explicit_genres.map(g => g.name))
+                .concat(details.themes.map(t => t.name))
+                .concat(details.demographics.map(d => d.name)),
         });
     }
 
@@ -66,7 +69,7 @@ export async function processJob(db: DB, queue: QueueDispatcher, username: strin
     const tooHighRated = [...analysedAnime].sort((a, b) => b.scoreDifference - a.scoreDifference).filter(a => a.scoreDifference > 2);
     const tooLowRated = [...analysedAnime].sort((a, b) => a.scoreDifference - b.scoreDifference).filter(a => a.scoreDifference < -2);
     const leastPopularScore = [...analysedAnime].sort((a, b) => a.scorePopularity - b.scorePopularity).filter(a => a.scorePopularity < 10);
-    const awarded = getAwardedAwards(analysedAnime);
+    const awarded = getAwardedAwards(analysedAnime, animeList);
 
     if(tooHighRated.length > 0) {
         console.log(" ");

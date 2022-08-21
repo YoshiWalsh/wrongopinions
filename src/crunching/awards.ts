@@ -1,4 +1,7 @@
+import { Instant, ZonedDateTime } from '@js-joda/core';
+import { access } from 'fs';
 import * as jstat from 'jstat';
+import { UserListAnimeEntry } from 'myanimelist-api';
 import { AnalysedAnime } from "./cruncher";
 
 type Constructor<T> = { new (): T }
@@ -19,16 +22,16 @@ export abstract class Award {
         this.description = data.description;
     }
 
-    abstract getAward(anime: Array<AnalysedAnime>): AwardedAward | null;
+    abstract getAward(anime: Array<AnalysedAnime>, listedAnime: Array<UserListAnimeEntry>): AwardedAward | null;
 }
 
 function notNull<T>(value: T | null): value is T {
     return value !== null;
 }
 
-export function getAwardedAwards(anime: Array<AnalysedAnime>): Array<AwardedAward> {
+export function getAwardedAwards(anime: Array<AnalysedAnime>, listedAnime: Array<UserListAnimeEntry>): Array<AwardedAward> {
     const awarded: Array<AwardedAward> = [];
-    return awards.map(a => a.getAward(anime)).filter(notNull);
+    return awards.map(a => a.getAward(anime, listedAnime)).filter(notNull);
 }
 
 abstract class BiasConfidenceAward extends Award {
@@ -196,6 +199,131 @@ class ComparisonAward extends Award {
     }
 }
 
+class ProportionWatchedAward extends Award {
+    public type = "proportion-watched";
+    private reason: string;
+    private predicate: (anime: AnalysedAnime) => boolean;
+    private threshold: number;
+
+    constructor(data: {name: string, description: string, reason: string, predicate: (anime: AnalysedAnime) => boolean, threshold: number}) {
+        super(data);
+
+        this.reason = data.reason;
+        this.predicate = data.predicate;
+        this.threshold = data.threshold;
+    }
+
+    public getAward(anime: Array<AnalysedAnime>) {
+        const matchedShows = anime.filter(this.predicate);
+        const ratio = matchedShows.length / anime.length;
+        if(ratio > this.threshold) {
+            return {
+                name: this.name,
+                description: this.description,
+                reason: this.reason,
+            };
+        }
+
+        return null;
+    }
+}
+
+class ProportionListedAward extends Award {
+    public type = "proportion-listed";
+    private reason: string;
+    private widePredicate: (anime: UserListAnimeEntry) => boolean;
+    private narrowPredicate: (anime: UserListAnimeEntry) => boolean;
+    private threshold: number;
+
+    constructor(data: {name: string, description: string, reason: string, widePredicate: (anime: UserListAnimeEntry) => boolean, narrowPredicate: (anime: UserListAnimeEntry) => boolean, threshold: number}) {
+        super(data);
+
+        this.reason = data.reason;
+        this.widePredicate = data.widePredicate;
+        this.narrowPredicate = data.narrowPredicate;
+        this.threshold = data.threshold;
+    }
+
+    public getAward(anime: Array<AnalysedAnime>, listedAnime: Array<UserListAnimeEntry>) {
+        const includedShows = listedAnime.filter(this.widePredicate);
+        const matchedShows = includedShows.filter(this.narrowPredicate);
+        const ratio = matchedShows.length / includedShows.length;
+        if(ratio > this.threshold) {
+            return {
+                name: this.name,
+                description: this.description,
+                reason: this.reason,
+            };
+        }
+
+        return null;
+    }
+}
+
+class AmountListedAward extends Award {
+    public type = "amount-listed";
+    private reason: string;
+    private predicate: (anime: UserListAnimeEntry) => boolean;
+    private threshold: number;
+
+    constructor(data: {name: string, description: string, reason: string, predicate: (anime: UserListAnimeEntry) => boolean, threshold: number}) {
+        super(data);
+
+        this.reason = data.reason;
+        this.predicate = data.predicate;
+        this.threshold = data.threshold;
+    }
+
+    public getAward(anime: Array<AnalysedAnime>, listedAnime: Array<UserListAnimeEntry>) {
+        const matchedShows = listedAnime.filter(this.predicate);
+        if(matchedShows.length > this.threshold) {
+            return {
+                name: this.name,
+                description: this.description,
+                reason: this.reason,
+            };
+        }
+
+        return null;
+    }
+}
+
+class UnbalancedGenreAward extends Award {
+    public type = "unbalanced-genre";
+    private threshold: number;
+
+    constructor(data: {name: string, description: string, threshold: number}) {
+        super(data);
+
+        this.threshold = data.threshold;
+    }
+
+    public getAward(anime: Array<AnalysedAnime>, listedAnime: Array<UserListAnimeEntry>) {
+        const allGenresList = anime.flatMap(a => a.tags);
+        const genreCounts: {[genre: string]: number} = allGenresList.reduce((acc, cur) => ({
+            ...acc,
+            [cur]: (acc[cur] ?? 0) + 1,
+        }), {} as {[genre: string]: number});
+
+        const genres = Object.keys(genreCounts);
+        const genresWithCounts = genres.map(g => ({
+            genre: g,
+            count: genreCounts[g],
+        }));
+
+        genresWithCounts.sort((a, b) => b.count - a.count); // Descending
+        const unbalancedGenres = genresWithCounts.filter(g => g.count > anime.length * this.threshold).map(g => g.genre);
+        if(unbalancedGenres.length > 0) {
+            return {
+                name: this.name,
+                description: this.description,
+                reason: `Awarded for more than ${(this.threshold * 100).toFixed(0)}% of scored shows relating to the same genre. (${unbalancedGenres.join(", ")})`,
+            }
+        }
+        return null;
+    }
+}
+
 const awards: Array<Award> = [
     new GenreAward({
         genre: 'Dementia',
@@ -342,5 +470,84 @@ const awards: Array<Award> = [
             11321, // Nee Summer
             35936, // Imouto Bitch ni Shiboraretai
         ]
+    }),
+    new ProportionWatchedAward({
+        name: "Hipster",
+        description: "When people ask what your favourite anime is, you just say they've probably never heard of it.",
+        reason: "Awarded for mostly watching anime with fewer than 100,000 votes.",
+        predicate: a => a.details.scored_by < 100000,
+        threshold: 0.5
+    }),
+    new ProportionWatchedAward({
+        name: "Uncritical",
+        description: "As long as there are some pretty colours on the screen, you're happy.",
+        reason: "Awarded for mostly scoring anime 9 or 10.",
+        predicate: a => a.watched.list_status.score >= 9,
+        threshold: 0.5
+    }),
+    new ProportionWatchedAward({
+        name: "Jaded",
+        description: "If you don't like anime, why do you keep watching? Take your negative energy elsewhere, hater.",
+        reason: "Awarded for mostly scoring anime 6 or lower.",
+        predicate: a => a.watched.list_status.score <= 6,
+        threshold: 0.5
+    }),
+    new ProportionWatchedAward({
+        name: "Whippersnapper",
+        description: "Those who don’t study history are doomed to repeat it.",
+        reason: "Awarded for mostly watching anime released since 2015.",
+        predicate: a => !a.details.aired.from || ZonedDateTime.parse(a.details.aired.from).isAfter(ZonedDateTime.parse("2015-01-01T00:00:00+08:00")),
+        threshold: 0.5
+    }),
+    new ProportionWatchedAward({
+        name: "Geriatric",
+        description: "I’m surprised you can access the internet from the nursing home.",
+        reason: "Awarded for mostly watching anime released before 2000.",
+        predicate: a => !!a.details.aired.to && ZonedDateTime.parse(a.details.aired.to).isBefore(ZonedDateTime.parse("2000-01-01T00:00:00+08:00")),
+        threshold: 0.5
+    }),
+    new ProportionListedAward({
+        name: "Judging by the cover",
+        description: "You must be a precog or something, being able to judge a show without even watching an episode.",
+        reason: "Awarded for scoring an anime in 'plan to watch' status.",
+        widePredicate: a => true,
+        narrowPredicate: a => !!a.list_status.score && a.list_status.status == 'plan_to_watch',
+        threshold: 0
+    }),
+    new ProportionListedAward({
+        name: "Hasty",
+        description: "Aren't you a bit quick to judge?",
+        reason: "Awarded for scoring shows without finishing them.",
+        widePredicate: a => !!a.list_status.score,
+        narrowPredicate: a => a.list_status.status != 'completed',
+        threshold: 0.05
+    }),
+    new ProportionListedAward({
+        name: "Quitter",
+        description: "When the going gets tough, you just give up.",
+        reason: "Drop more than 10% of shows.",
+        widePredicate: a => a.list_status.status != 'plan_to_watch',
+        narrowPredicate: a => a.list_status.status == 'dropped',
+        threshold: 0.1
+    }),
+    new ProportionListedAward({
+        name: "Theoretical Weeb",
+        description: "You like the idea of watching anime more than you like watching anime.",
+        reason: "Have more shows in 'plan to watch' than 'completed'.",
+        widePredicate: a => ['plan_to_watch', 'completed'].includes(a.list_status.status),
+        narrowPredicate: a => a.list_status.status == 'plan_to_watch',
+        threshold: 0.5
+    }),
+    new AmountListedAward({
+        name: "Cryostatis",
+        description: "Be honest with yourself, are you ever going to resume those shows? Just mark them 'dropped' and move on with your life.",
+        reason: "Have more than 10 shows in on-hold status.",
+        predicate: a => a.list_status.status == 'on_hold',
+        threshold: 10
+    }),
+    new UnbalancedGenreAward({
+        name: "Unbalanced",
+        description: "It wouldn't kill you to go outside of your comfort zone some time.",
+        threshold: 0.6,
     })
 ];

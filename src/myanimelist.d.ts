@@ -47,7 +47,7 @@ declare module 'myanimelist-api' {
             },
             title: string,
         },
-        list_status?: {
+        list_status: {
             is_rewatching: boolean,
             num_episodes_watched: number,
             score: number,
@@ -55,9 +55,6 @@ declare module 'myanimelist-api' {
             updated_at: string,
         }
     }
-
-    type WithRequired<T, K extends keyof T> = T & { [P in K]-?: T[P] }
-    export type UserListAnimeEntryWatched = WithRequired<UserListAnimeEntry, 'list_status'>;
 
     export default class MyAnimeList {
         constructor(options: ClientOptions)
