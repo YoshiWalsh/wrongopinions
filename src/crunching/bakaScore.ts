@@ -2,12 +2,11 @@ import * as jstat from 'jstat';
 import { AwardedAward } from './awards';
 import { AnalysedAnime } from './cruncher';
 
-const bakaScoreMaximum = 30000;
-const bakaScoreAnimeCountSteepness = 1.03;
+const bakaScoreScalingFactor = 6000;
 
 export function calculateBakaScore(analysedAnime: Array<AnalysedAnime>): number {
     const numberOfAnime = analysedAnime.length;
-    const numberOfAnimeMultiplier = bakaScoreMaximum * (1 - Math.pow(bakaScoreAnimeCountSteepness, -numberOfAnime));
+    const numberOfAnimeMultiplier = Math.log(numberOfAnime+1) * bakaScoreScalingFactor;
 
     const averageScoreIndex = jstat.mean(analysedAnime.map(a => a.scoreRank));
     const averageScoreMultiplier = averageScoreIndex / 9;
