@@ -288,36 +288,40 @@ class AmountListedAward extends Award {
     }
 }
 
-class UnbalancedGenreAward extends Award {
-    public type = "unbalanced-genre";
+class UnbalancedAward extends Award {
+    public type = "unbalanced";
+    private getTags: (anime: AnalysedAnime) => Array<string>;
     private threshold: number;
+    private commonality: string;
 
-    constructor(data: {name: string, description: string, threshold: number}) {
+    constructor(data: {name: string, description: string, getTags: (anime: AnalysedAnime) => Array<string>, commonality: string, threshold: number}) {
         super(data);
 
+        this.getTags = data.getTags;
         this.threshold = data.threshold;
+        this.commonality = data.commonality;
     }
 
     public getAward(anime: Array<AnalysedAnime>, listedAnime: Array<UserListAnimeEntry>) {
-        const allGenresList = anime.flatMap(a => a.tags);
-        const genreCounts: {[genre: string]: number} = allGenresList.reduce((acc, cur) => ({
+        const allTagsList = anime.flatMap(this.getTags);
+        const tagCounts: {[genre: string]: number} = allTagsList.reduce((acc, cur) => ({
             ...acc,
             [cur]: (acc[cur] ?? 0) + 1,
         }), {} as {[genre: string]: number});
 
-        const genres = Object.keys(genreCounts);
-        const genresWithCounts = genres.map(g => ({
-            genre: g,
-            count: genreCounts[g],
+        const tags = Object.keys(tagCounts);
+        const tagsWithCounts = tags.map(g => ({
+            tag: g,
+            count: tagCounts[g],
         }));
 
-        genresWithCounts.sort((a, b) => b.count - a.count); // Descending
-        const unbalancedGenres = genresWithCounts.filter(g => g.count > anime.length * this.threshold).map(g => g.genre);
-        if(unbalancedGenres.length > 0) {
+        tagsWithCounts.sort((a, b) => b.count - a.count); // Descending
+        const unbalancedTags = tagsWithCounts.filter(g => g.count > anime.length * this.threshold).map(g => g.tag);
+        if(unbalancedTags.length > 0) {
             return {
                 name: this.name,
                 description: this.description,
-                reason: `Awarded for more than ${(this.threshold * 100).toFixed(0)}% of scored shows relating to the same genre. (${unbalancedGenres.join(", ")})`,
+                reason: `Awarded for more than ${(this.threshold * 100).toFixed(0)}% of scored shows ${this.commonality}. (${unbalancedTags.join(", ")})`,
             }
         }
         return null;
@@ -545,9 +549,25 @@ const awards: Array<Award> = [
         predicate: a => a.list_status.status == 'on_hold',
         threshold: 10
     }),
-    new UnbalancedGenreAward({
+    new UnbalancedAward({
         name: "Unbalanced",
         description: "It wouldn't kill you to go outside of your comfort zone some time.",
         threshold: 0.6,
-    })
+        commonality: 'relating to the same genre',
+        getTags: a => a.details.genres.concat(a.details.explicit_genres).map(a => a.name),
+    }),
+    new UnbalancedAward({
+        name: "Stan",
+        description: "Being a superfan is one thing, but you're almost obsessive.",
+        threshold: 0.20,
+        commonality: 'made by the same studio',
+        getTags: a => a.details.studios.map(a => a.name),
+    }),
+    new UnbalancedAward({
+        name: "Creature of Habit",
+        description: "You don't like to venture outside of your comfort zone too often.",
+        threshold: 0.25,
+        commonality: 'of the same theme',
+        getTags: a => a.details.themes.map(a => a.name),
+    }),
 ];
