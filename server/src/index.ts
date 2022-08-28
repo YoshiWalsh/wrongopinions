@@ -14,6 +14,7 @@ import { Anime } from 'jikants/dist/src/interfaces/genre/Genre';
 import { title } from 'process';
 import { default as MyAnimeList, UserListAnimeEntry } from 'myanimelist-api';
 import { APIGatewayEvent, SQSEvent, Context, SQSBatchResponse, APIGatewayProxyEvent, APIGatewayProxyResultV2 } from 'aws-lambda';
+import { Contracts } from 'wrongopinions-common';
 
 
 function delay(t: number) {

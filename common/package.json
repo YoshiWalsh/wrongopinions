@@ -1,0 +1,19 @@
+{
+	"name": "wrongopinions-common",
+	"version": "0.0.1",
+	"description": "Contains elements that are used by both the client and server components of wrongopinions.moe.",
+	"main": "dist/index.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"author": {
+		"name": "Joshua Walsh",
+		"email": "josh@ymindustries.com",
+		"url": "https://joshwalsh.me"
+	},
+	"private": "true",
+	"license": "GPL",
+	"devDependencies": {
+		"typescript": "^4.0.2"
+	}
+}
