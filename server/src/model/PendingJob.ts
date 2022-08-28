@@ -1,5 +1,3 @@
-import { UserListAnimeEntry } from "myanimelist-api";
-
 export enum JobStatus {
     Creating = "creating",
     Waiting = "waiting",

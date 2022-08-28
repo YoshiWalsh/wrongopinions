@@ -1,4 +1,3 @@
-import JikanTS from 'jikants';
 import { DB } from "../db";
 import { QueueDispatcher } from "./queueDispatcher";
 import { LocalDate, ZonedDateTime, ZoneOffset } from '@js-joda/core';

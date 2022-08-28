@@ -1,10 +1,7 @@
-import { Instant, ZonedDateTime } from '@js-joda/core';
-import { access } from 'fs';
+import { ZonedDateTime } from '@js-joda/core';
 import * as jstat from 'jstat';
 import { UserListAnimeEntry } from 'myanimelist-api';
 import { AnalysedAnime } from "./cruncher";
-
-type Constructor<T> = { new (): T }
 
 export interface AwardedAward {
     name: string;
