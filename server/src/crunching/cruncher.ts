@@ -1,5 +1,6 @@
 import { IAnimeFull, IAnimeStats } from "@shineiichijo/marika";
 import { UserListAnimeEntry } from "myanimelist-api";
+import { Contracts } from "wrongopinions-common";
 import { DB } from "../db";
 import { QueueDispatcher } from "../fetching/queueDispatcher";
 import { getAwardedAwards } from "./awards";
@@ -17,6 +18,35 @@ export interface AnalysedAnime {
 }
 
 export type AnalysedById = {[mal_id: string]: AnalysedAnime};
+
+export function convertAnimeDetailsToContractAnime(animeDetails: IAnimeFull): Contracts.Anime {
+    const defaultTitle = animeDetails.titles.find(t => t.type == "Default")?.title;
+    const englishTitle = animeDetails.titles.find(t => t.type == "English")?.title;
+    const hasDistinctEnglishTitle = defaultTitle?.toLowerCase().replace(/[^a-z]/g, "") != englishTitle?.toLowerCase().replace(/[^a-z]/g, "");
+    return {
+        defaultTitle: defaultTitle ?? "",
+        englishTitle: hasDistinctEnglishTitle ? englishTitle : undefined,
+        url: animeDetails.url,
+        thumbnailUrl: animeDetails.images.jpg.image_url,
+    };
+}
+
+export function convertAnalysedAnimeToContractScoredAnime(analysedAnime: AnalysedAnime): Contracts.ScoredAnime {
+    return {
+        anime: convertAnimeDetailsToContractAnime(analysedAnime.details),
+        globalScore: analysedAnime.details.score,
+        scorePopularity: analysedAnime.scorePopularity,
+        userScore: analysedAnime.watched.list_status.score,
+    }
+}
+
+export function convertListEntryToContractAnime(listEntry: UserListAnimeEntry): Contracts.Anime {
+    return {
+        defaultTitle: listEntry.node.title,
+        thumbnailUrl: listEntry.node.main_picture.medium,
+        url: `https://myanimelist.net/anime/${listEntry.node.id}/`,
+    };
+}
 
 export async function processJob(db: DB, queue: QueueDispatcher, username: string): Promise<void> {
     console.log("Finished loading anime for job", username);
@@ -119,7 +149,7 @@ export async function processJob(db: DB, queue: QueueDispatcher, username: strin
     console.log(getSeriesDirectionCorrelations(analysedById)
         .sort((a, b) => a.correlationScore - b.correlationScore)
         .slice(0, 5)
-        .map(s => s.correlationCoefficient + " " + s.sequence.map(a => `${a.details.title} (${a.watched.list_status.score} / ${a.details.score})`).join(" -> "))
+        .map(s => s.correlationCoefficient + " " + s.sequence.map(a => `${a.anime.defaultTitle} (${a.userScore} / ${a.globalScore})`).join(" -> "))
         .join("\n")
     );
 }

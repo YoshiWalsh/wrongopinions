@@ -1,13 +1,8 @@
 import { ZonedDateTime } from '@js-joda/core';
 import * as jstat from 'jstat';
 import { UserListAnimeEntry } from 'myanimelist-api';
-import { AnalysedAnime } from "./cruncher";
-
-export interface AwardedAward {
-    name: string;
-    description: string;
-    reason: string;
-}
+import { AnalysedAnime, convertAnimeDetailsToContractAnime, convertListEntryToContractAnime } from "./cruncher";
+import { Contracts } from "wrongopinions-common";
 
 export abstract class Award {
     public type: string = "";
@@ -19,15 +14,15 @@ export abstract class Award {
         this.description = data.description;
     }
 
-    abstract getAward(anime: Array<AnalysedAnime>, listedAnime: Array<UserListAnimeEntry>): AwardedAward | null;
+    abstract getAward(anime: Array<AnalysedAnime>, listedAnime: Array<UserListAnimeEntry>): Contracts.AwardedAward | null;
 }
 
 function notNull<T>(value: T | null): value is T {
     return value !== null;
 }
 
-export function getAwardedAwards(anime: Array<AnalysedAnime>, listedAnime: Array<UserListAnimeEntry>): Array<AwardedAward> {
-    const awarded: Array<AwardedAward> = [];
+export function getAwardedAwards(anime: Array<AnalysedAnime>, listedAnime: Array<UserListAnimeEntry>): Array<Contracts.AwardedAward> {
+    const awarded: Array<Contracts.AwardedAward> = [];
     return awards.map(a => a.getAward(anime, listedAnime)).filter(notNull);
 }
 
@@ -63,10 +58,14 @@ abstract class BiasConfidenceAward extends Award {
         const confidence = (1-pValue) * 100;
 
         if(confidence >= 90 && meanDifference * this.direction > 0) {
+            matchingAnime.sort((a, b) => (a.scoreDifference - b.scoreDifference) * this.direction * -1);
+            const contributingAnime = matchingAnime.slice(0, matchingAnime.findIndex(a => a.scoreDifference * this.direction < 0));
+
             return({
                 name: this.name,
                 description: this.description,
-                reason: this.getReason(confidence)
+                reason: this.getReason(confidence),
+                contributingAnime: contributingAnime.map(a => convertAnimeDetailsToContractAnime(a.details)),
             });
         }
 
@@ -149,7 +148,8 @@ class ShowAward extends Award {
             return({
                 name: this.name,
                 description: this.description,
-                reason: `Awarded because you rated ${show.details.title_japanese} ${this.direction > 0 ? 'highly' : 'poorly'}.`
+                reason: `Awarded because you rated ${show.details.title_japanese} ${this.direction > 0 ? 'highly' : 'poorly'}.`,
+                contributingAnime: [convertAnimeDetailsToContractAnime(show.details)],
             });
         }
 
@@ -171,8 +171,12 @@ class ComparisonAward extends Award {
         this.betterShowIds = data.betterShowIds;
     }
 
-    private getAverageScoreForShows(anime: Array<AnalysedAnime>, showIds: Array<number>): number | null {
-        const scores = showIds.map(s => anime.find(a => a.details.mal_id === s)?.watched?.list_status.score).filter(s => s !== null);
+    private getShowsMatchingIds(anime: Array<AnalysedAnime>, showIds: Array<number>): Array<AnalysedAnime> {
+        return showIds.map(s => anime.find(a => a.details.mal_id === s)).filter(s => s) as Array<AnalysedAnime>;
+    }
+
+    private getAverageScoreForShows(shows: Array<AnalysedAnime>): number | null {
+        const scores = shows.map(s => s.watched.list_status.score);
         if(scores.length > 0) {
             return jstat.mean(scores);
         } else {
@@ -181,15 +185,18 @@ class ComparisonAward extends Award {
     }
 
     public getAward(anime: Array<AnalysedAnime>) {
-        const worseScore = this.getAverageScoreForShows(anime, this.worseShowIds);
-        const betterScore = this.getAverageScoreForShows(anime, this.betterShowIds);
+        const worseShows = this.getShowsMatchingIds(anime, this.worseShowIds);
+        const betterShows = this.getShowsMatchingIds(anime, this.betterShowIds);
+        const worseScore = this.getAverageScoreForShows(worseShows);
+        const betterScore = this.getAverageScoreForShows(betterShows);
 
         if(worseScore !== null && betterScore !== null && worseScore > betterScore) {
             return {
                 name: this.name,
                 description: this.description,
-                reason: this.reason
-            }
+                reason: this.reason,
+                contributingAnime: worseShows.concat(betterShows).map(s => convertAnimeDetailsToContractAnime(s.details)),
+            };
         }
 
         return null;
@@ -218,6 +225,7 @@ class ProportionWatchedAward extends Award {
                 name: this.name,
                 description: this.description,
                 reason: this.reason,
+                contributingAnime: matchedShows.map(s => convertAnimeDetailsToContractAnime(s.details)),
             };
         }
 
@@ -250,6 +258,7 @@ class ProportionListedAward extends Award {
                 name: this.name,
                 description: this.description,
                 reason: this.reason,
+                contributingAnime: matchedShows.map(s => convertListEntryToContractAnime(s)),
             };
         }
 
@@ -278,6 +287,7 @@ class AmountListedAward extends Award {
                 name: this.name,
                 description: this.description,
                 reason: this.reason,
+                contributingAnime: matchedShows.map(s => convertListEntryToContractAnime(s)),
             };
         }
 
@@ -315,11 +325,13 @@ class UnbalancedAward extends Award {
         tagsWithCounts.sort((a, b) => b.count - a.count); // Descending
         const unbalancedTags = tagsWithCounts.filter(g => g.count > anime.length * this.threshold).map(g => g.tag);
         if(unbalancedTags.length > 0) {
+            const contributingAnime = anime.filter(a => a.tags.findIndex(t => unbalancedTags.includes(t)) !== -1);
             return {
                 name: this.name,
                 description: this.description,
                 reason: `Awarded for more than ${(this.threshold * 100).toFixed(0)}% of scored shows ${this.commonality}. (${unbalancedTags.join(", ")})`,
-            }
+                contributingAnime: contributingAnime.map(a => convertAnimeDetailsToContractAnime(a.details)),
+            };
         }
         return null;
     }

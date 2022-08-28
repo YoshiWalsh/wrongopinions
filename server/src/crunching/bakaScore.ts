@@ -1,5 +1,5 @@
 import * as jstat from 'jstat';
-import { AwardedAward } from './awards';
+import { Contracts } from "wrongopinions-common";
 import { AnalysedAnime } from './cruncher';
 
 const bakaScoreScalingFactor = 6000;
@@ -17,7 +17,7 @@ export function calculateBakaScore(analysedAnime: Array<AnalysedAnime>): number 
 
 const bakaRanks: Array<{
     minimumScore: number,
-    rank: AwardedAward,
+    rank: Contracts.AwardedAward,
 }> = [
     {
         minimumScore: 0,
@@ -25,6 +25,7 @@ const bakaRanks: Array<{
             name: "NPC",
             description: "You know you're meant to pick your own scores, right? MAL isn't a game about trying to match the number.",
             reason: "Awarded for having an unrealistically low baka score.",
+            contributingAnime: [],
         }
     },
     {
@@ -32,7 +33,8 @@ const bakaRanks: Array<{
         rank: {
             name: "Normie",
             description: "You're a sheep. Have you ever had an original thought in your life?",
-            reason: "Awarded for having a low baka score."
+            reason: "Awarded for having a low baka score.",
+            contributingAnime: [],
         }
     },
     {
@@ -40,7 +42,8 @@ const bakaRanks: Array<{
         rank: {
             name: "Opinionated",
             description: "You know what you like and you know what you don't.",
-            reason: "Awarded for having an ordinary baka score."
+            reason: "Awarded for having an ordinary baka score.",
+            contributingAnime: [],
         }
     },
     {
@@ -48,7 +51,8 @@ const bakaRanks: Array<{
         rank: {
             name: "Contrarian",
             description: "Being different doesn’t make you special. Doesn’t it get tiring to be the Devil’s Advocate all the time?",
-            reason: "Awarded for having a high baka score."
+            reason: "Awarded for having a high baka score.",
+            contributingAnime: [],
         }
     },
     {
@@ -56,7 +60,8 @@ const bakaRanks: Array<{
         rank: {
             name: "Troll",
             description: "Your opinions are so wrong that you can’t possibly be serious.",
-            reason: "Awarded for having a comically high baka score."
+            reason: "Awarded for having a comically high baka score.",
+            contributingAnime: [],
         }
     },
     {
@@ -64,7 +69,8 @@ const bakaRanks: Array<{
         rank: {
             name: "IT'S OVER 9000!!!",
             description: "What, 9000!? There's no way that can be right.",
-            reason: "Awarded for having a baka score that's over 9000."
+            reason: "Awarded for having a baka score that's over 9000.",
+            contributingAnime: [],
         }
     },
     {
@@ -72,12 +78,13 @@ const bakaRanks: Array<{
         rank: {
             name: "Cheater",
             description: "You must have voted on anime with the specific intention of maximising your baka score. Congratulations, your results are statistically invalid.",
-            reason: "Awarded for your votes having no correlation with other votes."
+            reason: "Awarded for your votes having no correlation with other votes.",
+            contributingAnime: [],
         }
     },
 ];
 
-export function getBakaRank(bakaScore: number): AwardedAward {
+export function getBakaRank(bakaScore: number): Contracts.AwardedAward {
     let attainedRank = bakaRanks[0].rank;
     for(const rank of bakaRanks) {
         if(bakaScore >= rank.minimumScore) {

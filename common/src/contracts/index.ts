@@ -1,1 +1,1 @@
-export { Results } from './results';
+export { Anime, ScoredAnime, Results, AwardedAward, SeriesDirectionCorrelation } from './results';

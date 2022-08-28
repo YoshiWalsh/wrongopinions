@@ -1,5 +1,6 @@
 import * as jstat from 'jstat';
-import { AnalysedAnime, AnalysedById, getWatchedAnimeByRelationship } from "./cruncher";
+import { Contracts } from 'wrongopinions-common';
+import { AnalysedAnime, AnalysedById, convertAnalysedAnimeToContractScoredAnime, getWatchedAnimeByRelationship } from "./cruncher";
 
 const animeScalingCount = 4; // Sequences shorter than this will have their correlations scaled down
 
@@ -26,12 +27,8 @@ function getAllSequences(analysedById: AnalysedById) {
     return startingAnime.flatMap(a => getChildSequences([a]));
 }
 
-export interface SeriesDirectionCorrelation {
-    sequence: Array<AnalysedAnime>;
-    correlationCoefficient: number;
-    correlationScore: number;
-}
-function getSeriesDirectionCorrelation(sequence: Array<AnalysedAnime>): SeriesDirectionCorrelation {
+
+function getSeriesDirectionCorrelation(sequence: Array<AnalysedAnime>): Contracts.SeriesDirectionCorrelation {
     const userScores = sequence.map(a => a.watched.list_status.score);
     const averageScores = sequence.map(a => a.details.score);
     const correlationCoefficient = jstat.spearmancoeff(userScores, averageScores);
@@ -39,7 +36,7 @@ function getSeriesDirectionCorrelation(sequence: Array<AnalysedAnime>): SeriesDi
     const userMagnitude = jstat.stdev(userScores);
     const averageMagnitude = jstat.stdev(averageScores);
     return {
-        sequence,
+        sequence: sequence.map(convertAnalysedAnimeToContractScoredAnime),
         correlationCoefficient: correlationCoefficient,
         correlationScore: (correlationCoefficient * animeCountScalingFactor * userMagnitude * averageMagnitude) || 0,
     };
