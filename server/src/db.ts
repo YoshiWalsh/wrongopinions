@@ -1,11 +1,11 @@
 import { DynamoDB, ConditionalCheckFailedException, AttributeValue } from '@aws-sdk/client-dynamodb';
 import * as DynamoDBConverter from '@aws-sdk/util-dynamodb';
 import { AnimeData, AnimeDetails, AnimeStatus } from './model/AnimeDetails';
-import { CompletedJob } from './model/CompletedJob';
+import { Contracts } from 'wrongopinions-common';
 import { JobStatus, PendingJob } from './model/PendingJob';
 import { QueueStatus } from './model/QueueStatus';
 import { convert, LocalDate } from '@js-joda/core';
-import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, NotFound } from '@aws-sdk/client-s3';
 import { UserListAnimeEntry } from 'myanimelist-api';
 import consumers from 'stream/consumers';
 import { Readable } from 'stream';
@@ -347,29 +347,32 @@ export class DB {
 
     
 
-    async getCompleted(username: string): Promise<CompletedJob | null> {
-        const result = await this.db.getItem({
-            ConsistentRead: true,
-            TableName: this.tableName,
-            Key: this.pk(`completed-${username}`),
-        });
-
-        return result.Item ? unmarshall(result.Item) as CompletedJob : null;
+    async getCompleted(username: string): Promise<Contracts.Results | null> {
+        try {
+            const object = await this.s3.send(new GetObjectCommand({
+                Bucket: this.bucketName,
+                Key: `completed-${username}.json`,
+            }));
+            return await consumers.json(object.Body as Readable) as Contracts.Results;
+        } catch (ex) {
+            if(ex instanceof NotFound) {
+                return null;
+            }
+            throw ex;
+        }
     }
 
-    async addCompleted(job: CompletedJob): Promise<void> {
-        await this.db.putItem({
-            TableName: this.tableName,
-            Item: {
-                ...this.pk(`completed-${job.username}`),
-                ...marshall(job),
-            },
-        });
+    async addCompleted(results: Contracts.Results): Promise<void> {
+        await this.s3.send(new PutObjectCommand({
+            Bucket: this.bucketName,
+            Key: `completed-${results.username}.json`,
+            Body: JSON.stringify(results),
+        }));
     }
 
 
     async saveAnimeList(username: string, animeList: Array<UserListAnimeEntry>): Promise<void> {
-        const result = await this.s3.send(new PutObjectCommand({
+        await this.s3.send(new PutObjectCommand({
             Bucket: this.bucketName,
             Key: `animeList-${username}.json`,
             Body: JSON.stringify(animeList),
