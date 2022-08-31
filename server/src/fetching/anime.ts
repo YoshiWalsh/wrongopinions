@@ -3,6 +3,7 @@ import { QueueDispatcher } from "./queueDispatcher";
 import { LocalDate, ZonedDateTime, ZoneOffset } from '@js-joda/core';
 import { Anime as MarikaAnime, IAnimeFull, IAnimeStats } from '@shineiichijo/marika'; // Depends on https://github.com/LuckyYam/Marika/pull/1
 import { ratelimit, retry } from '../utils';
+import { Contracts } from "wrongopinions-common";
 
 const marika = {
     anime: new MarikaAnime(),
@@ -47,6 +48,7 @@ export async function loadAnime(db: DB, queue: QueueDispatcher, id: number): Pro
         try {
             const remainingAnime = await db.removeAnimeFromJob(username, id);
             if(remainingAnime < 1) {
+                await db.updateJobStatus(username, Contracts.JobStatus.Queued);
                 await queue.queueProcessing(username);
             }
         } catch (ex) {

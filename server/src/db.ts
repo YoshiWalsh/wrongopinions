@@ -2,7 +2,7 @@ import { DynamoDB, ConditionalCheckFailedException, AttributeValue } from '@aws-
 import * as DynamoDBConverter from '@aws-sdk/util-dynamodb';
 import { AnimeData, AnimeDetails, AnimeStatus } from './model/AnimeDetails';
 import { Contracts } from 'wrongopinions-common';
-import { JobStatus, PendingJob } from './model/PendingJob';
+import { PendingJob } from './model/PendingJob';
 import { QueueStatus } from './model/QueueStatus';
 import { convert, LocalDate } from '@js-joda/core';
 import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, NotFound } from '@aws-sdk/client-s3';
@@ -257,7 +257,7 @@ export class DB {
                 ConditionExpression: 'attribute_not_exists(PK) OR jobStatus = :s',
                 ExpressionAttributeValues: {
                     ':s': {
-                        'S': JobStatus.Processing,
+                        'S': Contracts.JobStatus.Processing,
                     },
                 },
             })
@@ -270,7 +270,7 @@ export class DB {
         };
     }
 
-    async updateJobStatusAndRemoveDependencies(username: string, status: JobStatus, animeIdsToRemove: Array<string>, lastDependencyQueuePosition: number): Promise<number> {
+    async updateJobStatusAndRemoveDependencies(username: string, status: Contracts.JobStatus, animeIdsToRemove: Array<string>, lastDependencyQueuePosition: number): Promise<number> {
         const results = await this.db.updateItem({
             TableName: this.tableName,
             Key: this.pk(`job-${username}`),
@@ -300,7 +300,7 @@ export class DB {
         return job.dependsOn.size - 1;
     }
 
-    async updateJobStatus(username: string, status: JobStatus): Promise<number> {
+    async updateJobStatus(username: string, status: Contracts.JobStatus): Promise<PendingJob> {
         const results = await this.db.updateItem({
             TableName: this.tableName,
             Key: this.pk(`job-${username}`),
@@ -311,6 +311,28 @@ export class DB {
                 },
                 ':t': {
                     'N': Date.now().toString(),
+                },
+            },
+            ReturnValues: 'ALL_NEW',
+        });
+
+        return this.deserialiseJob(results.Attributes) as PendingJob;
+    }
+
+    async updateJobStatusAndSetQueuePosition(username: string, status: Contracts.JobStatus, queuePosition: number): Promise<number> {
+        const results = await this.db.updateItem({
+            TableName: this.tableName,
+            Key: this.pk(`job-${username}`),
+            UpdateExpression: `SET jobStatus = :s, lastStateChange = :t, processingQueuePosition = :p`,
+            ExpressionAttributeValues: {
+                ':s': {
+                    'S': status,
+                },
+                ':t': {
+                    'N': Date.now().toString(),
+                },
+                ':p': {
+                    'N': queuePosition.toString(),
                 },
             },
             ReturnValues: 'ALL_NEW',

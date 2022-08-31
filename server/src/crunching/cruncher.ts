@@ -1,8 +1,11 @@
+import { Instant } from "@js-joda/core";
 import { IAnimeFull, IAnimeStats } from "@shineiichijo/marika";
 import { UserListAnimeEntry } from "myanimelist-api";
 import { Contracts } from "wrongopinions-common";
 import { DB } from "../db";
 import { QueueDispatcher } from "../fetching/queueDispatcher";
+import { AnimeDetails } from "../model/AnimeDetails";
+import { PendingJob } from "../model/PendingJob";
 import { getAwardedAwards } from "./awards";
 import { calculateBakaScore, getBakaRank } from "./bakaScore";
 import { getSeriesDirectionCorrelations } from "./seriesDirection";
@@ -48,21 +51,9 @@ export function convertListEntryToContractAnime(listEntry: UserListAnimeEntry): 
     };
 }
 
-export async function processJob(db: DB, queue: QueueDispatcher, username: string): Promise<void> {
-    console.log("Finished loading anime for job", username);
-
-    const job = await db.getJob(username, true);
-    if(!job) {
-        throw new Error(`Attempt to process unknown job '${username}'`);
-    }
-    const animeList = await db.loadAnimeList(username);
-    const completedRatedAnime = animeList.filter(a => a.list_status.status === "completed" && a.list_status.score) as Array<UserListAnimeEntry>;
-
-    const now = Date.now();
-    const retrievedAnime = await db.getMultipleAnime(completedRatedAnime.map(a => a.node.id), true);
-
+export async function crunchJob(job: PendingJob, animeList: Array<UserListAnimeEntry>, retrievedAnime: { [id: number]: AnimeDetails | undefined }): Promise<Contracts.Results> {
     const analysedAnime: Array<AnalysedAnime> = [];
-    for(const watched of completedRatedAnime) {
+    for(const watched of animeList) {
         const anime = retrievedAnime[watched.node.id];
         if(!anime?.animeData) {
             continue;
@@ -101,57 +92,20 @@ export async function processJob(db: DB, queue: QueueDispatcher, username: strin
     const leastPopularScore = [...analysedAnime].sort((a, b) => a.scorePopularity - b.scorePopularity).filter(a => a.scorePopularity < 10);
     const awarded = getAwardedAwards(analysedAnime, animeList);
 
-    if(tooHighRated.length > 0) {
-        console.log(" ");
-        console.log("Worse than you think:");
-    }
-    for(const current of tooHighRated.slice(0, 5)) {
-        console.log(formatShowName(current.details));
-        console.log(`Your score: ${current.watched.list_status.score} | Global score: ${current.details.score.toFixed(2)}`);
-        console.log("");
-    }
-    if(tooLowRated.length > 0) {
-        console.log(" ");
-        console.log("Better than you think:");
-    }
-    for(const current of tooLowRated.slice(0, 5)) {
-        console.log(formatShowName(current.details));
-        console.log(`Your score: ${current.watched.list_status.score} | Global score: ${current.details.score.toFixed(2)}`);
-        console.log("");
-    }
-    if(leastPopularScore.length > 0) {
-        console.log(" ");
-        console.log("Your absolute worst takes:");
-    }
-    for(const current of leastPopularScore.slice(0, 5)) {
-        console.log(formatShowName(current.details));
-        console.log(`Your score: ${current.watched.list_status.score} | Global score: ${current.details.score.toFixed(2)} | Only ${current.scorePopularity.toFixed(2)}% of viewers agree with you.`);
-        console.log("");
-    }
-    if(awarded.length > 0) {
-        console.log(" ");
-        console.log("Extra bad taste awards:");
-    }
-    for(const current of awarded) {
-        console.log(current.name);
-        console.log(current.description);
-        console.log(current.reason);
-        console.log("");
-    }
-
     const bakaScore = calculateBakaScore(analysedAnime);
     const bakaRank = getBakaRank(bakaScore);
-    console.log("Baka score:", bakaScore);
-    console.log(bakaRank.name);
-    console.log(bakaRank.description);
 
-    console.log("Series:");
-    console.log(getSeriesDirectionCorrelations(analysedById)
-        .sort((a, b) => a.correlationScore - b.correlationScore)
-        .slice(0, 5)
-        .map(s => s.correlationCoefficient + " " + s.sequence.map(a => `${a.anime.defaultTitle} (${a.userScore} / ${a.globalScore})`).join(" -> "))
-        .join("\n")
-    );
+    return {
+        username: job.username,
+        requested: Instant.ofEpochMilli(job.created).toString(),
+        completed: Instant.now().toString(),
+        bakaScore,
+        bakaRank,
+        mostOverratedShows: tooHighRated.map(convertAnalysedAnimeToContractScoredAnime),
+        mostUnderratedShows: tooLowRated.map(convertAnalysedAnimeToContractScoredAnime),
+        leastPopularScores: leastPopularScore.map(convertAnalysedAnimeToContractScoredAnime),
+        specialAwards: awarded,
+    };
 }
 
 function formatShowName(details: IAnimeFull) {

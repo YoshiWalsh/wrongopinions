@@ -1,12 +1,15 @@
 import MyAnimeList, { UserListAnimeEntry } from "myanimelist-api";
 import { DB } from "../db";
 import { AnimeDetails, AnimeStatus } from "../model/AnimeDetails";
-import { JobStatus, PendingJob } from "../model/PendingJob";
+import { PendingJob } from "../model/PendingJob";
+import { Contracts } from 'wrongopinions-common';
 import { QueueDispatcher } from "./queueDispatcher";
+import { Instant } from "@js-joda/core";
+import { crunchJob } from "../crunching/cruncher";
 
 const MAL_PAGE_SIZE = 1000;
 
-export async function initialiseJob(db: DB, queue: QueueDispatcher, username: string) {
+export async function initialiseJob(db: DB, queue: QueueDispatcher, username: string): Promise<Contracts.PendingJobStatus> {
     const mal = new MyAnimeList({
         clientId: process.env.MAL_CLIENT_ID as string,
         clientSecret: process.env.MAL_CLIENT_SECRET as string,
@@ -66,7 +69,8 @@ export async function initialiseJob(db: DB, queue: QueueDispatcher, username: st
     const job: PendingJob = {
         username,
         dependsOn: new Set([''].concat(requiredAnime.map(i => `anime-${i}`))),
-        jobStatus: JobStatus.Creating,
+        jobStatus: Contracts.JobStatus.Creating,
+        created: now,
         lastStateChange: now,
     };
     if(!await db.addJob(job)) {
@@ -128,13 +132,19 @@ export async function initialiseJob(db: DB, queue: QueueDispatcher, username: st
 
     const cachedAnimeIds = cached.concat(newlyRetrievedAnime.map(a => a.id));
 
-    const remainingAnime = await db.updateJobStatusAndRemoveDependencies(username, JobStatus.Processing, cachedAnimeIds.map(id => `anime-${id}`), lastQueuePosition);
+    const remainingAnime = await db.updateJobStatusAndRemoveDependencies(username, Contracts.JobStatus.Processing, cachedAnimeIds.map(id => `anime-${id}`), lastQueuePosition);
 
 
     if(remainingAnime < 1) {
         await queue.queueProcessing(username);
-        console.log("All anime cached, queued for processing");
-        return;
+        const jobQueueStatus = await db.incrementQueueProperty("job", "queueLength");
+        await db.updateJobStatusAndSetQueuePosition(username, Contracts.JobStatus.Queued, jobQueueStatus.queueLength);
+
+        return {
+            status: Contracts.JobStatus.Queued,
+            estimatedRemainingSeconds: (jobQueueStatus.queueLength - jobQueueStatus.processedItems) * 5,
+            created: Instant.ofEpochMilli(now).toString(),
+        };
     }
 
     let jobsToWaitFor = 0;
@@ -142,5 +152,69 @@ export async function initialiseJob(db: DB, queue: QueueDispatcher, username: st
         const queueStatus = await db.getQueueStatus("anime");
         jobsToWaitFor = lastQueuePosition - (queueStatus.processedItems ?? 0);
     }
-    console.log(`Job requires loading ${remainingAnime} anime. Based on the current queue, this might take ${jobsToWaitFor * 4} seconds.`);
+
+    return {
+        status: Contracts.JobStatus.Waiting,
+        estimatedRemainingSeconds: jobsToWaitFor * 4,
+        created: Instant.ofEpochMilli(now).toString(),
+    };
+}
+
+export async function getPendingJobStatus(db: DB, username: string): Promise<Contracts.PendingJobStatus | null> {
+    const job = await db.getJob(username, false);
+
+    if(!job) {
+        return null;
+    }
+
+    const jobCreated = Instant.ofEpochMilli(job.created).toString();
+
+    switch(job.jobStatus) {
+        case Contracts.JobStatus.Creating:
+        case Contracts.JobStatus.Processing:
+            return {
+                status: job.jobStatus,
+                estimatedRemainingSeconds: 10,
+                created: jobCreated,
+            };
+        case Contracts.JobStatus.Waiting:
+            const animeQueueStatus = await db.getQueueStatus("anime");
+            return {
+                status: job.jobStatus,
+                estimatedRemainingSeconds: (job.lastDependencyQueuePosition as number - animeQueueStatus.processedItems) * 4,
+                created: jobCreated,
+            };
+        case Contracts.JobStatus.Queued:
+            const jobQueueStatus = await db.getQueueStatus("job");
+            return {
+                status: job.jobStatus,
+                estimatedRemainingSeconds: (job.processingQueuePosition as number - jobQueueStatus.processedItems) * 5,
+                created: jobCreated,
+            };
+        default:
+            return null;
+    }
+}
+
+export async function getFullStatus(db: DB, username: string): Promise<Contracts.FullStatus> {
+    return {
+        pending: await getPendingJobStatus(db, username),
+        results: await db.getCompleted(username),
+    };
+}
+
+export async function processJob(db: DB, username: string): Promise<void> {
+    const job = await db.updateJobStatus(username, Contracts.JobStatus.Processing);
+
+    const animeList = await db.loadAnimeList(username);
+
+    const completedRatedAnime = animeList.filter(a => a.list_status.status === "completed" && a.list_status.score) as Array<UserListAnimeEntry>;
+
+    const retrievedAnime = await db.getMultipleAnime(completedRatedAnime.map(a => a.node.id), true);
+
+    const results = await crunchJob(job, animeList, retrievedAnime);
+
+    await db.addCompleted(results);
+    await db.removeJob(username);
+    await db.incrementQueueProperty("job", "processedItems");
 }

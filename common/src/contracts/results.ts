@@ -1,6 +1,7 @@
 export interface Results {
     username: string;
-    generated: string; // ISO8601 timestamp
+    requested: string; // ISO8601 timestamp
+    completed: string; // ISO8601 timestamp
     
     bakaScore: number;
     bakaRank: AwardedAward;
