@@ -2,12 +2,14 @@ require('dotenv').config();
 
 import { demand } from 'ts-demand';
 import { SQSEvent, Context, SQSBatchResponse, APIGatewayProxyEventV2WithRequestContext, APIGatewayEventRequestContextV2, APIGatewayProxyResultV2 } from 'aws-lambda';
+import { DB } from './db';
+import { QueueDispatcher, QueueMessage, QueueMessageType } from './fetching/queueDispatcher';
+import { loadAnime } from './fetching/anime';
+import { initialiseJob, getPendingJobStatus, getFullStatus, processJob } from './fetching/job';
+import { convertExceptionToResponse } from './error';
 
-// processUser("YM_Industries").then(function(res) {
-    
-// }).catch(function(ex) {
-//     console.error(ex);
-// });
+const db = new DB();
+const queue = new QueueDispatcher();
 
 function isSQSEvent(event: any): event is SQSEvent {
     return event?.Records;
@@ -78,23 +80,3 @@ export async function handler<T>(event: T, context: Context): Promise<any> {
     }
     throw new Error("Unsupported event");
 }
-
-
-import { DB } from './db';
-import { QueueDispatcher, QueueMessage, QueueMessageType } from './fetching/queueDispatcher';
-import { loadAnime } from './fetching/anime';
-import { initialiseJob, getPendingJobStatus, getFullStatus, processJob } from './fetching/job';
-import { convertExceptionToResponse } from './error';
-const db = new DB();
-const queue = new QueueDispatcher();
-(async function() {
-    await Promise.all([
-        initialiseJob(db, queue, "YM_Industries"),
-        // initialiseJob(db, queue, "codythecoder"),
-        // initialiseJob(db, queue, "Voivodian"),
-    ]);
-})().then(res => {
-
-}).catch(function(ex) {
-    console.error(ex);
-});
