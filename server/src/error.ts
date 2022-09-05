@@ -15,11 +15,11 @@ export class ResponseError extends Error {
 export class UnknownError extends ResponseError {
     constructor(ex: Error) {
         super(500, "Unknown server error");
-        this.data = serializeError(ex);
+        this.data = ex instanceof Error ? serializeError(ex) : Object.toString.apply(ex);
     }
 }
 
-export function convertExceptionToResponse(ex: Error): Contracts.ErrorResponse {
+export function convertExceptionToResponse(ex: any): Contracts.ErrorResponse {
     const error = ex instanceof ResponseError ? ex : new UnknownError(ex);
 
     return {

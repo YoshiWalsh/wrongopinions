@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "src"
+  ],
+  "exclude": [
+    "node_modules"
+  ],
+  "compilerOptions": {
+    "module": "commonjs", // Changing this to esnext would allow treeshaking, but it causes a lot of errors. Something for another time.
+    "moduleResolution": "node"
+  }
+}

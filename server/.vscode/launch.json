@@ -8,13 +8,13 @@
             "type": "node",
             "request": "launch",
             "name": "Launch Program",
-            "program": "${workspaceFolder}/dist/index.js",
+            "program": "${workspaceFolder}/build/index.js",
             "preLaunchTask": "build",
             "env": {
                 "NODE_ENV": "development"
             },
             "outFiles": [
-                "${workspaceFolder}/dist/**/*.js"
+                "${workspaceFolder}/build/**/*.js"
             ]
         }
     ]
