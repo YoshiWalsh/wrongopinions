@@ -22,9 +22,15 @@ export interface AnalysedAnime {
 
 export type AnalysedById = {[mal_id: string]: AnalysedAnime};
 
+interface AnimeTitle {
+    type: string;
+    title: string;
+}
+
 export function convertAnimeDetailsToContractAnime(animeDetails: IAnimeFull): Contracts.Anime {
-    const defaultTitle = animeDetails.titles.find(t => t.type == "Default")?.title;
-    const englishTitle = animeDetails.titles.find(t => t.type == "English")?.title;
+    const titles = animeDetails.titles as unknown as Array<AnimeTitle>; // Workaround until https://github.com/LuckyYam/Marika/pull/3 is merged
+    const defaultTitle = titles.find(t => t.type == "Default")?.title;
+    const englishTitle = titles.find(t => t.type == "English")?.title;
     const hasDistinctEnglishTitle = defaultTitle?.toLowerCase().replace(/[^a-z]/g, "") != englishTitle?.toLowerCase().replace(/[^a-z]/g, "");
     return {
         defaultTitle: defaultTitle ?? "",
