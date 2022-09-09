@@ -10,6 +10,7 @@ import { crunchJob } from "../crunching/cruncher";
 const MAL_PAGE_SIZE = 1000;
 
 export async function initialiseJob(db: DB, queue: QueueDispatcher, username: string): Promise<Contracts.PendingJobStatus> {
+    console.log("Initialising job for", username);
     const mal = new MyAnimeList({
         clientId: process.env.MAL_CLIENT_ID as string,
         clientSecret: process.env.MAL_CLIENT_SECRET as string,
@@ -96,6 +97,7 @@ export async function initialiseJob(db: DB, queue: QueueDispatcher, username: st
             await db.incrementQueueProperty("anime", "queueLength", true);
         } else {
             await queue.queueAnime(id);
+            console.log("Queued anime", id);
             newlyQueued.push(id);
             lastQueuePosition = Math.max(lastQueuePosition, queueStatus.queueLength);
         }
@@ -111,6 +113,7 @@ export async function initialiseJob(db: DB, queue: QueueDispatcher, username: st
             await db.incrementQueueProperty("anime", "queueLength", true);
         } else {
             await queue.queueAnime(id);
+            console.log("Queued anime", id);
             newlyQueued.push(id);
             lastQueuePosition = Math.max(lastQueuePosition, queueStatus.queueLength);
         }
@@ -140,6 +143,8 @@ export async function initialiseJob(db: DB, queue: QueueDispatcher, username: st
         const jobQueueStatus = await db.incrementQueueProperty("job", "queueLength");
         await db.updateJobStatusAndSetQueuePosition(username, Contracts.JobStatus.Queued, jobQueueStatus.queueLength);
 
+        console.log("All anime for", username, "already loaded, queued for processing");
+
         return {
             status: Contracts.JobStatus.Queued,
             estimatedRemainingSeconds: (jobQueueStatus.queueLength - jobQueueStatus.processedItems) * 5,
@@ -152,6 +157,8 @@ export async function initialiseJob(db: DB, queue: QueueDispatcher, username: st
         const queueStatus = await db.getQueueStatus("anime");
         jobsToWaitFor = lastQueuePosition - (queueStatus.processedItems ?? 0);
     }
+
+    console.log("Job for", username, "requires loading anime. Queue length is", jobsToWaitFor);
 
     return {
         status: Contracts.JobStatus.Waiting,

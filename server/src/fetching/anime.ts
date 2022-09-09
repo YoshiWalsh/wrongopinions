@@ -10,6 +10,7 @@ const marika = {
 }
 
 export async function loadAnime(db: DB, queue: QueueDispatcher, id: number): Promise<void> {
+    console.log("Loading anime", id);
     let details: IAnimeFull;
     let stats: IAnimeStats;
     await ratelimit(2 * 2); // We need to make two requests, so we double the ratelimit. Also see https://github.com/jikan-me/jikan/issues/469
@@ -42,7 +43,7 @@ export async function loadAnime(db: DB, queue: QueueDispatcher, id: number): Pro
         stats,
     }, expires);
 
-    console.log("Loaded", details.title);
+    console.log("Loaded anime", id, details.title);
 
     await Promise.all(Array.from(animeDetails.dependentJobs?.values() ?? []).filter(a => a).map(async username => {
         try {
