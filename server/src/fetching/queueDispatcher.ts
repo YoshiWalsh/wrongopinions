@@ -31,7 +31,7 @@ export class QueueDispatcher {
         this.queueName = process.env.SQS_QUEUE_URL as string;
         if(this.queueName) {
             this.sqs = new SQS({
-                region: 'us-east-1',
+                region: process.env.AWS_REGION as string,
             });
         } else {
             this.sqs = null;
@@ -58,7 +58,7 @@ export class QueueDispatcher {
                                 SenderId: "",
                                 SentTimestamp: "",
                             },
-                            awsRegion: 'us-east-1',
+                            awsRegion: process.env.AWS_REGION as string,
                             body: JSON.stringify(payload),
                             md5OfBody: "",
                             eventSource: "",

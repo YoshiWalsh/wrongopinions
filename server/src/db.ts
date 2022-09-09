@@ -28,8 +28,12 @@ export class DB {
     bucketName: string;
 
     constructor() {
-        this.db = new DynamoDB({region: 'us-east-1'});
-        this.s3 = new S3Client({region: 'us-east-1'});
+        this.db = new DynamoDB({
+            region: process.env.AWS_REGION as string,
+        });
+        this.s3 = new S3Client({
+            region: process.env.AWS_REGION as string,
+        });
         this.tableName = process.env.TABLE_NAME as string;
         this.bucketName = process.env.BUCKET_NAME as string;
     }
