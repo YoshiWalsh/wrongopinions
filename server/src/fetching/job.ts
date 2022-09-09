@@ -132,7 +132,7 @@ export async function initialiseJob(db: DB, queue: QueueDispatcher, username: st
 
     const cachedAnimeIds = cached.concat(newlyRetrievedAnime.map(a => a.id));
 
-    const remainingAnime = await db.updateJobStatusAndRemoveDependencies(username, Contracts.JobStatus.Processing, cachedAnimeIds.map(id => `anime-${id}`), lastQueuePosition);
+    const remainingAnime = await db.updateJobStatusAndRemoveDependencies(username, Contracts.JobStatus.Waiting, cachedAnimeIds.map(id => `anime-${id}`), lastQueuePosition);
 
 
     if(remainingAnime < 1) {

@@ -268,7 +268,7 @@ export class DB {
                 ConditionExpression: 'attribute_not_exists(PK) OR jobStatus = :s',
                 ExpressionAttributeValues: {
                     ':s': {
-                        'S': Contracts.JobStatus.Processing,
+                        'S': Contracts.JobStatus.Waiting,
                     },
                 },
             })
