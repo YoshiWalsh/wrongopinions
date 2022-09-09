@@ -7,7 +7,7 @@ import { QueueStatus } from './model/QueueStatus';
 import { convert, LocalDate } from '@js-joda/core';
 import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, NotFound } from '@aws-sdk/client-s3';
 import { UserListAnimeEntry } from 'myanimelist-api';
-import consumers from 'stream/consumers';
+import { default as getStream } from 'get-stream';
 import { Readable } from 'stream';
 
 type AttributeMap = {
@@ -375,7 +375,7 @@ export class DB {
                 Bucket: this.bucketName,
                 Key: `completed-${username}.json`,
             }));
-            return await consumers.json(object.Body as Readable) as Contracts.Results;
+            return JSON.parse(await getStream(object.Body as Readable)) as Contracts.Results;
         } catch (ex) {
             if(ex instanceof NotFound) {
                 return null;
@@ -406,7 +406,7 @@ export class DB {
             Bucket: this.bucketName,
             Key: `animeList-${username}.json`,
         }));
-        return await consumers.json(object.Body as Readable) as Array<UserListAnimeEntry>;
+        return JSON.parse(await getStream(object.Body as Readable)) as Array<UserListAnimeEntry>;
     }
 
     async deleteAnimeList(username: string): Promise<void> {
