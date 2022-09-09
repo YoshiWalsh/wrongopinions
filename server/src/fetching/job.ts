@@ -181,14 +181,14 @@ export async function getPendingJobStatus(db: DB, username: string): Promise<Con
             const animeQueueStatus = await db.getQueueStatus("anime");
             return {
                 status: job.jobStatus,
-                estimatedRemainingSeconds: (job.lastDependencyQueuePosition as number - animeQueueStatus.processedItems) * 4,
+                estimatedRemainingSeconds: (job.lastDependencyQueuePosition ?? 0 - animeQueueStatus.processedItems ?? 0) * 4,
                 created: jobCreated,
             };
         case Contracts.JobStatus.Queued:
             const jobQueueStatus = await db.getQueueStatus("job");
             return {
                 status: job.jobStatus,
-                estimatedRemainingSeconds: (job.processingQueuePosition as number - jobQueueStatus.processedItems) * 5,
+                estimatedRemainingSeconds: (job.processingQueuePosition ?? 0 - jobQueueStatus.processedItems ?? 0) * 5,
                 created: jobCreated,
             };
         default:
