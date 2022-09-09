@@ -37,3 +37,6 @@ terraform.rc
 # This is not for security purposes (you should NOT store AWS credentials in the config,
 # rather it's just to make it easy for forks to use different backends.
 backend.tf
+
+# Temporary storage of file artifacts
+files
