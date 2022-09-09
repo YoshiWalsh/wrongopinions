@@ -78,6 +78,7 @@ resource "aws_iam_role_policy" "function_role_sqs" {
         Statement = [
             {
                 Action = [
+                    "sqs:SendMessage",
                     "sqs:ReceiveMessage",
                     "sqs:DeleteMessage",
                     "sqs:GetQueueAttributes",
