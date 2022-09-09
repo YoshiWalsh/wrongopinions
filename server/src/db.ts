@@ -1,4 +1,5 @@
 import { DynamoDB, ConditionalCheckFailedException, AttributeValue } from '@aws-sdk/client-dynamodb';
+import { AdaptiveRetryStrategy } from '@aws-sdk/middleware-retry';
 import * as DynamoDBConverter from '@aws-sdk/util-dynamodb';
 import { AnimeData, AnimeDetails, AnimeStatus } from './model/AnimeDetails';
 import { Contracts } from 'wrongopinions-common';
@@ -30,9 +31,15 @@ export class DB {
     constructor() {
         this.db = new DynamoDB({
             region: process.env.AWS_REGION as string,
+            retryStrategy: new AdaptiveRetryStrategy(() => Promise.resolve(10), {
+
+            })
         });
         this.s3 = new S3Client({
             region: process.env.AWS_REGION as string,
+            retryStrategy: new AdaptiveRetryStrategy(() => Promise.resolve(10), {
+                
+            })
         });
         this.tableName = process.env.TABLE_NAME as string;
         this.bucketName = process.env.BUCKET_NAME as string;
