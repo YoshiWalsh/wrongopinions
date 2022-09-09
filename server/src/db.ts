@@ -6,7 +6,7 @@ import { Contracts } from 'wrongopinions-common';
 import { PendingJob } from './model/PendingJob';
 import { QueueStatus } from './model/QueueStatus';
 import { convert, LocalDate } from '@js-joda/core';
-import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, NotFound } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, NotFound, NoSuchKey } from '@aws-sdk/client-s3';
 import { UserListAnimeEntry } from 'myanimelist-api';
 import { default as getStream } from 'get-stream';
 import { Readable } from 'stream';
@@ -388,7 +388,7 @@ export class DB {
             }));
             return JSON.parse(await getStream(object.Body as Readable)) as Contracts.Results;
         } catch (ex) {
-            if(ex instanceof NotFound) {
+            if(ex instanceof NoSuchKey) {
                 return null;
             }
             throw ex;
