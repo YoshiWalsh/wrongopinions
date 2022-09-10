@@ -213,15 +213,20 @@ export async function getFullStatus(db: DB, username: string): Promise<Contracts
 export async function processJob(db: DB, username: string): Promise<void> {
     const job = await db.updateJobStatus(username, Contracts.JobStatus.Processing);
 
-    const animeList = await db.loadAnimeList(username);
+    try {
+        const animeList = await db.loadAnimeList(username);
 
-    const completedRatedAnime = animeList.filter(a => a.list_status.status === "completed" && a.list_status.score) as Array<UserListAnimeEntry>;
+        const completedRatedAnime = animeList.filter(a => a.list_status.status === "completed" && a.list_status.score) as Array<UserListAnimeEntry>;
 
-    const retrievedAnime = await db.getMultipleAnime(completedRatedAnime.map(a => a.node.id), true);
+        const retrievedAnime = await db.getMultipleAnime(completedRatedAnime.map(a => a.node.id), true);
 
-    const results = await crunchJob(job, animeList, retrievedAnime);
+        const results = await crunchJob(job, animeList, retrievedAnime);
 
-    await db.addCompleted(results);
-    await db.removeJob(username);
-    await db.incrementQueueProperty("job", "processedItems");
+        await db.addCompleted(results);
+        await db.removeJob(username);
+        await db.incrementQueueProperty("job", "processedItems");
+    } catch (ex) {
+        const job = await db.updateJobStatus(username, Contracts.JobStatus.Queued);
+        throw ex;
+    }
 }
