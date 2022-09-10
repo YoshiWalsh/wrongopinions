@@ -88,11 +88,6 @@ export async function crunchJob(job: PendingJob, animeList: Array<UserListAnimeE
         });
     }
 
-    
-    const analysedById: AnalysedById = analysedAnime.reduce((acc, cur) => ({
-        ...acc,
-        [cur.details.mal_id]: cur,
-    }), {});
 
     const tooHighRated = [...analysedAnime].sort((a, b) => b.scoreDifference - a.scoreDifference).filter(a => a.scoreDifference > 2);
     const tooLowRated = [...analysedAnime].sort((a, b) => a.scoreDifference - b.scoreDifference).filter(a => a.scoreDifference < -2);
