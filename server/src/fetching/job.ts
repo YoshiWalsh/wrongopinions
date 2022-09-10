@@ -6,8 +6,10 @@ import { Contracts } from 'wrongopinions-common';
 import { QueueDispatcher } from "./queueDispatcher";
 import { Instant } from "@js-joda/core";
 import { crunchJob } from "../crunching/cruncher";
+import { parallelLimit } from 'async';
 
 const MAL_PAGE_SIZE = 1000;
+const PARALLELISATION = 100;
 
 export async function initialiseJob(db: DB, queue: QueueDispatcher, username: string): Promise<Contracts.PendingJobStatus> {
     console.log("Initialising job for", username);
@@ -85,7 +87,7 @@ export async function initialiseJob(db: DB, queue: QueueDispatcher, username: st
     const newlyQueued: Array<number> = [];
     let lastQueuePosition = 0;
 
-    await Promise.all(notFound.map(async id => {
+    await parallelLimit<void, void, void>(notFound.map(id => async () => {
         const queueStatus = await db.incrementQueueProperty("anime", "queueLength");
         const result = await db.addAnime({
             id,
@@ -97,34 +99,37 @@ export async function initialiseJob(db: DB, queue: QueueDispatcher, username: st
         if(!result) {
             // If we can't add the anime, it means it's already added. We should add this job as a dependency instead.
             queued.push(id);
+            console.log("notFound anime", id, "unexpectedly existed, moving to notQueued.");
             // Decrease the queue length since we won't be loading this anime after all
             await db.incrementQueueProperty("anime", "queueLength", true);
         } else {
             await queue.queueAnime(id);
-            console.log("Queued anime", id);
+            console.log("Queued anime", id, "(not found)");
             newlyQueued.push(id);
             lastQueuePosition = Math.max(lastQueuePosition, queueStatus.queueLength);
         }
-    }));
+    }), PARALLELISATION);
 
-    await Promise.all(notQueued.map(async id => {
+    await parallelLimit<void, void, void>(notQueued.map(id => async () => {
         const queueStatus = await db.incrementQueueProperty("anime", "queueLength");
         const result = await db.markAnimePending(id, username, queueStatus.queueLength);
         if(!result) {
             // If we can't mark the anime as pending, it means it's already added. We should add this job as a dependency instead.
             queued.push(id);
+            console.log("notQueued anime", id, "unexpectedly pending, moving to queued.");
             // Decrease the queue length since we won't be loading this anime after all
             await db.incrementQueueProperty("anime", "queueLength", true);
         } else {
             await queue.queueAnime(id);
-            console.log("Queued anime", id);
+            console.log("Queued anime", id, "(not queued)");
             newlyQueued.push(id);
             lastQueuePosition = Math.max(lastQueuePosition, queueStatus.queueLength);
         }
-    }));
+    }), PARALLELISATION);
 
-    await Promise.all(queued.map(async id => {
+    await parallelLimit<void, void, void>(queued.map(id => async () => {
         const result = await db.addDependentJobToAnime(id, username);
+        console.log("Added job to anime dependencies", id);
         if(!result) {
             // If we can't add a job, it means the anime either failed or was successful. Either way, we won't re-request it in this request.
             cached.push(id);
@@ -132,7 +137,7 @@ export async function initialiseJob(db: DB, queue: QueueDispatcher, username: st
             newlyQueued.push(id);
             lastQueuePosition = Math.max(lastQueuePosition, result);
         }
-    }));
+    }), PARALLELISATION);
 
 
     const newlyRetrievedAnime = Object.values(await db.getMultipleAnime(newlyQueued, true)).filter(a => a?.expires && a.expires > now) as Array<AnimeDetails>;
