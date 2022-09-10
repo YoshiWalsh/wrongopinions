@@ -49,8 +49,9 @@ export async function loadAnime(db: DB, queue: QueueDispatcher, id: number): Pro
         try {
             const remainingAnime = await db.removeAnimeFromJob(username, id);
             if(remainingAnime < 1) {
-                await db.updateJobStatus(username, Contracts.JobStatus.Queued);
                 await queue.queueProcessing(username);
+                const jobQueueStatus = await db.incrementQueueProperty("job", "queueLength");
+                await db.updateJobStatusAndSetQueuePosition(username, Contracts.JobStatus.Queued, jobQueueStatus.queueLength);
             }
         } catch (ex) {
             console.warn(ex);
