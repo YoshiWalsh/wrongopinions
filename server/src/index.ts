@@ -24,6 +24,8 @@ function isAPIGatewayEvent(event: any): event is APIGatewayProxyEventV2WithoutAu
 export async function handler<APIGatewayProxyEventV2WithoutAuthorization>(event: APIGatewayProxyEventV2WithoutAuthorization, context: Context): Promise<APIGatewayProxyResultV2>
 export async function handler<SQSEvent>(event: SQSEvent, context: Context): Promise<SQSBatchResponse>
 export async function handler<T>(event: T, context: Context): Promise<any> {
+    console.log("Handling request", JSON.stringify({ event, context }));
+
     const queue = new QueueDispatcher();
     const db = new DB();
 

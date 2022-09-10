@@ -21,6 +21,7 @@ export async function initialiseJob(db: DB, queue: QueueDispatcher, username: st
         },
     });
 
+    console.log("Retrieving anime list");
     let animeList: Array<UserListAnimeEntry> = [];
     let offset = 0;
     while(true) {
@@ -37,7 +38,8 @@ export async function initialiseJob(db: DB, queue: QueueDispatcher, username: st
     }
 
     const requiredAnime = animeList.filter(a => a.list_status?.status === "completed" && a.list_status?.score).map(a => a.node.id);
-
+    
+    console.log("Getting existing anime");
     const now = Date.now();
     const retrievedAnime = await db.getMultipleAnime(requiredAnime, false);
 
@@ -66,6 +68,7 @@ export async function initialiseJob(db: DB, queue: QueueDispatcher, username: st
         notQueued.push(id);
     }
 
+    console.log("Storing anime list");
     await db.saveAnimeList(username, animeList);
     const job: PendingJob = {
         username,
@@ -78,6 +81,7 @@ export async function initialiseJob(db: DB, queue: QueueDispatcher, username: st
         throw new Error("Unable to create job"); // TODO: Improve error
     }
 
+    console.log("Queueing anime");
     const newlyQueued: Array<number> = [];
     let lastQueuePosition = 0;
 
@@ -211,17 +215,22 @@ export async function getFullStatus(db: DB, username: string): Promise<Contracts
 }
 
 export async function processJob(db: DB, username: string): Promise<void> {
+    console.log("Processing job", username);
     const job = await db.updateJobStatus(username, Contracts.JobStatus.Processing);
 
     try {
+        console.log("Retrieving anime list");
         const animeList = await db.loadAnimeList(username);
 
         const completedRatedAnime = animeList.filter(a => a.list_status.status === "completed" && a.list_status.score) as Array<UserListAnimeEntry>;
 
+        console.log("Retrieving anime");
         const retrievedAnime = await db.getMultipleAnime(completedRatedAnime.map(a => a.node.id), true);
 
+        console.log("Crunching");
         const results = await crunchJob(job, animeList, retrievedAnime);
 
+        console.log("Completed job", username);
         await db.addCompleted(results);
         await db.removeJob(username);
         await db.incrementQueueProperty("job", "processedItems");

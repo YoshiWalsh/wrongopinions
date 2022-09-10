@@ -48,10 +48,13 @@ export async function loadAnime(db: DB, queue: QueueDispatcher, id: number): Pro
     await Promise.all(Array.from(animeDetails.dependentJobs?.values() ?? []).filter(a => a).map(async username => {
         try {
             const remainingAnime = await db.removeAnimeFromJob(username, id);
+            console.log("Removed anime", id, "from job", username, ",", remainingAnime, "remaining");
             if(remainingAnime < 1) {
                 await queue.queueProcessing(username);
                 const jobQueueStatus = await db.incrementQueueProperty("job", "queueLength");
                 await db.updateJobStatusAndSetQueuePosition(username, Contracts.JobStatus.Queued, jobQueueStatus.queueLength);
+
+                console.log("Queued processing for job", username);
             }
         } catch (ex) {
             console.warn(ex);
