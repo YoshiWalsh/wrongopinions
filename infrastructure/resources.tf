@@ -150,8 +150,56 @@ resource "aws_iam_role_policy" "function_role_dynamodb" {
     })
 }
 
-resource "aws_lambda_function" "function" {
-    function_name = join("-", ["wrongopinions", random_id.environment_identifier.hex])
+resource "aws_lambda_function" "function_limited" {
+    function_name = join("-", ["wrongopinions", random_id.environment_identifier.hex, "limited"])
+    role = aws_iam_role.function_role.arn
+    handler = "bundle.handler"
+    filename = "${path.module}/files/lambda.zip"
+
+    architectures = [ "arm64" ]
+    runtime = "nodejs16.x"
+    memory_size = "128"
+    timeout = "120"
+
+    reserved_concurrent_executions = 1
+
+    source_code_hash = data.archive_file.lambda_zip.output_base64sha256
+
+    environment {
+        variables = {
+            TABLE_NAME = aws_dynamodb_table.dynamodb_table.id
+            BUCKET_NAME = aws_s3_bucket.data_bucket.id
+            SQS_QUEUE_URL = aws_sqs_queue.fast_queue.id
+            MAL_CLIENT_ID = var.mal_client_id
+            MAL_CLIENT_SECRET = var.mal_client_secret # I know, I know, I should use Secrets Manager.
+        }
+    }
+}
+resource "aws_lambda_function" "function_heavyweight" {
+    function_name = join("-", ["wrongopinions", random_id.environment_identifier.hex, "heavy"])
+    role = aws_iam_role.function_role.arn
+    handler = "bundle.handler"
+    filename = "${path.module}/files/lambda.zip"
+
+    architectures = [ "arm64" ]
+    runtime = "nodejs16.x"
+    memory_size = "768"
+    timeout = "120"
+
+    source_code_hash = data.archive_file.lambda_zip.output_base64sha256
+
+    environment {
+        variables = {
+            TABLE_NAME = aws_dynamodb_table.dynamodb_table.id
+            BUCKET_NAME = aws_s3_bucket.data_bucket.id
+            SQS_QUEUE_URL = aws_sqs_queue.fast_queue.id
+            MAL_CLIENT_ID = var.mal_client_id
+            MAL_CLIENT_SECRET = var.mal_client_secret # I know, I know, I should use Secrets Manager.
+        }
+    }
+}
+resource "aws_lambda_function" "function_lightweight" {
+    function_name = join("-", ["wrongopinions", random_id.environment_identifier.hex, "light"])
     role = aws_iam_role.function_role.arn
     handler = "bundle.handler"
     filename = "${path.module}/files/lambda.zip"
@@ -184,12 +232,22 @@ resource "aws_apigatewayv2_api" "api" {
     }
 }
 
-resource "aws_apigatewayv2_integration" "api_integration" {
+resource "aws_apigatewayv2_integration" "api_integration_heavy" {
     api_id = aws_apigatewayv2_api.api.id
     integration_type = "AWS_PROXY"
 
     integration_method = "POST"
-    integration_uri = aws_lambda_function.function.invoke_arn
+    integration_uri = aws_lambda_function.function_heavyweight.invoke_arn
+
+    payload_format_version = "2.0"
+}
+
+resource "aws_apigatewayv2_integration" "api_integration_light" {
+    api_id = aws_apigatewayv2_api.api.id
+    integration_type = "AWS_PROXY"
+
+    integration_method = "POST"
+    integration_uri = aws_lambda_function.function_lightweight.invoke_arn
 
     payload_format_version = "2.0"
 }
@@ -198,21 +256,21 @@ resource "aws_apigatewayv2_route" "api_route_GET_opinion" {
     api_id = aws_apigatewayv2_api.api.id
     route_key = "GET /opinions/{username}"
 
-    target = join("/", ["integrations", aws_apigatewayv2_integration.api_integration.id])
+    target = join("/", ["integrations", aws_apigatewayv2_integration.api_integration_light.id])
 }
 
 resource "aws_apigatewayv2_route" "api_route_GET_opinion_pending" {
     api_id = aws_apigatewayv2_api.api.id
     route_key = "GET /opinions/{username}/pending"
 
-    target = join("/", ["integrations", aws_apigatewayv2_integration.api_integration.id])
+    target = join("/", ["integrations", aws_apigatewayv2_integration.api_integration_light.id])
 }
 
 resource "aws_apigatewayv2_route" "api_route_POST_opinion" {
     api_id = aws_apigatewayv2_api.api.id
     route_key = "POST /opinions/{username}"
 
-    target = join("/", ["integrations", aws_apigatewayv2_integration.api_integration.id])
+    target = join("/", ["integrations", aws_apigatewayv2_integration.api_integration_heavy.id])
 }
 
 resource "aws_apigatewayv2_deployment" "api_deployment" {
@@ -220,7 +278,8 @@ resource "aws_apigatewayv2_deployment" "api_deployment" {
 
     triggers = {
         redeployment = sha1(join(",", [
-            jsonencode(aws_apigatewayv2_integration.api_integration),
+            jsonencode(aws_apigatewayv2_integration.api_integration_heavy),
+            jsonencode(aws_apigatewayv2_integration.api_integration_light),
             jsonencode(aws_apigatewayv2_route.api_route_GET_opinion),
             jsonencode(aws_apigatewayv2_route.api_route_GET_opinion_pending),
             jsonencode(aws_apigatewayv2_route.api_route_POST_opinion),
@@ -239,13 +298,26 @@ resource "aws_apigatewayv2_stage" "api_stage" {
     auto_deploy = false
 
     deployment_id = aws_apigatewayv2_deployment.api_deployment.id
+
+    depends_on = [ aws_apigatewayv2_deployment.api_deployment ]
 }
 
 
-resource "aws_lambda_permission" "lambda_apigateway_permission" {
+resource "aws_lambda_permission" "lambda_apigateway_permission_light" {
     statement_id  = join("-", ["wrongopinions", random_id.environment_identifier.hex, "apigateway"])
     action        = "lambda:InvokeFunction"
-    function_name = aws_lambda_function.function.function_name
+    function_name = aws_lambda_function.function_lightweight.function_name
+    principal     = "apigateway.amazonaws.com"
+
+    # The /*/*/* part allows invocation from any stage, method and resource path
+    # within API Gateway REST API.
+    source_arn = "${aws_apigatewayv2_api.api.execution_arn}/*/*/*"
+}
+
+resource "aws_lambda_permission" "lambda_apigateway_permission_heavy" {
+    statement_id  = join("-", ["wrongopinions", random_id.environment_identifier.hex, "apigateway"])
+    action        = "lambda:InvokeFunction"
+    function_name = aws_lambda_function.function_heavyweight.function_name
     principal     = "apigateway.amazonaws.com"
 
     # The /*/*/* part allows invocation from any stage, method and resource path
@@ -269,7 +341,7 @@ resource "aws_sqs_queue" "fast_queue" {
 
 resource "aws_lambda_event_source_mapping" "fast_queue_lambda" {
     event_source_arn = aws_sqs_queue.fast_queue.arn
-    function_name    = aws_lambda_function.function.arn
+    function_name    = aws_lambda_function.function_limited.arn
 
     batch_size = 10
     maximum_batching_window_in_seconds = 15
@@ -293,7 +365,7 @@ resource "aws_sqs_queue" "slow_queue" {
 
 resource "aws_lambda_event_source_mapping" "slow_queue_lambda" {
     event_source_arn = aws_sqs_queue.slow_queue.arn
-    function_name    = aws_lambda_function.function.arn
+    function_name    = aws_lambda_function.function_limited.arn
 
     batch_size = 10
     maximum_batching_window_in_seconds = 300
