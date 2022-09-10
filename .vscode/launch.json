@@ -8,14 +8,14 @@
             "type": "node",
             "request": "launch",
             "name": "Launch Program",
-            "program": "${workspaceFolder}/build/index.js",
-            "preLaunchTask": "build",
-            "env": {
-                "NODE_ENV": "development"
-            },
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/server/dist/bundle.js",
             "outFiles": [
-                "${workspaceFolder}/build/**/*.js"
-            ]
+                "${workspaceFolder}/**/*.js"
+            ],
+            "cwd": "${workspaceFolder}/server"
         }
     ]
 }
