@@ -29,8 +29,9 @@ interface AnimeTitle {
 
 export function convertAnimeDetailsToContractAnime(animeDetails: IAnimeFull): Contracts.Anime {
     const titles = animeDetails.titles as unknown as Array<AnimeTitle>; // Workaround until https://github.com/LuckyYam/Marika/pull/3 is merged
-    const defaultTitle = titles.find(t => t.type == "Default")?.title;
-    const englishTitle = titles.find(t => t.type == "English")?.title;
+    // Sometimes titles is not present: https://github.com/jikan-me/jikan/issues/477
+    const defaultTitle = titles?.find(t => t.type == "Default")?.title ?? animeDetails.title;
+    const englishTitle = titles?.find(t => t.type == "English")?.title ?? animeDetails.title_english;
     const hasDistinctEnglishTitle = defaultTitle?.toLowerCase().replace(/[^a-z]/g, "") != englishTitle?.toLowerCase().replace(/[^a-z]/g, "");
     return {
         defaultTitle: defaultTitle ?? "",
