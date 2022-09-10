@@ -40,7 +40,7 @@ export class QueueDispatcher {
 
     protected async sendMessage(payload: QueueMessage) {
         if(this.sqs) {
-            this.sqs.sendMessage({
+            await this.sqs.sendMessage({
                 QueueUrl: this.queueName,
                 MessageBody: JSON.stringify(payload),
             });
