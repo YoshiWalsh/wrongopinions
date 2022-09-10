@@ -15,7 +15,8 @@
             "outFiles": [
                 "${workspaceFolder}/**/*.js"
             ],
-            "cwd": "${workspaceFolder}/server"
+            "cwd": "${workspaceFolder}/server",
+            "preLaunchTask": "build server"
         }
     ]
 }

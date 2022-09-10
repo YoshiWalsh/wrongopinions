@@ -1,0 +1,46 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "build common",
+			"type": "typescript",
+			"tsconfig": "common/tsconfig.json",
+			"problemMatcher": [
+				"$tsc"
+			]
+		},
+		{
+			"label": "build server",
+			"type": "npm",
+			"script": "build",
+			"path": "server/",
+			"group": "build",
+			"problemMatcher": [
+				"$ts-webpack"
+			],
+			"detail": "webpack",
+			"dependsOn": [
+				"build common"
+			]
+		},
+		{
+			"label": "deploy",
+			"type": "process",
+			"command": "terraform",
+			"options": {
+				"cwd": "${workspaceFolder}/infrastructure"
+			},
+			"args": [
+				"apply",
+				"-auto-approve"
+			],
+			"dependsOn": [
+				"build server"
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
+		}
+	]
+}
