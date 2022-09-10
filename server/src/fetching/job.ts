@@ -41,7 +41,7 @@ export async function initialiseJob(db: DB, queue: QueueDispatcher, username: st
     
     console.log("Getting existing anime");
     const now = Date.now();
-    const retrievedAnime = await db.getMultipleAnime(requiredAnime, false);
+    const retrievedAnime = await db.bulkGetAnime(requiredAnime, false, true);
 
     const notFound = [];
     const notQueued = [];
@@ -225,7 +225,7 @@ export async function processJob(db: DB, username: string): Promise<void> {
         const completedRatedAnime = animeList.filter(a => a.list_status.status === "completed" && a.list_status.score) as Array<UserListAnimeEntry>;
 
         console.log("Retrieving anime");
-        const retrievedAnime = await db.getMultipleAnime(completedRatedAnime.map(a => a.node.id), true);
+        const retrievedAnime = await db.bulkGetAnime(completedRatedAnime.map(a => a.node.id), true, true);
 
         console.log("Crunching");
         const results = await crunchJob(job, animeList, retrievedAnime);

@@ -133,9 +133,11 @@ resource "aws_iam_role_policy" "function_role_dynamodb" {
             {
                 Action = [
                     "dynamodb:GetItem",
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:Scan",
                     "dynamodb:PutItem",
+                    "dynamodb:BatchWriteItem",
                     "dynamodb:UpdateItem",
                     "dynamodb:DeleteItem",
                 ],

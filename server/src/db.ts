@@ -1,7 +1,7 @@
 import { DynamoDB, ConditionalCheckFailedException, AttributeValue } from '@aws-sdk/client-dynamodb';
 import { AdaptiveRetryStrategy } from '@aws-sdk/middleware-retry';
 import * as DynamoDBConverter from '@aws-sdk/util-dynamodb';
-import { AnimeData, AnimeDetails, AnimeStatus } from './model/AnimeDetails';
+import { AnimeData, AnimeDetails, AnimeMinimalDetails, AnimeStatus } from './model/AnimeDetails';
 import { Contracts } from 'wrongopinions-common';
 import { PendingJob } from './model/PendingJob';
 import { QueueStatus } from './model/QueueStatus';
@@ -10,6 +10,8 @@ import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, NotF
 import { UserListAnimeEntry } from 'myanimelist-api';
 import { default as getStream } from 'get-stream';
 import { Readable } from 'stream';
+
+const BATCH_READ_SIZE = 100;
 
 type AttributeMap = {
     [key: string]: AttributeValue,
@@ -113,6 +115,48 @@ export class DB {
             }
             return acc;
         }, {});
+    }
+
+    bulkGetAnime(ids: Array<number>, stronglyConsistent?: boolean): Promise<{[id: number]: AnimeDetails | undefined}>
+    bulkGetAnime(ids: Array<number>, stronglyConsistent?: boolean, minimal?: false): Promise<{[id: number]: AnimeDetails | undefined}>
+    bulkGetAnime(ids: Array<number>, stronglyConsistent?: boolean, minimal?: true): Promise<{[id: number]: AnimeMinimalDetails | undefined}>
+    async bulkGetAnime(ids: Array<number>, stronglyConsistent?: boolean, minimal?: boolean) {
+        const result = await this.db.batchGetItem({
+            RequestItems: {
+                [this.tableName]: {
+                    ConsistentRead: stronglyConsistent,
+                    Keys: ids.slice(0, BATCH_READ_SIZE).map(id => this.pk(`anime-${id}`)),
+                    ...(minimal ? {
+                        ProjectionExpression: 'id, animeStatus, expires',
+                    } : {}),
+                },
+            },
+        });
+
+        const retrievedAnime = result.Responses?.[this.tableName]?.map(item => unmarshall(item) as AnimeDetails) ?? [];
+        const keyed = retrievedAnime.reduce((acc, cur) => {
+            if(cur) {
+                return {
+                    ...acc,
+                    [cur.id]: cur,
+                }
+            }
+            return acc;
+        }, {});
+
+        const unprocessedIds = result.UnprocessedKeys?.[this.tableName]?.Keys?.map(k => parseInt(k["PK"].S as string, 10)) ?? [];
+        return {
+            ...keyed,
+            ...(ids.length > BATCH_READ_SIZE || unprocessedIds.length ?
+                await this.bulkGetAnime(
+                    [
+                        ...ids.slice(BATCH_READ_SIZE),
+                        ...unprocessedIds
+                    ], stronglyConsistent,
+                    minimal as undefined // I don't know how to make this properly statically typed
+                )
+            : {}),
+        };
     }
 
     // Returns true if successful, false if unsuccessful

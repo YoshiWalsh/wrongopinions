@@ -18,3 +18,5 @@ export interface AnimeDetails {
     dependentJobs?: Set<string>;
     animeData?: AnimeData;
 }
+
+export type AnimeMinimalDetails = Pick<AnimeDetails, "id" | "animeStatus" | "expires">;
