@@ -21,7 +21,10 @@
     "lib": [
       "es2020",
       "dom"
-    ]
+    ],
+    "paths": {
+      "dom-to-image-more": ["./node_modules/@types/dom-to-image"]
+    }
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,
