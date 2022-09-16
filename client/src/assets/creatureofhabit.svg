@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="128"
+   height="128"
+   viewBox="0 0 33.866666 33.866668"
+   version="1.1"
+   id="svg8"
+   inkscape:version="1.0.1 (3bc2e813f5, 2020-09-07)"
+   sodipodi:docname="creatureofhabit.svg">
+  <defs
+     id="defs2">
+    <inkscape:path-effect
+       effect="mirror_symmetry"
+       start_point="11.774259,-9.3824763"
+       end_point="11.774259,1.1692793"
+       center_point="11.774259,-4.1065985"
+       id="path-effect3834"
+       is_visible="true"
+       lpeversion="1"
+       mode="free"
+       discard_orig_path="false"
+       fuse_paths="true"
+       oposite_fuse="false"
+       split_items="false" />
+    <inkscape:perspective
+       sodipodi:type="inkscape:persp3d"
+       inkscape:vp_x="0 : 16.933334 : 1"
+       inkscape:vp_y="6.1230314e-14 : -1000 : 0"
+       inkscape:vp_z="33.866666 : 16.933334 : 1"
+       inkscape:persp3d-origin="16.933333 : 11.288889 : 1"
+       id="perspective3275" />
+    <inkscape:path-effect
+       effect="mirror_symmetry"
+       start_point="7.5537049,17.270622"
+       end_point="7.5537049,21.49181"
+       center_point="7.5537049,19.381216"
+       id="path-effect3205"
+       is_visible="true"
+       lpeversion="1"
+       mode="free"
+       discard_orig_path="false"
+       fuse_paths="false"
+       oposite_fuse="false"
+       split_items="false" />
+    <inkscape:path-effect
+       effect="mirror_symmetry"
+       start_point="7.4601606,21.421652"
+       end_point="7.4601606,21.608741"
+       center_point="7.4601606,21.515197"
+       id="path-effect3203"
+       is_visible="true"
+       lpeversion="1"
+       mode="free"
+       discard_orig_path="false"
+       fuse_paths="false"
+       oposite_fuse="false"
+       split_items="false" />
+    <inkscape:path-effect
+       effect="mirror_symmetry"
+       start_point="7.5537049,17.270622"
+       end_point="7.5537049,21.49181"
+       center_point="7.5537049,19.381216"
+       id="path-effect3164"
+       is_visible="true"
+       lpeversion="1"
+       mode="free"
+       discard_orig_path="false"
+       fuse_paths="false"
+       oposite_fuse="false"
+       split_items="false" />
+    <inkscape:path-effect
+       effect="mirror_symmetry"
+       start_point="7.4601606,21.421652"
+       end_point="7.4601606,21.608741"
+       center_point="7.4601606,21.515197"
+       id="path-effect3145"
+       is_visible="true"
+       lpeversion="1"
+       mode="free"
+       discard_orig_path="false"
+       fuse_paths="false"
+       oposite_fuse="false"
+       split_items="false" />
+  </defs>
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="5.6568543"
+     inkscape:cx="21.228815"
+     inkscape:cy="65.530541"
+     inkscape:document-units="px"
+     inkscape:current-layer="g3262"
+     inkscape:document-rotation="0"
+     showgrid="false"
+     units="px"
+     inkscape:window-width="2560"
+     inkscape:window-height="1346"
+     inkscape:window-x="-11"
+     inkscape:window-y="-11"
+     inkscape:window-maximized="1"
+     inkscape:snap-others="true"
+     inkscape:object-nodes="false"
+     inkscape:snap-bbox="true"
+     inkscape:snap-global="true" />
+  <metadata
+     id="metadata5">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <g
+       id="g3262"
+       transform="matrix(1.6929429,0,0,1.6929429,-4.248014,-11.209581)">
+      <circle
+         style="fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.312572;stroke-linecap:butt;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+         id="path3841"
+         cx="16.972364"
+         cy="18.542723"
+         r="1.7543608" />
+      <path
+         style="fill:#000000;stroke:none;stroke-width:0.156286px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;fill-opacity:1"
+         d="m 5.2443935,20.642431 c -0.7111937,-1.742498 2.1707703,-3.614279 3.1633749,-3.923138 0.9926047,-0.308859 4.1859476,-1.664644 5.8432646,-0.980784 1.657316,0.68386 2.946606,2.573966 3.052864,4.903922 z"
+         id="path3843"
+         sodipodi:nodetypes="czzcc" />
+    </g>
+  </g>
+</svg>
