@@ -26,7 +26,7 @@ export class DomImageComponent implements OnInit {
 			this.renderImage();
 		});
 
-		this.observer.observe(this.canvasElm.nativeElement, { attributes: true, childList: true, characterData: true });
+		this.observer.observe(this.canvasElm.nativeElement, { subtree: true, attributes: true, childList: true, characterData: true });
 
 		this.renderImage();
 	}
