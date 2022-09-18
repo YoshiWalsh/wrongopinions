@@ -1,0 +1,82 @@
+.container {
+    width: 1080px;
+    height: 1350px;
+
+    display: flex;
+    flex-direction: column;
+
+    position: relative;
+
+    .fineprint {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        text-align: center;
+        font-family: 'Roboto Mono', monospace;
+        font-size: 14px;
+    }
+
+    .titleRow {
+        display: flex;
+        flex-direction: row;
+
+        .usernameContainer {
+            flex-grow: 1;
+            flex-shrink: 0;
+
+            .username {
+                font-size: 30px;
+                font-weight: bold;
+            }
+
+            .bakaRank {
+                display: flex;
+
+                .bakaRankName {
+                    font-size: 30px;
+                    font-weight: normal;
+                }
+
+                .bakaRankCaption {
+                    margin-left: 10px;
+                    font-size: 16px;
+
+                    overflow: hidden;
+                    position: relative;
+
+                    width: fit-content;
+
+                    .measurement {
+                        white-space: nowrap;
+                        opacity: 0;
+
+                        width: fit-content;
+                    }
+
+                    .visible {
+                        position: absolute;
+                        left: 0;
+                        top: 0;
+                        right: 40%;
+                    }
+                }
+            }
+        }
+
+        .bakaScoreContainer {
+            flex-grow: 0;
+            flex-shrink: 1;
+            text-align: center;
+
+            .bakaScoreTitle {
+                font-size: 16px;
+            }
+
+            .bakaScore {
+                font-size: 40px;
+                font-weight: bold;
+            }
+        }
+    }
+}

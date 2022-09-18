@@ -1,4 +1,28 @@
-<app-dom-image>
-    <p>{{results?.username}}</p>
-    <pre>{{results?.bakaRank | json}}</pre>
+<app-dom-image *ngIf="results">
+    <div class="container">
+        <span class="fineprint">wrongopinions.moe</span>
+        <div class="titleRow">
+            <div class="usernameContainer">
+                <div class="username">{{results.username}}</div>
+                <div class="bakaRank">
+                    <span class="bakaRankName">{{results.bakaRank.name}}</span>
+                    <div class="bakaRankCaption">
+                        <div class="measurement">{{results.bakaRank.description}}</div>
+                        <div class="visible">{{results.bakaRank.description}}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="bakaScoreContainer">
+                <div class="bakaScoreTitle">
+                    Baka Score:
+                </div>
+                <div class="bakaScore">
+                    {{ results.bakaScore | number : '1.0-0' }}
+                </div>
+            </div>
+        </div>
+        <div class="awardsArea">
+            
+        </div>
+    </div>
 </app-dom-image>
