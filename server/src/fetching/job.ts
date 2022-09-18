@@ -225,7 +225,7 @@ export async function processJob(db: DB, username: string): Promise<void> {
         const completedRatedAnime = animeList.filter(a => a.list_status.status === "completed" && a.list_status.score) as Array<UserListAnimeEntry>;
 
         console.log("Retrieving anime");
-        const retrievedAnime = await db.bulkGetAnime(completedRatedAnime.map(a => a.node.id), true, true);
+        const retrievedAnime = await db.bulkGetAnime(completedRatedAnime.map(a => a.node.id), true, false);
 
         console.log("Crunching");
         const results = await crunchJob(job, animeList, retrievedAnime);

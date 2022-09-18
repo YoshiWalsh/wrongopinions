@@ -133,7 +133,7 @@ export class DB {
             },
         });
 
-        const retrievedAnime = result.Responses?.[this.tableName]?.map(item => unmarshall(item) as AnimeDetails) ?? [];
+        const retrievedAnime = result.Responses?.[this.tableName]?.map(item => this.deserialiseAnime(item)) ?? [];
         const keyed = retrievedAnime.reduce((acc, cur) => {
             if(cur) {
                 return {
