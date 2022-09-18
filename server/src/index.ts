@@ -7,6 +7,7 @@ import { QueueDispatcher, QueueMessage, QueueMessageType } from './fetching/queu
 import { loadAnime } from './fetching/anime';
 import { initialiseJob, getPendingJobStatus, getFullStatus, processJob } from './fetching/job';
 import { convertExceptionToResponse } from './error';
+import { Contracts } from 'wrongopinions-common';
 
 const db = new DB();
 const queue = new QueueDispatcher();
@@ -66,10 +67,13 @@ export async function handler<T>(event: T, context: Context): Promise<any> {
                         return await initialiseJob(db, queue, event.pathParameters!['username'] as string);
                 }
             })();
+            const responseInEnvelope = demand<Contracts.SuccessResponse<typeof responsePayload>>({
+                data: responsePayload,
+            });
             return demand<APIGatewayProxyResultV2>({
                 statusCode: 200,
                 isBase64Encoded: false,
-                body: JSON.stringify(responsePayload),
+                body: JSON.stringify(responseInEnvelope),
             });
         } catch (ex) {
             const errorObject = convertExceptionToResponse(ex);
