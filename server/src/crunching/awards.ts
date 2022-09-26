@@ -519,6 +519,27 @@ const awards: Array<Award> = [
         predicate: a => !!a.details.aired.from && ZonedDateTime.parse(a.details.aired.to ?? a.details.aired.from).isBefore(ZonedDateTime.parse("2000-01-01T00:00:00+08:00")),
         threshold: 0.5
     }),
+    new ProportionWatchedAward({
+        name: "Bin Diver",
+        description: "Wading through the garbage, looking for scraps - I'd like to commend you, but really I'm just wondering how you sank this low.",
+        reason: "Awarded for more than 30% of watched anime being scored lower than 6.5.",
+        predicate: a => a.details.score < 6.5,
+        threshold: 0.3
+    }),
+    new ProportionWatchedAward({
+        name: "Silver Spoon",
+        description: "You privileged snob, do you think you're better than us!? Why not at least try watching some of the anime the peasants enjoy?",
+        reason: "Awarded for more than 70% of watched anime being scored higher than 7.5.",
+        predicate: a => a.details.score > 7.5,
+        threshold: 0.7
+    }),
+    new ProportionWatchedAward({
+        name: "Loner",
+        description: "You have ventured into previously uncharted territories, plundering the depths of awful opinions.",
+        reason: "Awarded for choosing the least popular score for a show.",
+        predicate: a => a.scoreRank >= 9,
+        threshold: 0
+    }),
     new ProportionListedAward({
         name: "Judging by the cover",
         description: "You must be a precog or something, being able to judge a show without even watching an episode.",
@@ -561,21 +582,21 @@ const awards: Array<Award> = [
     new UnbalancedAward({
         name: "Unbalanced",
         description: "It wouldn't kill you to go outside of your comfort zone some time.",
-        threshold: 0.6,
+        threshold: 0.7,
         commonality: 'relating to the same genre',
         getTags: a => a.details.genres.concat(a.details.explicit_genres).map(a => a.name),
     }),
     new UnbalancedAward({
         name: "Stan",
         description: "Being a superfan is one thing, but you're almost obsessive.",
-        threshold: 0.20,
+        threshold: 0.2,
         commonality: 'made by the same studio',
         getTags: a => a.details.studios.map(a => a.name),
     }),
     new UnbalancedAward({
         name: "Creature of Habit",
         description: "You don't like to venture outside of your comfort zone too often.",
-        threshold: 0.25,
+        threshold: 0.4,
         commonality: 'of the same theme',
         getTags: a => a.details.themes.map(a => a.name),
     }),
