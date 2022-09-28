@@ -1,0 +1,20 @@
+<div
+    class="panel-grid"
+    [ngStyle]="{
+        '--columns': columns,
+        '--rows': rows
+    }"
+>
+    <div
+        *ngFor="let panel of panelLayout"
+        class="panel"
+        [ngStyle]="{
+            'grid-column-start': panel.position.startColumn + 1,
+            'grid-column-end': panel.position.endColumn + 1,
+            'grid-row-start': panel.position.startRow + 1,
+            'grid-row-end': panel.position.endRow + 1
+        }"
+    >
+        panel
+    </div>
+</div>

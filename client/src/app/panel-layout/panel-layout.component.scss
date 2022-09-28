@@ -1,0 +1,11 @@
+.panel-grid {
+    display: grid;
+    grid-template-columns: repeat(var(--columns), 1fr);
+    grid-template-rows: repeat(var(--rows), 1fr);
+    grid-gap: 10px;
+
+    .panel {
+        border: 1px solid black;
+        border-radius: 2px;
+    }
+}

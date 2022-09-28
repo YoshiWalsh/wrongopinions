@@ -3,6 +3,9 @@ import { ActivatedRoute } from '@angular/router';
 import { Contracts } from 'wrongopinions-common';
 import { PendingJobStatus } from 'wrongopinions-common/dist/contracts';
 import { ApiService } from '../api.service';
+import { Panel } from '../panel-layout/panel-types/panel-type';
+import { ScoreDifferencePanel } from '../panel-layout/panel-types/score-difference';
+import { UnpopularScorePanel } from '../panel-layout/panel-types/unpopular-score';
 
 @Component({
 	selector: 'app-opinions',
@@ -17,6 +20,8 @@ export class OpinionsComponent implements OnInit {
 
 	results: Contracts.Results | null = null;
 	pendingJob: Contracts.PendingJobStatus | null = null;
+
+	panels: Array<Panel> = [];
 
 	constructor(
 		private route: ActivatedRoute,
@@ -48,6 +53,7 @@ export class OpinionsComponent implements OnInit {
 
 			if(status.results) {
 				this.results = status.results;
+				this.setUpPanels();
 			}
 			if(status.pending) {
 				this.pendingJob = status.pending;
@@ -83,7 +89,20 @@ export class OpinionsComponent implements OnInit {
 
 			this.api.getFullStatus(username).then(fullStatus => {
 				this.results = fullStatus.results;
+				this.setUpPanels();
 			});
 		});
+	}
+
+	private setUpPanels() {
+		if(!this.results) {
+			this.panels = [];
+			return;
+		}
+		this.panels = [
+			new ScoreDifferencePanel(this.results.mostOverratedShows),
+			new ScoreDifferencePanel(this.results.mostUnderratedShows),
+			new UnpopularScorePanel(this.results.leastPopularScores),
+		];
 	}
 }
