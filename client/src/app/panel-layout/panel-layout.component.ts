@@ -58,11 +58,26 @@ export class PanelLayoutComponent implements OnInit {
 			};
 		});
 
-		const sortedPotentialPanels = this.sortPanels(potentialPanels);
 
-		const layout = this.layoutPanels(sortedPotentialPanels);
+		let panelsToPlace = [...potentialPanels];
+		let layout: Array<PositionedPanel>;
+		while(true) {
+			panelsToPlace = this.trimPanels(panelsToPlace);
+			panelsToPlace = this.sortPanels(panelsToPlace);
+			layout = this.layoutPanels(panelsToPlace);
+			
+			if(layout.length < panelsToPlace.length) {
+				this.shrinkPanels(panelsToPlace);
+			} else {
+				break;
+			}
+		}
 
 		this.panelLayout = layout;
+	}
+
+	private trimPanels(potentialPanels: Array<PotentialPanel>) {
+		return potentialPanels.filter(p => p.possibleSizes.length > 0);
 	}
 
 	private sortPanels(potentialPanels: Array<PotentialPanel>) {
@@ -70,6 +85,21 @@ export class PanelLayoutComponent implements OnInit {
 			b.possibleSizes[b.possibleSizes.length - 1].size.baseInterest -
 			a.possibleSizes[a.possibleSizes.length - 1].size.baseInterest
 		);
+	}
+
+	private shrinkPanels(potentialPanels: Array<PotentialPanel>) {
+		let worstPanelRatio = Infinity;
+		let worstPanel!: PotentialPanel;
+
+		for(const panel of potentialPanels) {
+			const ratio = panel.possibleSizes[0].additionalInterest / panel.possibleSizes[0].additionalArea;
+			if(ratio < worstPanelRatio) {
+				worstPanelRatio = ratio;
+				worstPanel = panel;
+			}
+		}
+
+		worstPanel.possibleSizes.shift();
 	}
 
 	private layoutPanels(potentialPanels: Array<PotentialPanel>) {

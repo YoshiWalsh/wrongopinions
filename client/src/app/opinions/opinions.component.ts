@@ -103,6 +103,9 @@ export class OpinionsComponent implements OnInit {
 			new ScoreDifferencePanel(this.results.mostOverratedShows),
 			new ScoreDifferencePanel(this.results.mostUnderratedShows),
 			new UnpopularScorePanel(this.results.leastPopularScores),
+			new ScoreDifferencePanel(this.results.mostOverratedShows),
+			new ScoreDifferencePanel(this.results.mostUnderratedShows),
+			new UnpopularScorePanel(this.results.leastPopularScores),
 		];
 	}
 }
