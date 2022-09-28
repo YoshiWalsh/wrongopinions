@@ -74,7 +74,7 @@ export class PanelLayoutComponent implements OnInit {
 
 	private layoutPanels(potentialPanels: Array<PotentialPanel>) {
 		const layout: Array<PositionedPanel> = [];
-		const remainingPanels = potentialPanels;
+		const remainingPanels = [...potentialPanels];
 
 		let currentRow = 0;
 		let currentColumn = 0;
