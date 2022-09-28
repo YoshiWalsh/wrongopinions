@@ -84,7 +84,7 @@ export class PanelLayoutComponent implements OnInit {
 		let workingLayout: Array<PositionedPanel> = [];
 		while(true) {
 			const interferingPanels = workingLayout.filter(p => p.position.endColumn > currentColumn);
-			const lastPossibleColumn = interferingPanels.length > 0 ? Math.min(...interferingPanels.map(p => p.position.startColumn)) : (this.columns + 1);
+			const lastPossibleColumn = interferingPanels.length > 0 ? Math.min(...interferingPanels.map(p => p.position.startColumn)) : this.columns;
 			const maxWidth = lastPossibleColumn - currentColumn;
 			const panelIndex = remainingPanels.findIndex(p => p.possibleSizes[0].size.columns <= maxWidth);
 			if(panelIndex !== -1) {
