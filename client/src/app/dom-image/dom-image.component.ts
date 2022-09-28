@@ -35,8 +35,8 @@ export class DomImageComponent implements OnInit {
 		const bounding = this.canvasElm.nativeElement.getBoundingClientRect();
 		domtoimage.toPng(this.canvasElm.nativeElement as Element, {
 			quality: 100,
-			width: bounding.width,
-			height: bounding.height,
+			width: bounding.width + 1,
+			height: bounding.height + 1,
 		}).then((res) => {
 			this.png = res;
 		});
