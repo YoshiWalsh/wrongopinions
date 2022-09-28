@@ -53,7 +53,7 @@ export class PanelLayoutComponent implements OnInit {
 					size: possibleSize,
 					additionalInterest: possibleSize.interest - (possibleSizes[index - 1]?.interest ?? 0),
 					additionalArea: (possibleSize.rows * possibleSize.columns) -
-						(possibleSizes[index - 1]?.rows ?? 0 * possibleSizes[index - 1]?.columns ?? 0),
+						((possibleSizes[index - 1]?.rows ?? 0) * (possibleSizes[index - 1]?.columns ?? 0)),
 				})).reverse(),
 			};
 		});
