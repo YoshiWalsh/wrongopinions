@@ -11,6 +11,7 @@ import { HomeComponent } from './home/home.component';
 import { OpinionsComponent } from './opinions/opinions.component';
 import { PanelLayoutComponent } from './panel-layout/panel-layout.component';
 import { UnpopularScoreComponent } from './panels/unpopular-score/unpopular-score.component';
+import { SpecialAwardComponent } from './panels/special-award/special-award.component';
 
 @NgModule({
 	declarations: [
@@ -20,6 +21,7 @@ import { UnpopularScoreComponent } from './panels/unpopular-score/unpopular-scor
 		OpinionsComponent,
 		PanelLayoutComponent,
 		UnpopularScoreComponent,
+		SpecialAwardComponent,
 	],
 	imports: [
 		CommonModule,

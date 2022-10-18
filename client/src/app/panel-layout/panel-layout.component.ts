@@ -1,5 +1,6 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { Panel, PossibleSize } from './panel-types/panel-type';
+import { SpecialAwardPanel } from './panel-types/special-award';
 import { UnpopularScorePanel } from './panel-types/unpopular-score';
 
 interface PanelSize {
@@ -171,6 +172,9 @@ export class PanelLayoutComponent implements OnInit {
 	getPanelType(panel: PositionedPanel<Panel>): string {
 		if(panel.panel instanceof UnpopularScorePanel) {
 			return "unpopular-score";
+		}
+		if(panel.panel instanceof SpecialAwardPanel) {
+			return "special-award";
 		}
 		return "";
 	}
