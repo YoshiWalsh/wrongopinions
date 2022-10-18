@@ -91,7 +91,7 @@ export abstract class AnimeListPanel extends Panel {
         return layouts.map<PossibleSize>(l => ({
             columns: l.columns,
             rows: l.rows,
-            interest: totalValues[l.animeCount-1],
+            interest: totalValues[Math.min(l.animeCount, this.valuedAnime.length)-1] ?? 0,
             baseInterest: totalValues[0],
         }));
     }
