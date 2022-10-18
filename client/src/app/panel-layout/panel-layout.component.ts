@@ -1,5 +1,6 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { Panel, PossibleSize } from './panel-types/panel-type';
+import { UnpopularScorePanel } from './panel-types/unpopular-score';
 
 interface PanelSize {
 	size: PossibleSize;
@@ -14,13 +15,14 @@ interface PanelPosition {
 	endRow: number;
 }
 
-interface PositionedPanel {
-	panel: Panel;
+interface PositionedPanel<T extends Panel> {
+	panel: T;
 	position: PanelPosition;
+	size: PossibleSize;
 }
 
-interface PotentialPanel {
-	panel: Panel;
+interface PotentialPanel<T extends Panel> {
+	panel: T;
 	possibleSizes: Array<PanelSize>;
 }
 
@@ -40,12 +42,12 @@ export class PanelLayoutComponent implements OnInit {
 	@Input()
 	rows!: number;
 
-	panelLayout!: Array<PositionedPanel>;
+	panelLayout!: Array<PositionedPanel<Panel>>;
 
 	constructor() {}
 
 	private initialisePanelLayout() {
-		const potentialPanels = this.panels.map<PotentialPanel>(p => {
+		const potentialPanels = this.panels.map<PotentialPanel<Panel>>(p => {
 			const possibleSizes = p.getPossibleSizes();
 			return {
 				panel: p,
@@ -60,7 +62,7 @@ export class PanelLayoutComponent implements OnInit {
 
 
 		let panelsToPlace = [...potentialPanels];
-		let layout: Array<PositionedPanel>;
+		let layout: Array<PositionedPanel<Panel>>;
 		while(true) {
 			panelsToPlace = this.trimPanels(panelsToPlace);
 			panelsToPlace = this.sortPanels(panelsToPlace);
@@ -76,20 +78,20 @@ export class PanelLayoutComponent implements OnInit {
 		this.panelLayout = layout;
 	}
 
-	private trimPanels(potentialPanels: Array<PotentialPanel>) {
+	private trimPanels(potentialPanels: Array<PotentialPanel<Panel>>) {
 		return potentialPanels.filter(p => p.possibleSizes.length > 0);
 	}
 
-	private sortPanels(potentialPanels: Array<PotentialPanel>) {
+	private sortPanels(potentialPanels: Array<PotentialPanel<Panel>>) {
 		return potentialPanels.sort((a, b) =>
 			b.possibleSizes[b.possibleSizes.length - 1].size.baseInterest -
 			a.possibleSizes[a.possibleSizes.length - 1].size.baseInterest
 		);
 	}
 
-	private shrinkPanels(potentialPanels: Array<PotentialPanel>) {
+	private shrinkPanels(potentialPanels: Array<PotentialPanel<Panel>>) {
 		let worstPanelRatio = Infinity;
-		let worstPanel!: PotentialPanel;
+		let worstPanel!: PotentialPanel<Panel>;
 
 		for(const panel of potentialPanels) {
 			const ratio = panel.possibleSizes[0].additionalInterest / panel.possibleSizes[0].additionalArea;
@@ -102,8 +104,8 @@ export class PanelLayoutComponent implements OnInit {
 		worstPanel.possibleSizes.shift();
 	}
 
-	private layoutPanels(potentialPanels: Array<PotentialPanel>) {
-		const layout: Array<PositionedPanel> = [];
+	private layoutPanels(potentialPanels: Array<PotentialPanel<Panel>>) {
+		const layout: Array<PositionedPanel<Panel>> = [];
 		const remainingPanels = [...potentialPanels];
 
 		let currentRow = 0;
@@ -111,7 +113,7 @@ export class PanelLayoutComponent implements OnInit {
 
 		// `workingLayout` is similar to `layout`, except panels will be evicted once we
 		// pass their last row and they can no longer interfere with newly placed panels.
-		let workingLayout: Array<PositionedPanel> = [];
+		let workingLayout: Array<PositionedPanel<Panel>> = [];
 		while(true) {
 			const interferingPanels = workingLayout.filter(p => p.position.endColumn > currentColumn);
 			const lastPossibleColumn = interferingPanels.length > 0 ? Math.min(...interferingPanels.map(p => p.position.startColumn)) : this.columns;
@@ -120,7 +122,7 @@ export class PanelLayoutComponent implements OnInit {
 			const panelIndex = remainingPanels.findIndex(p => p.possibleSizes[0].size.columns <= maxWidth && p.possibleSizes[0].size.rows <= maxHeight);
 			if(panelIndex !== -1) {
 				const panel = remainingPanels.splice(panelIndex, 1)[0];
-				const positionedPanel: PositionedPanel = {
+				const positionedPanel: PositionedPanel<Panel> = {
 					panel: panel.panel,
 					position: {
 						startRow: currentRow,
@@ -128,6 +130,7 @@ export class PanelLayoutComponent implements OnInit {
 						endRow: currentRow + panel.possibleSizes[0].size.rows,
 						endColumn: currentColumn + panel.possibleSizes[0].size.columns,
 					},
+					size: panel.possibleSizes[0].size,
 				};
 				layout.push(positionedPanel);
 				workingLayout.push(positionedPanel);
@@ -163,6 +166,13 @@ export class PanelLayoutComponent implements OnInit {
 
 	ngOnInit(): void {
 		this.initialisePanelLayout();
+	}
+
+	getPanelType(panel: PositionedPanel<Panel>): string {
+		if(panel.panel instanceof UnpopularScorePanel) {
+			return "unpopular-score";
+		}
+		return "";
 	}
 
 }

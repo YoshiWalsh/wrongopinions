@@ -10,6 +10,7 @@ import { DomImageComponent } from './dom-image/dom-image.component';
 import { HomeComponent } from './home/home.component';
 import { OpinionsComponent } from './opinions/opinions.component';
 import { PanelLayoutComponent } from './panel-layout/panel-layout.component';
+import { UnpopularScoreComponent } from './panels/unpopular-score/unpopular-score.component';
 
 @NgModule({
 	declarations: [
@@ -18,6 +19,7 @@ import { PanelLayoutComponent } from './panel-layout/panel-layout.component';
 		HomeComponent,
 		OpinionsComponent,
 		PanelLayoutComponent,
+		UnpopularScoreComponent,
 	],
 	imports: [
 		CommonModule,

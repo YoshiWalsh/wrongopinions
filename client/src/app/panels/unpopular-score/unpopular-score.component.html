@@ -1,0 +1,34 @@
+<div class="container">
+    <div class="column" *ngFor="let column of animeByColumns">
+        <table>
+            <thead>
+                <tr>
+                    <td colspan="2" class="animeTitle">Anime</td>
+                    <td>Score</td>
+                    <td>People who agree</td>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let valuedAnime of column">
+                    <td class="poster" [ngStyle]="{
+                        'background-image': valuedAnime.anime.anime.thumbnailUrl
+                    }"></td>
+                    <td class="animeTitle">
+                        <div class="default">
+                            {{ valuedAnime.anime.anime.defaultTitle }}
+                        </div>
+                        <div class="english">
+                            {{ valuedAnime.anime.anime.englishTitle }}
+                        </div>
+                    </td>
+                    <td>{{valuedAnime.anime.userScore}}</td>
+                    <td>
+                        {{
+                            formatPercentage(valuedAnime.anime.scorePopularity)
+                        }}%
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

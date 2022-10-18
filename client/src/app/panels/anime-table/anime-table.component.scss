@@ -1,0 +1,27 @@
+.container {
+    display: flex;
+
+    .column {
+        flex: auto;
+    }
+}
+
+table {
+    tr td {
+        height: 50px;
+        width: 80px;
+        text-align: center;
+        
+        &.animeTitle {
+            text-align: left;
+            width: 100%;
+        }
+
+        &.poster {
+            background-repeat: no-repeat;
+            background-position: center center;
+            background-size: contain;
+            width: 40px;
+        }
+    }
+}

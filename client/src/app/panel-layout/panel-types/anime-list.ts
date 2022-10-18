@@ -1,7 +1,7 @@
 import { Contracts } from "wrongopinions-common";
 import { Panel, PossibleSize } from "./panel-type";
 
-interface ValuedAnime {
+export interface ValuedAnime {
     anime: Contracts.ScoredAnime;
     interest: number;
 }
@@ -94,5 +94,13 @@ export abstract class AnimeListPanel extends Panel {
             interest: totalValues[l.animeCount-1],
             baseInterest: totalValues[0],
         }));
+    }
+
+    getAnimeCountForSize(size: PossibleSize): number {
+        const matchingLayout = layouts.find(l => l.columns === size.columns && l.rows === size.rows);
+        if(matchingLayout) {
+            return matchingLayout.animeCount;
+        }
+        throw new Error("No matching layout found!");
     }
 }
