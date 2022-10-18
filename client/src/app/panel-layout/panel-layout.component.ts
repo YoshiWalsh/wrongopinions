@@ -51,14 +51,16 @@ export class PanelLayoutComponent implements OnInit {
 	private initialisePanelLayout() {
 		const potentialPanels = this.panels.map<PotentialPanel<Panel>>(p => {
 			const possibleSizes = p.getPossibleSizes();
+			const assessedSizes = possibleSizes.map((possibleSize, index) => ({
+				size: possibleSize,
+				additionalInterest: possibleSize.interest - (possibleSizes[index - 1]?.interest ?? 0),
+				additionalArea: (possibleSize.rows * possibleSize.columns) -
+					((possibleSizes[index - 1]?.rows ?? 0) * (possibleSizes[index - 1]?.columns ?? 0)),
+			})).reverse();
+			const firstInterestingSizeIndex = assessedSizes.findIndex(s => s.additionalInterest > 0);
 			return {
 				panel: p,
-				possibleSizes: possibleSizes.map((possibleSize, index) => ({
-					size: possibleSize,
-					additionalInterest: possibleSize.interest - (possibleSizes[index - 1]?.interest ?? 0),
-					additionalArea: (possibleSize.rows * possibleSize.columns) -
-						((possibleSizes[index - 1]?.rows ?? 0) * (possibleSizes[index - 1]?.columns ?? 0)),
-				})).reverse(),
+				possibleSizes: firstInterestingSizeIndex !== -1 ? assessedSizes.slice(firstInterestingSizeIndex) : [],
 			};
 		});
 
