@@ -41,7 +41,7 @@ const layouts = [
 ];
 
 export abstract class AnimeListPanel extends Panel {
-    private valuedAnime;
+    valuedAnime: Array<ValuedAnime>;
 
     constructor(anime: Array<Contracts.ScoredAnime>) {
         super();
@@ -52,6 +52,35 @@ export abstract class AnimeListPanel extends Panel {
         }));
 
         this.valuedAnime.sort((a, b) => b.interest - a.interest);
+    }
+
+    /*
+        There's a lot of overlap between the UnpopularScore and ScoreDifference panels. This
+        makes a boring report card, because the same bad opinions are represented twice.
+
+        This function makes each AnimeListPanel fight for exclusive rights to display an anime.
+        It's kind of like the childhood friend and the transfer student fighting over senpai.
+    */
+    static tournamentArc(panels: Array<AnimeListPanel>): void {
+        const ownershipRights: {[url: string]: { panel: AnimeListPanel, interest: number }} = {};
+
+        for(const panel of panels) {
+            for(const valuedAnime of panel.valuedAnime) {
+                const url = valuedAnime.anime.anime.url;
+                const existingInterest = ownershipRights[url]?.interest ?? 0;
+                const currentInterest = valuedAnime.interest;
+                if(currentInterest > existingInterest) {
+                    ownershipRights[url] = {
+                        panel: panel,
+                        interest: currentInterest,
+                    };
+                }
+            }
+        }
+
+        for(const panel of panels) {
+            panel.valuedAnime = panel.valuedAnime.filter(a => ownershipRights[a.anime.anime.url].panel === panel);
+        }
     }
 
     protected abstract getAnimeInterest(anime: Contracts.ScoredAnime): number

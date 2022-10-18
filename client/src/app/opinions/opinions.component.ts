@@ -3,6 +3,7 @@ import { ActivatedRoute } from '@angular/router';
 import { Contracts } from 'wrongopinions-common';
 import { PendingJobStatus } from 'wrongopinions-common/dist/contracts';
 import { ApiService } from '../api.service';
+import { AnimeListPanel } from '../panel-layout/panel-types/anime-list';
 import { Panel } from '../panel-layout/panel-types/panel-type';
 import { ScoreDifferencePanel } from '../panel-layout/panel-types/score-difference';
 import { UnpopularScorePanel } from '../panel-layout/panel-types/unpopular-score';
@@ -99,13 +100,16 @@ export class OpinionsComponent implements OnInit {
 			this.panels = [];
 			return;
 		}
+
+		const animeListPanels = [
+			new ScoreDifferencePanel(this.results.mostOverratedShows),
+			new ScoreDifferencePanel(this.results.mostUnderratedShows),
+			new UnpopularScorePanel(this.results.leastPopularScores),
+		];
+		AnimeListPanel.tournamentArc(animeListPanels);
+
 		this.panels = [
-			new ScoreDifferencePanel(this.results.mostOverratedShows),
-			new ScoreDifferencePanel(this.results.mostUnderratedShows),
-			new UnpopularScorePanel(this.results.leastPopularScores),
-			new ScoreDifferencePanel(this.results.mostOverratedShows),
-			new ScoreDifferencePanel(this.results.mostUnderratedShows),
-			new UnpopularScorePanel(this.results.leastPopularScores),
+			...animeListPanels,
 		];
 	}
 }
