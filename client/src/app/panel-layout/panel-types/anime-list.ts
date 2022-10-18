@@ -86,7 +86,7 @@ export abstract class AnimeListPanel extends Panel {
     protected abstract getAnimeInterest(anime: Contracts.ScoredAnime): number
 
     getPossibleSizes(): Array<PossibleSize> {
-        const totalValues = this.valuedAnime.map(a => a.interest).reduce((acc, cur) => [...acc, acc[acc.length-1] ?? 0 + cur], []);
+        const totalValues = this.valuedAnime.map(a => a.interest).reduce<Array<number>>((acc, cur) => [...acc, (acc[acc.length-1] ?? 0) + cur], []);
 
         return layouts.map<PossibleSize>(l => ({
             columns: l.columns,
