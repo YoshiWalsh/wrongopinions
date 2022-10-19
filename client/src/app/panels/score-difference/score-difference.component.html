@@ -3,15 +3,15 @@
         <table>
             <thead>
                 <tr>
-                    <td colspan="2" class="animeTitle">Anime</td>
-                    <td>Global Score</td>
-                    <td>Your Score</td>
+                    <th colspan="2" class="animeTitle">Anime</th>
+                    <th>Global Score</th>
+                    <th>Your Score</th>
                 </tr>
             </thead>
             <tbody>
                 <tr *ngFor="let valuedAnime of column">
                     <td class="poster" [ngStyle]="{
-                        'background-image': valuedAnime.anime.anime.thumbnailUrl
+                        'background-image': 'url(' + valuedAnime.anime.anime.thumbnailUrl + ')'
                     }"></td>
                     <td class="animeTitle">
                         <div class="default">

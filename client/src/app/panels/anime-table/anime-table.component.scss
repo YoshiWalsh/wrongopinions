@@ -7,21 +7,29 @@
 }
 
 table {
-    tr td {
+    width: 100%;
+
+    tr th {
         height: 50px;
+        padding: 0;
+    }
+
+    tr td {
+        height: 60px;
         width: 80px;
         text-align: center;
+        padding: 0;
         
         &.animeTitle {
             text-align: left;
-            width: 100%;
+            width: auto;
         }
 
         &.poster {
             background-repeat: no-repeat;
             background-position: center center;
-            background-size: contain;
-            width: 40px;
+            background-size: cover;
+            width: 45px;
         }
     }
 }
