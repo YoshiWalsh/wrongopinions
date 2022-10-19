@@ -14,11 +14,13 @@
                         'background-image': 'url(' + valuedAnime.anime.anime.thumbnailUrl + ')'
                     }"></td>
                     <td class="animeTitle">
-                        <div class="default">
-                            {{ valuedAnime.anime.anime.defaultTitle }}
-                        </div>
-                        <div class="english">
-                            {{ valuedAnime.anime.anime.englishTitle }}
+                        <div class="titleContainer">
+                            <div class="default">
+                                {{ valuedAnime.anime.anime.defaultTitle }}
+                            </div>
+                            <div class="english">
+                                {{ valuedAnime.anime.anime.englishTitle }}
+                            </div>
                         </div>
                     </td>
                     <td>{{valuedAnime.anime.userScore}}</td>

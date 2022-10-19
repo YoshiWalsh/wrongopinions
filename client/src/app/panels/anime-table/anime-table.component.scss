@@ -23,6 +23,23 @@ table {
         &.animeTitle {
             text-align: left;
             width: auto;
+            position: relative;
+
+            .titleContainer {
+                position: absolute;
+
+                top: 50%;
+                left: 0;
+                right: 0;
+
+                transform: translateY(-50%);
+
+                div {
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                }
+            }
         }
 
         &.poster {
