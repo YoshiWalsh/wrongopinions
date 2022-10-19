@@ -88,8 +88,8 @@ export class PanelLayoutComponent implements OnInit {
 
 	private sortPanels(potentialPanels: Array<PotentialPanel<Panel>>) {
 		return potentialPanels.sort((a, b) =>
-			b.possibleSizes[b.possibleSizes.length - 1].size.baseInterest -
-			a.possibleSizes[a.possibleSizes.length - 1].size.baseInterest
+			(b.possibleSizes[0].size.baseInterest + b.possibleSizes[0].size.interest) -
+			(a.possibleSizes[0].size.baseInterest + a.possibleSizes[0].size.interest)
 		);
 	}
 

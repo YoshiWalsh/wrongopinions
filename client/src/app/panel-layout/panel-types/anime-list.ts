@@ -46,12 +46,16 @@ export abstract class AnimeListPanel extends Panel {
     constructor(anime: Array<Contracts.ScoredAnime>) {
         super();
 
-        this.valuedAnime = anime.map(a => ({
+        const maxAnimeCount = layouts[layouts.length - 1].animeCount;
+
+        const valuedAnime = anime.map(a => ({
             anime: a,
             interest: this.getAnimeInterest(a),
         }));
 
-        this.valuedAnime.sort((a, b) => b.interest - a.interest);
+        valuedAnime.sort((a, b) => b.interest - a.interest);
+
+        this.valuedAnime = valuedAnime.slice(0, maxAnimeCount);
     }
 
     /*
