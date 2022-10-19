@@ -1,1 +1,13 @@
-<p>{{ panel.award.name }}</p>
+<div class="container">
+    <div class="icon" [ngStyle]="{
+        'background-image': 'url(' + properties.icon + ')'
+    }"></div>
+    <div class="name">{{ panel.award.name }}</div>
+    <div class="description">{{ panel.award.description }}</div>
+    <div class="reason">{{ panel.award.reason }}</div>
+    <div class="contributingAnime">
+        <div *ngFor="let anime of contributingAnime" class="thumbnail" [ngStyle]="{
+            'background-image': 'url(' + anime.thumbnailUrl + ')'
+        }"></div>
+    </div>
+</div>

@@ -1,0 +1,77 @@
+.container {
+    position: relative;
+
+    height: 115px;
+}
+
+.icon {
+    position: absolute;
+
+    left: 5px;
+    top: 5px;
+
+    width: 80px;
+    height: 80px;
+
+    border: 1px solid black;
+
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.name {
+    position: absolute;
+
+    left: 90px;
+    right: 90px;
+    top: 2px;
+    height: 25px;
+
+    font-size: 20px;
+}
+
+.description {
+    position: absolute;
+
+    left: 90px;
+    top: 30px;
+    right: 90px;
+
+    font-size: 14px;
+}
+
+.reason {
+    position: absolute;
+
+    left: 5px;
+    top: 92px;
+    bottom: 0;
+    right: 0;
+
+    overflow: hidden;
+
+    font-size: 12px;
+}
+
+.contributingAnime {
+    position: absolute;
+    
+    top: 0;
+    height: 85px;
+    right: 0;
+    width: 80px;
+
+    overflow: hidden;
+
+    .thumbnail {
+        float: right;
+
+        height: 44px;
+        width: 26px;
+
+        background-size: cover;
+        background-repeat: no-repeat;
+        background-position: center;
+    }
+}

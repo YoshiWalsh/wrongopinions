@@ -8,131 +8,131 @@ export interface AwardProperties {
 
 const specialAwards: {[name: string]: AwardProperties} = {
     "Small Brain": {
-        icon: "Small Brain.svg",
+        icon: "/assets/special-award-icons/smallbrain.svg",
         interest: 1,
     },
     "Pretentious": {
-        icon: "Pretentious.svg",
+        icon: "/assets/special-award-icons/pretentious2.svg",
         interest: 1,
     },
     "Meathead": {
-        icon: "Meathead.svg",
+        icon: "/assets/special-award-icons/meathead.svg",
         interest: 1,
     },
     "Heartless": {
-        icon: "Heartless.svg",
+        icon: "/assets/special-award-icons/heartless.svg",
         interest: 1,
     },
     "Greedy": {
-        icon: "Greedy.svg",
+        icon: "/assets/special-award-icons/greedy.svg",
         interest: 1,
     },
     "Boring": {
-        icon: "Boring.svg",
+        icon: "/assets/special-award-icons/boring.svg",
         interest: 1,
     },
     "Prude": {
-        icon: "Prude.svg",
+        icon: "/assets/special-award-icons/prude.svg",
         interest: 1,
     },
     "Tasteless": {
-        icon: "Tasteless.svg",
+        icon: "/assets/special-award-icons/tasteless.svg",
         interest: 1,
     },
     "Homophobe": {
-        icon: "Homophobe.svg",
+        icon: "/assets/special-award-icons/homophobe.svg",
         interest: 1,
     },
     "Objectifier": {
-        icon: "Objectifier.svg",
+        icon: "/assets/special-award-icons/objectifier.svg",
         interest: 1,
     },
     "Humourless": {
-        icon: "Humourless.svg",
+        icon: "/assets/special-award-icons/humourless.svg",
         interest: 1,
     },
     "Sociopath": {
-        icon: "Sociopath.svg",
+        icon: "/assets/special-award-icons/sociopath.svg",
         interest: 1,
     },
     "Neo-Luddite": {
-        icon: "Neo-Luddite.svg",
+        icon: "/assets/special-award-icons/neo-luddite.svg",
         interest: 1,
     },
     "Yaegerist": {
-        icon: "Yaegerist.svg",
+        icon: "/assets/special-award-icons/yaegerist.svg",
         interest: 1,
     },
     "Newer = Better?": {
-        icon: "Newer = Better?.svg",
+        icon: "/assets/special-award-icons/newer=better?.svg",
         interest: 1,
     },
     "Only Child": {
-        icon: "Only Child.svg",
+        icon: "/assets/special-award-icons/onlychild.svg",
         interest: 1,
     },
     "Hipster": {
-        icon: "Hipster.svg",
+        icon: "/assets/special-award-icons/hipster.svg",
         interest: 1,
     },
     "Uncritical": {
-        icon: "Uncritical.svg",
+        icon: "/assets/special-award-icons/uncritical.svg",
         interest: 1,
     },
     "Jaded": {
-        icon: "Jaded.svg",
+        icon: "/assets/special-award-icons/jaded.svg",
         interest: 1,
     },
     "Whippersnapper": {
-        icon: "Whippersnapper.svg",
+        icon: "/assets/special-award-icons/whippersnapper.svg",
         interest: 1,
     },
     "Geriatric": {
-        icon: "Geriatric.svg",
+        icon: "/assets/special-award-icons/geriatric.svg",
         interest: 1,
     },
     "Bin Diver": {
-        icon: "Bin Diver.svg",
+        icon: "/assets/special-award-icons/bindiver.svg",
         interest: 1,
     },
     "Silver Spoon": {
-        icon: "Silver Spoon.svg",
+        icon: "/assets/special-award-icons/silverspoon.svg",
         interest: 1,
     },
     "Loner": {
-        icon: "Loner.svg",
+        icon: "/assets/special-award-icons/loner.svg",
         interest: 1,
     },
     "Judging by the cover": {
-        icon: "Judging by the cover.svg",
+        icon: "/assets/special-award-icons/judgingbythecover.svg",
         interest: 1,
     },
     "Hasty": {
-        icon: "Hasty.svg",
+        icon: "/assets/special-award-icons/hasty.svg",
         interest: 1,
     },
     "Quitter": {
-        icon: "Quitter.svg",
+        icon: "/assets/special-award-icons/quitter.svg",
         interest: 1,
     },
     "Theoretical Weeb": {
-        icon: "Theoretical Weeb.svg",
+        icon: "/assets/special-award-icons/theoreticalweeb2.svg",
         interest: 1,
     },
     "Cryostatis": {
-        icon: "Cryostatis.svg",
+        icon: "/assets/special-award-icons/cryostatis.svg",
         interest: 1,
     },
     "Unbalanced": {
-        icon: "Unbalanced.svg",
+        icon: "/assets/special-award-icons/unbalanced.svg",
         interest: 1,
     },
     "Stan": {
-        icon: "Stan.svg",
+        icon: "/assets/special-award-icons/stan.svg",
         interest: 1,
     },
     "Creature of Habit": {
-        icon: "Creature of Habit.svg",
+        icon: "/assets/special-award-icons/creatureofhabit.svg",
         interest: 1,
     },    
 };
@@ -156,5 +156,9 @@ export class SpecialAwardPanel extends Panel {
                 baseInterest: interest
             }
         ];
+    }
+
+    getAwardProperties(): AwardProperties {
+        return specialAwards[this.award.name];
     }
 }
