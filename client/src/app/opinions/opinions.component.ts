@@ -6,6 +6,7 @@ import { ApiService } from '../api.service';
 import { AnimeListPanel } from '../panel-layout/panel-types/anime-list';
 import { Panel } from '../panel-layout/panel-types/panel-type';
 import { ScoreDifferencePanel } from '../panel-layout/panel-types/score-difference';
+import { SeriesDirectionPanel } from '../panel-layout/panel-types/series-direction';
 import { SpecialAwardPanel } from '../panel-layout/panel-types/special-award';
 import { UnpopularScorePanel } from '../panel-layout/panel-types/unpopular-score';
 
@@ -112,6 +113,7 @@ export class OpinionsComponent implements OnInit {
 		this.panels = [
 			...animeListPanels,
 			...this.results.specialAwards.map(a => new SpecialAwardPanel(a)),
+			...this.results.seriesDirectionCorrelations.map(sd => new SeriesDirectionPanel(sd)),
 		];
 	}
 }

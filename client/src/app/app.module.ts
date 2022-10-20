@@ -13,6 +13,7 @@ import { PanelLayoutComponent } from './panel-layout/panel-layout.component';
 import { ScoreDifferenceComponent } from './panels/score-difference/score-difference.component';
 import { UnpopularScoreComponent } from './panels/unpopular-score/unpopular-score.component';
 import { SpecialAwardComponent } from './panels/special-award/special-award.component';
+import { SeriesDirectionCorrelationComponent } from './panels/series-direction-correlation/series-direction-correlation.component';
 
 @NgModule({
 	declarations: [
@@ -24,6 +25,7 @@ import { SpecialAwardComponent } from './panels/special-award/special-award.comp
 		ScoreDifferenceComponent,
 		UnpopularScoreComponent,
 		SpecialAwardComponent,
+		SeriesDirectionCorrelationComponent,
 	],
 	imports: [
 		CommonModule,

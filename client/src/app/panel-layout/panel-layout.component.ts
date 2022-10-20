@@ -1,6 +1,7 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { Panel, PossibleSize } from './panel-types/panel-type';
 import { ScoreDifferencePanel } from './panel-types/score-difference';
+import { SeriesDirectionPanel } from './panel-types/series-direction';
 import { SpecialAwardPanel } from './panel-types/special-award';
 import { UnpopularScorePanel } from './panel-types/unpopular-score';
 
@@ -181,6 +182,9 @@ export class PanelLayoutComponent implements OnInit {
 		}
 		if(panel.panel instanceof SpecialAwardPanel) {
 			return "special-award";
+		}
+		if(panel.panel instanceof SeriesDirectionPanel) {
+			return "series-direction";
 		}
 		return "";
 	}
