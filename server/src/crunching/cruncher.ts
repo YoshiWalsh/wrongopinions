@@ -88,6 +88,7 @@ export async function crunchJob(job: PendingJob, animeList: Array<UserListAnimeE
         });
     }
 
+    const analysedById = analysedAnime.reduce((acc, anime) => ({...acc, [anime.details.mal_id]: anime}), {});
 
     const tooHighRated = [...analysedAnime].sort((a, b) => b.scoreDifference - a.scoreDifference).filter(a => a.scoreDifference > 2);
     const tooLowRated = [...analysedAnime].sort((a, b) => a.scoreDifference - b.scoreDifference).filter(a => a.scoreDifference < -2);
@@ -107,15 +108,8 @@ export async function crunchJob(job: PendingJob, animeList: Array<UserListAnimeE
         mostUnderratedShows: tooLowRated.map(convertAnalysedAnimeToContractScoredAnime),
         leastPopularScores: leastPopularScore.map(convertAnalysedAnimeToContractScoredAnime),
         specialAwards: awarded,
+        seriesDirectionCorrelations: getSeriesDirectionCorrelations(analysedById),
     };
-}
-
-function formatShowName(details: IAnimeFull) {
-    let output = details.title;
-    if(details.title_english) {
-        output += ` (${details.title_english})`;
-    }
-    return output;
 }
 
 export function getWatchedAnimeByRelationship(animeById: {[mal_id: string]: AnalysedAnime}, relatedTo: AnalysedAnime, relationshipType: string): Array<AnalysedAnime> {

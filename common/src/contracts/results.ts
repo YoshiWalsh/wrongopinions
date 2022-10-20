@@ -11,6 +11,8 @@ export interface Results {
     leastPopularScores: Array<ScoredAnime>;
 
     specialAwards: Array<AwardedAward>;
+
+    seriesDirectionCorrelations: Array<SeriesDirectionCorrelation>;
 }
 
 export interface Anime {
