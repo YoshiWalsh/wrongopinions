@@ -74,6 +74,9 @@ export async function handler<T>(event: T, context: Context): Promise<any> {
                 statusCode: 200,
                 isBase64Encoded: false,
                 body: JSON.stringify(responseInEnvelope),
+                headers: {
+                    'Content-Type': 'application/json',
+                },
             });
         } catch (ex) {
             const errorObject = convertExceptionToResponse(ex);
