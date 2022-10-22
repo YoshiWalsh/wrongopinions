@@ -23,6 +23,17 @@
         display: flex;
         flex-direction: row;
 
+        .icon {
+            flex-grow: 0;
+            flex-shrink: 0;
+
+            width: 80px;
+
+            background-position: center;
+            background-size: contain;
+            background-repeat: no-repeat;
+        }
+
         .usernameContainer {
             flex-grow: 1;
             flex-shrink: 0;

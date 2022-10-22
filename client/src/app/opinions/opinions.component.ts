@@ -10,6 +10,34 @@ import { SeriesDirectionPanel } from '../panel-layout/panel-types/series-directi
 import { SpecialAwardPanel } from '../panel-layout/panel-types/special-award';
 import { UnpopularScorePanel } from '../panel-layout/panel-types/unpopular-score';
 
+export interface RankProperties {
+    icon: string;
+}
+
+const bakaRanks: {[name: string]: RankProperties} = {
+	"NPC": {
+		icon: '/assets/rank-icons/aho.svg',
+	},
+	"Normie": {
+		icon: '/assets/rank-icons/nendou.svg',
+	},
+	"Opinionated": {
+		icon: '/assets/rank-icons/peace.svg',
+	},
+	"Contrarian": {
+		icon: '/assets/rank-icons/chuuni.svg',
+	},
+	"Troll": {
+		icon: '/assets/rank-icons/teehee.svg',
+	},
+	"IT'S OVER 9000!!!": {
+		icon: '/assets/rank-icons/9000.svg',
+	},
+	"Cheater": {
+		icon: '/assets/rank-icons/none.svg',
+	},
+};
+
 @Component({
 	selector: 'app-opinions',
 	templateUrl: './opinions.component.html',
@@ -115,5 +143,10 @@ export class OpinionsComponent implements OnInit {
 			...this.results.specialAwards.map(a => new SpecialAwardPanel(a)),
 			...this.results.seriesDirectionCorrelations.map(sd => new SeriesDirectionPanel(sd)),
 		];
+	}
+
+	
+	getBakaIcon() {
+		return bakaRanks[this.results?.bakaRank?.name as string].icon;
 	}
 }

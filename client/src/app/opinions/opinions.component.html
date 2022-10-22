@@ -2,6 +2,9 @@
     <div class="container">
         <span class="fineprint">wrongopinions.moe</span>
         <div class="titleRow">
+            <div class="icon" [ngStyle]="{
+                'background-image': 'url(' + getBakaIcon() + ')'
+            }"></div>
             <div class="usernameContainer">
                 <div class="username">{{results.username}}</div>
                 <div class="bakaRank">
