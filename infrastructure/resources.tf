@@ -16,6 +16,35 @@ resource "aws_s3_bucket" "data_bucket" {
     bucket = join("-", ["wrongopinions", random_id.environment_identifier.hex, "data"])
 }
 
+resource "aws_s3_bucket" "assets_bucket" {
+    bucket = join("-", ["wrongopinions", random_id.environment_identifier.hex, "assets"])
+}
+
+resource "aws_s3_bucket_cors_configuration" "assets_bucket_cors" {
+    bucket = aws_s3_bucket.assets_bucket.id
+
+    cors_rule {
+        allowed_methods = ["GET"]
+        allowed_origins = ["*"]
+    }
+}
+
+resource "aws_s3_bucket" "app_bucket" {
+    bucket = join("-", ["wrongopinions", random_id.environment_identifier.hex, "app"])
+}
+
+resource "aws_s3_bucket_website_configuration" "app_bucket_website" {
+    bucket = aws_s3_bucket.app_bucket.id
+
+    index_document {
+        suffix = "index.html"
+    }
+
+    error_document {
+        key = "404.html"
+    }
+}
+
 resource "aws_dynamodb_table" "dynamodb_table" {
     name = join("-", ["wrongopinions", random_id.environment_identifier.hex])
     billing_mode = "PAY_PER_REQUEST"
@@ -106,7 +135,8 @@ resource "aws_iam_role_policy" "function_role_s3" {
                 ],
                 Effect   = "Allow",
                 Resource = [
-                    aws_s3_bucket.data_bucket.arn
+                    aws_s3_bucket.data_bucket.arn,
+                    aws_s3_bucket.assets_bucket.arn,
                 ]
             },
             {
@@ -116,7 +146,8 @@ resource "aws_iam_role_policy" "function_role_s3" {
                 ],
                 Effect   = "Allow",
                 Resource = [
-                    join("/", [aws_s3_bucket.data_bucket.arn, "*"])
+                    join("/", [aws_s3_bucket.data_bucket.arn, "*"]),
+                    join("/", [aws_s3_bucket.assets_bucket.arn, "*"]),
                 ]
             }
         ]
@@ -383,3 +414,130 @@ resource "aws_sqs_queue" "dead_queue" {
     message_retention_seconds = 1209600
     sqs_managed_sse_enabled = true
 }
+
+resource "aws_acm_certificate" "cf_cert" {
+    provider = aws.global
+
+    domain_name = var.domain
+    validation_method = "DNS"
+}
+
+data "aws_route53_zone" "zone" {
+    name = var.zone_name
+    private_zone = false
+}
+
+resource "aws_route53_record" "cf_cert_validation_dns" {
+    for_each = {
+        for dvo in aws_acm_certificate.cf_cert.domain_validation_options : dvo.domain_name => {
+            name = dvo.resource_record_name
+            record = dvo.resource_record_value
+            type = dvo.resource_record_type
+        }
+    }
+
+    allow_overwrite = true
+    name = each.value.name
+    records = [each.value.record]
+    ttl = 60
+    type = each.value.type
+    zone_id = data.aws_route53_zone.zone.zone_id
+}
+
+resource "aws_acm_certificate_validation" "cf_cert_validation" {
+    provider = aws.global
+    
+    certificate_arn = aws_acm_certificate.cf_cert.arn
+    validation_record_fqdns = [for record in aws_route53_record.cf_cert_validation_dns : record.fqdn]
+}
+
+resource "aws_cloudfront_origin_access_control" "cf_oac" {
+    name = join("-", ["wrongopinions", random_id.environment_identifier.hex])
+    description = "OAC"
+    origin_access_control_origin_type = "s3"
+    signing_behavior = "always"
+    signing_protocol = "sigv4"
+}
+
+resource "aws_cloudfront_distribution" "cf_distribution" {
+    origin {
+        origin_id = "assets"
+        domain_name = aws_s3_bucket.assets_bucket.bucket_regional_domain_name
+        origin_access_control_id = aws_cloudfront_origin_access_control.cf_oac.id
+    }
+
+    origin {
+        origin_id = "app"
+        domain_name = aws_s3_bucket_website_configuration.app_bucket_website.website_domain
+
+        custom_origin_config {
+            http_port = 80
+            https_port = 443
+            origin_protocol_policy = "http-only"
+            origin_ssl_protocols = [ "TLSv1.2" ]
+        }
+    }
+
+    enabled = true
+    is_ipv6_enabled = true
+    comment = "Wrong Opinions ${random_id.environment_identifier.hex}"
+    default_root_object = "index.html"
+
+    aliases = [var.domain]
+
+    default_cache_behavior {
+        allowed_methods = ["GET", "HEAD", "OPTIONS"]
+        cached_methods = ["GET", "HEAD"]
+        target_origin_id = "app"
+
+        forwarded_values {
+            query_string = false
+
+            cookies {
+                forward = "none"
+            }
+        }
+
+        viewer_protocol_policy = "redirect-to-https"
+        min_ttl = 3600
+        default_ttl = 3600
+        max_ttl = 86400
+    }
+
+    ordered_cache_behavior {
+        path_pattern = "/assets/*"
+
+        allowed_methods = ["GET", "HEAD", "OPTIONS"]
+        cached_methods = ["GET", "HEAD"]
+
+        target_origin_id = "assets"
+
+        forwarded_values {
+            query_string = false
+
+            cookies {
+                forward = "none"
+            }
+        }
+
+        viewer_protocol_policy = "redirect-to-https"
+        min_ttl = 3600
+        default_ttl = 3600
+        max_ttl = 86400
+    }
+
+    restrictions {
+        geo_restriction {
+            restriction_type = "none"
+        }
+    }
+
+    price_class = "PriceClass_100"
+
+    viewer_certificate {
+        acm_certificate_arn = aws_acm_certificate_validation.cf_cert_validation.certificate_arn
+        ssl_support_method = "sni-only"
+        minimum_protocol_version = "TLSv1.2_2021"
+    }
+}
+
