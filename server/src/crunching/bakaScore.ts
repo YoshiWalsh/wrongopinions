@@ -29,7 +29,7 @@ const bakaRanks: Array<{
         }
     },
     {
-        minimumScore: 2000,
+        minimumScore: 3500,
         rank: {
             name: "Normie",
             description: "You're a sheep. Have you ever had an original thought in your life?",
@@ -47,7 +47,7 @@ const bakaRanks: Array<{
         }
     },
     {
-        minimumScore: 6000,
+        minimumScore: 5500,
         rank: {
             name: "Contrarian",
             description: "Being different doesn’t make you special. Doesn’t it get tiring to be the Devil’s Advocate all the time?",
@@ -56,7 +56,7 @@ const bakaRanks: Array<{
         }
     },
     {
-        minimumScore: 8000,
+        minimumScore: 7500,
         rank: {
             name: "Troll",
             description: "Your opinions are so wrong that you can’t possibly be serious.",
