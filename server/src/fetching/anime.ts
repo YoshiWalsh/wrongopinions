@@ -16,7 +16,8 @@ export async function loadAnime(db: DB, queue: QueueDispatcher, id: number): Pro
     console.log("Loading anime", id);
     let details: IAnimeFull;
     let stats: IAnimeStats;
-    await ratelimit(2 * 2); // We need to make two requests, so we double the ratelimit. Also see https://github.com/jikan-me/jikan/issues/469
+    await ratelimit(1 * 2); // We need to make two requests, so we double the ratelimit.
+    console.log("Loading anime", id);
     try {
         details = await retry(() => marika.anime.getAnimeFullById(id), 3, 2);
     } catch (ex) {

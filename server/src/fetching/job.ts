@@ -171,7 +171,7 @@ export async function initialiseJob(db: DB, queue: QueueDispatcher, username: st
 
     return {
         status: Contracts.JobStatus.Waiting,
-        estimatedRemainingSeconds: jobsToWaitFor * 4,
+        estimatedRemainingSeconds: jobsToWaitFor * 2,
         created: Instant.ofEpochMilli(now).toString(),
     };
 }
@@ -197,7 +197,7 @@ export async function getPendingJobStatus(db: DB, username: string): Promise<Con
             const animeQueueStatus = await db.getQueueStatus("anime");
             return {
                 status: job.jobStatus,
-                estimatedRemainingSeconds: ((job.lastDependencyQueuePosition ?? 0) - (animeQueueStatus.processedItems ?? 0)) * 4,
+                estimatedRemainingSeconds: ((job.lastDependencyQueuePosition ?? 0) - (animeQueueStatus.processedItems ?? 0)) * 2,
                 created: jobCreated,
             };
         case Contracts.JobStatus.Queued:
