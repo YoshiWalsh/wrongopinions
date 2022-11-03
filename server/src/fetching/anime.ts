@@ -1,7 +1,7 @@
 import { DB } from "../db";
 import { QueueDispatcher } from "./queueDispatcher";
 import { LocalDate, ZonedDateTime, ZoneOffset } from '@js-joda/core';
-import { Anime as MarikaAnime, IAnimeFull, IAnimeStats } from '@shineiichijo/marika'; // Depends on https://github.com/LuckyYam/Marika/pull/1
+import { Anime as MarikaAnime, IAnimeFull, IAnimeStats } from '@shineiichijo/marika';
 import { ratelimit, retry } from '../utils';
 import { Contracts } from "wrongopinions-common";
 
