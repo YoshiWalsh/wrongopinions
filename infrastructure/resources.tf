@@ -376,6 +376,7 @@ resource "aws_lambda_event_source_mapping" "fast_queue_lambda" {
 
     batch_size = 10
     maximum_batching_window_in_seconds = 15
+    function_response_types = ["ReportBatchItemFailures"]
 
     depends_on = [
         aws_iam_role_policy.function_role_sqs
@@ -400,6 +401,7 @@ resource "aws_lambda_event_source_mapping" "slow_queue_lambda" {
 
     batch_size = 10
     maximum_batching_window_in_seconds = 15
+    function_response_types = ["ReportBatchItemFailures"]
 
     depends_on = [
         aws_iam_role_policy.function_role_sqs

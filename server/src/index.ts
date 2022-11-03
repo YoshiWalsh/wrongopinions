@@ -51,9 +51,11 @@ export async function handler<T>(event: T, context: Context): Promise<any> {
         }));
 
         const failedItems = results.filter(id => id !== null) as Array<string>; // Remove null records (successfully processed)
-        return demand<SQSBatchResponse>({
+        const response = demand<SQSBatchResponse>({
             batchItemFailures: failedItems.map(i => ({ itemIdentifier: i })),
         });
+        console.log("Responding", JSON.stringify(response));
+        return response;
     }
     if(isAPIGatewayEvent(event)) {
         try {
