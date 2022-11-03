@@ -190,7 +190,7 @@ resource "aws_lambda_function" "function_limited" {
     architectures = [ "arm64" ]
     runtime = "nodejs16.x"
     memory_size = "128"
-    timeout = "120"
+    timeout = "240" # Usually this function will complete in ~100 seconds, but if it times out it breaks our queue length logic and we really want to avoid that.
 
     reserved_concurrent_executions = 1
 
@@ -362,7 +362,7 @@ resource "aws_lambda_permission" "lambda_apigateway_permission_heavy" {
 resource "aws_sqs_queue" "fast_queue" {
     name = join("-", ["wrongopinions", random_id.environment_identifier.hex, "fast"])
     delay_seconds = 0
-    visibility_timeout_seconds = 120
+    visibility_timeout_seconds = 250 # Slightly longer than the lambda timeout
     sqs_managed_sse_enabled = true
     redrive_policy = jsonencode({
         deadLetterTargetArn = aws_sqs_queue.slow_queue.arn
@@ -399,7 +399,7 @@ resource "aws_lambda_event_source_mapping" "slow_queue_lambda" {
     function_name    = aws_lambda_function.function_limited.arn
 
     batch_size = 10
-    maximum_batching_window_in_seconds = 300
+    maximum_batching_window_in_seconds = 15
 
     depends_on = [
         aws_iam_role_policy.function_role_sqs
