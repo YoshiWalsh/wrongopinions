@@ -4,10 +4,13 @@ import { LocalDate, ZonedDateTime, ZoneOffset } from '@js-joda/core';
 import { Anime as MarikaAnime, IAnimeFull, IAnimeStats } from '@shineiichijo/marika';
 import { ratelimit, retry } from '../utils';
 import { Contracts } from "wrongopinions-common";
+import { default as axios } from 'axios';
 
 const marika = {
     anime: new MarikaAnime(),
 }
+
+axios.defaults.timeout = 10 * 1000; // Avoid pointless waiting when https://github.com/jikan-me/jikan-rest/issues/269 occurs
 
 export async function loadAnime(db: DB, queue: QueueDispatcher, id: number): Promise<void> {
     console.log("Loading anime", id);

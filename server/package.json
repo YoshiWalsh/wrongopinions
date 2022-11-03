@@ -35,6 +35,7 @@
     "@types/chunk": "^0.0.0",
     "aws-lambda": "^1.0.7",
     "aws-sdk": "^2.1187.0",
+    "axios": "^0.27.2",
     "body-parser": "^1.19.0",
     "chunk": "^0.0.3",
     "cors": "^2.8.5",
