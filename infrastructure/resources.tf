@@ -192,7 +192,7 @@ resource "aws_lambda_function" "function_limited" {
     memory_size = "128"
     timeout = "240" # Usually this function will complete in ~100 seconds, but if it times out it breaks our queue length logic and we really want to avoid that.
 
-    reserved_concurrent_executions = 1
+    reserved_concurrent_executions = var.limited_function_concurrency
 
     source_code_hash = data.archive_file.lambda_zip.output_base64sha256
 

@@ -18,3 +18,7 @@ variable "mal_client_secret" {
     type = string
     sensitive = true
 }
+
+variable "limited_function_concurrency" {
+    type = number
+}
