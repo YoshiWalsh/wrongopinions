@@ -86,6 +86,7 @@ export async function initialiseJob(db: DB, queue: QueueDispatcher, username: st
     let lastQueuePosition = 0;
 
     await Promise.all(notFound.map(async id => {
+        console.log("Increment anime queue length: not found anime", id);
         const queueStatus = await db.incrementQueueProperty("anime", "queueLength");
         const result = await db.addAnime({
             id,
@@ -98,6 +99,7 @@ export async function initialiseJob(db: DB, queue: QueueDispatcher, username: st
             // If we can't add the anime, it means it's already added. We should add this job as a dependency instead.
             queued.push(id);
             // Decrease the queue length since we won't be loading this anime after all
+            console.log("Increment anime processed items: cancelled not found anime", id);
             await db.incrementQueueProperty("anime", "queueLength", true);
         } else {
             await queue.queueAnime(id);
@@ -108,12 +110,14 @@ export async function initialiseJob(db: DB, queue: QueueDispatcher, username: st
     }));
 
     await Promise.all(notQueued.map(async id => {
+        console.log("Increment anime queue length: not queued anime", id);
         const queueStatus = await db.incrementQueueProperty("anime", "queueLength");
         const result = await db.markAnimePending(id, username, queueStatus.queueLength);
         if(!result) {
             // If we can't mark the anime as pending, it means it's already added. We should add this job as a dependency instead.
             queued.push(id);
             // Decrease the queue length since we won't be loading this anime after all
+            console.log("Increment anime processed items: cancelled not queued anime", id);
             await db.incrementQueueProperty("anime", "queueLength", true);
         } else {
             await queue.queueAnime(id);
@@ -144,6 +148,7 @@ export async function initialiseJob(db: DB, queue: QueueDispatcher, username: st
 
     if(remainingAnime < 1) {
         await queue.queueProcessing(username);
+        console.log("Increment job queue length: all anime already loaded", username);
         const jobQueueStatus = await db.incrementQueueProperty("job", "queueLength");
         await db.updateJobStatusAndSetQueuePosition(username, Contracts.JobStatus.Queued, jobQueueStatus.queueLength);
 
@@ -233,6 +238,7 @@ export async function processJob(db: DB, username: string): Promise<void> {
         console.log("Completed job", username);
         await db.addCompleted(results);
         await db.removeJob(username);
+        console.log("Increment job processed items: finished processing", username);
         await db.incrementQueueProperty("job", "processedItems");
     } catch (ex) {
         const job = await db.updateJobStatus(username, Contracts.JobStatus.Queued);

@@ -51,6 +51,7 @@ export async function loadAnime(db: DB, queue: QueueDispatcher, id: number): Pro
             console.log("Removed anime", id, "from job", username, ",", remainingAnime, "remaining");
             if(remainingAnime < 1) {
                 await queue.queueProcessing(username);
+                console.log("Increment job queue length: processed all requisite anime", username);
                 const jobQueueStatus = await db.incrementQueueProperty("job", "queueLength");
                 await db.updateJobStatusAndSetQueuePosition(username, Contracts.JobStatus.Queued, jobQueueStatus.queueLength);
 
@@ -61,5 +62,6 @@ export async function loadAnime(db: DB, queue: QueueDispatcher, id: number): Pro
         }
     }));
 
+    console.log("Increment anime processed items: processed anime", id);
     await db.incrementQueueProperty('anime', 'processedItems');
 }
