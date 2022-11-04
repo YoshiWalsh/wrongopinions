@@ -14,6 +14,7 @@ export interface AnalysedAnime {
     watched: UserListAnimeEntry;
     details: IAnimeFull;
     stats: IAnimeStats;
+    poster: string;
     scoreDifference: number;
     scorePopularity: number;
     scoreRank: number;
@@ -27,7 +28,7 @@ interface AnimeTitle {
     title: string;
 }
 
-export function convertAnimeDetailsToContractAnime(animeDetails: IAnimeFull): Contracts.Anime {
+export function convertAnimeDetailsToContractAnime(animeDetails: IAnimeFull, poster: string): Contracts.Anime {
     const titles = animeDetails.titles as unknown as Array<AnimeTitle>; // Workaround until https://github.com/LuckyYam/Marika/pull/3 is merged
     // Sometimes titles is not present: https://github.com/jikan-me/jikan/issues/477
     const defaultTitle = titles?.find(t => t.type == "Default")?.title ?? animeDetails.title;
@@ -37,13 +38,13 @@ export function convertAnimeDetailsToContractAnime(animeDetails: IAnimeFull): Co
         defaultTitle: defaultTitle ?? "",
         englishTitle: hasDistinctEnglishTitle ? englishTitle : undefined,
         url: animeDetails.url,
-        thumbnailUrl: animeDetails.images.jpg.image_url,
+        thumbnailUrl: poster,
     };
 }
 
 export function convertAnalysedAnimeToContractScoredAnime(analysedAnime: AnalysedAnime): Contracts.ScoredAnime {
     return {
-        anime: convertAnimeDetailsToContractAnime(analysedAnime.details),
+        anime: convertAnimeDetailsToContractAnime(analysedAnime.details, analysedAnime.poster),
         globalScore: analysedAnime.details.score,
         scorePopularity: analysedAnime.scorePopularity,
         userScore: analysedAnime.watched.list_status.score,
@@ -53,8 +54,8 @@ export function convertAnalysedAnimeToContractScoredAnime(analysedAnime: Analyse
 export function convertListEntryToContractAnime(listEntry: UserListAnimeEntry): Contracts.Anime {
     return {
         defaultTitle: listEntry.node.title,
-        thumbnailUrl: listEntry.node.main_picture.medium,
         url: `https://myanimelist.net/anime/${listEntry.node.id}/`,
+        thumbnailUrl: null,
     };
 }
 
@@ -65,7 +66,7 @@ export async function crunchJob(job: PendingJob, animeList: Array<UserListAnimeE
         if(!anime?.animeData) {
             continue;
         }
-        const { details, stats } = anime.animeData;
+        const { details, stats, poster } = anime.animeData;
 
         if(!details || !stats || !details.score) {
             continue; // Skip any anime that we can't retrieve details about
@@ -78,6 +79,7 @@ export async function crunchJob(job: PendingJob, animeList: Array<UserListAnimeE
             watched,
             details,
             stats,
+            poster,
             scoreDifference: watched.list_status.score - details.score,
             scorePopularity: stats.scores[scoreIndex].percentage,
             scoreRank: scoreIndex,

@@ -65,7 +65,7 @@ abstract class BiasConfidenceAward extends Award {
                 name: this.name,
                 description: this.description,
                 reason: this.getReason(confidence),
-                contributingAnime: contributingAnime.map(a => convertAnimeDetailsToContractAnime(a.details)),
+                contributingAnime: contributingAnime.map(a => convertAnimeDetailsToContractAnime(a.details, a.poster)),
             });
         }
 
@@ -149,7 +149,7 @@ class ShowAward extends Award {
                 name: this.name,
                 description: this.description,
                 reason: `Awarded because you rated ${show.details.title_japanese} ${this.direction > 0 ? 'highly' : 'poorly'}.`,
-                contributingAnime: [convertAnimeDetailsToContractAnime(show.details)],
+                contributingAnime: [convertAnimeDetailsToContractAnime(show.details, show.poster)],
             });
         }
 
@@ -195,7 +195,7 @@ class ComparisonAward extends Award {
                 name: this.name,
                 description: this.description,
                 reason: this.reason,
-                contributingAnime: worseShows.concat(betterShows).map(s => convertAnimeDetailsToContractAnime(s.details)),
+                contributingAnime: worseShows.concat(betterShows).map(s => convertAnimeDetailsToContractAnime(s.details, s.poster)),
             };
         }
 
@@ -225,7 +225,7 @@ class ProportionWatchedAward extends Award {
                 name: this.name,
                 description: this.description,
                 reason: this.reason,
-                contributingAnime: matchedShows.map(s => convertAnimeDetailsToContractAnime(s.details)),
+                contributingAnime: matchedShows.map(s => convertAnimeDetailsToContractAnime(s.details, s.poster)),
             };
         }
 
@@ -330,7 +330,7 @@ class UnbalancedAward extends Award {
                 name: this.name,
                 description: this.description,
                 reason: `Awarded for more than ${(this.threshold * 100).toFixed(0)}% of scored shows ${this.commonality}. (${unbalancedTags.join(", ")})`,
-                contributingAnime: contributingAnime.map(a => convertAnimeDetailsToContractAnime(a.details)),
+                contributingAnime: contributingAnime.map(a => convertAnimeDetailsToContractAnime(a.details, a.poster)),
             };
         }
         return null;

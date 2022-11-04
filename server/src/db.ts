@@ -28,7 +28,7 @@ export class DB {
     db: DynamoDB;
     s3: S3Client;
     tableName: string;
-    bucketName: string;
+    dataBucketName: string;
 
     constructor() {
         this.db = new DynamoDB({
@@ -44,7 +44,7 @@ export class DB {
             })
         });
         this.tableName = process.env.TABLE_NAME as string;
-        this.bucketName = process.env.BUCKET_NAME as string;
+        this.dataBucketName = process.env.DATA_BUCKET_NAME as string;
     }
 
     private pk(key: string): AttributeMap {
@@ -255,7 +255,11 @@ export class DB {
                     ':e': {
                         'N': convert(expires).toEpochMilli().toString(),
                     },
+                    ':p': {
+                        'S': AnimeStatus.Pending,
+                    }
                 },
+                ConditionExpression: 'attribute_not_exists(PK) OR animeStatus = :p', // If this anime is not pending, fail the update in order to avoid double-incrementing the queue progress
                 ReturnValues: 'ALL_OLD',
             });
 
@@ -427,7 +431,7 @@ export class DB {
     async getCompleted(username: string): Promise<Contracts.Results | null> {
         try {
             const object = await this.s3.send(new GetObjectCommand({
-                Bucket: this.bucketName,
+                Bucket: this.dataBucketName,
                 Key: `completed-${username}.json`,
             }));
             return JSON.parse(await getStream(object.Body as Readable)) as Contracts.Results;
@@ -441,7 +445,7 @@ export class DB {
 
     async addCompleted(results: Contracts.Results): Promise<void> {
         await this.s3.send(new PutObjectCommand({
-            Bucket: this.bucketName,
+            Bucket: this.dataBucketName,
             Key: `completed-${results.username}.json`,
             Body: JSON.stringify(results),
         }));
@@ -450,7 +454,7 @@ export class DB {
 
     async saveAnimeList(username: string, animeList: Array<UserListAnimeEntry>): Promise<void> {
         await this.s3.send(new PutObjectCommand({
-            Bucket: this.bucketName,
+            Bucket: this.dataBucketName,
             Key: `animeList-${username}.json`,
             Body: JSON.stringify(animeList),
         }));
@@ -458,7 +462,7 @@ export class DB {
 
     async loadAnimeList(username: string): Promise<Array<UserListAnimeEntry>> {
         const object = await this.s3.send(new GetObjectCommand({
-            Bucket: this.bucketName,
+            Bucket: this.dataBucketName,
             Key: `animeList-${username}.json`,
         }));
         return JSON.parse(await getStream(object.Body as Readable)) as Array<UserListAnimeEntry>;
@@ -466,7 +470,7 @@ export class DB {
 
     async deleteAnimeList(username: string): Promise<void> {
         await this.s3.send(new DeleteObjectCommand({
-            Bucket: this.bucketName,
+            Bucket: this.dataBucketName,
             Key: `animeList-${username}.json`,
         }));
     }

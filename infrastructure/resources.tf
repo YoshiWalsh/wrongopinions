@@ -20,6 +20,36 @@ resource "aws_s3_bucket" "assets_bucket" {
     bucket = join("-", ["wrongopinions", random_id.environment_identifier.hex, "assets"])
 }
 
+resource "aws_s3_bucket_policy" "assets_policy_attachment" {
+    bucket = aws_s3_bucket.assets_bucket.id
+    policy = data.aws_iam_policy_document.assets_policy.json
+}
+
+data "aws_iam_policy_document" "assets_policy" {
+    statement {
+        principals {
+            type = "Service"
+            identifiers = ["cloudfront.amazonaws.com"]
+        }
+
+        actions = [
+            "s3:GetObject",
+            # Lack of ListBucket permission means missing objects will return 403 instead of 404
+        ]
+
+        resources = [
+            aws_s3_bucket.assets_bucket.arn,
+            "${aws_s3_bucket.assets_bucket.arn}/*",
+        ]
+
+        condition {
+            test = "StringEquals"
+            variable = "AWS:SourceArn"
+            values = [ aws_cloudfront_distribution.cf_distribution.arn ]
+        }
+    }
+}
+
 resource "aws_s3_bucket_cors_configuration" "assets_bucket_cors" {
     bucket = aws_s3_bucket.assets_bucket.id
 
@@ -31,6 +61,30 @@ resource "aws_s3_bucket_cors_configuration" "assets_bucket_cors" {
 
 resource "aws_s3_bucket" "app_bucket" {
     bucket = join("-", ["wrongopinions", random_id.environment_identifier.hex, "app"])
+}
+
+resource "aws_s3_bucket_policy" "website_policy_attachment" {
+    bucket = aws_s3_bucket.app_bucket.id
+    policy = data.aws_iam_policy_document.website_policy.json
+}
+
+data "aws_iam_policy_document" "website_policy" {
+    statement {
+        principals {
+            type = "AWS"
+            identifiers = ["*"]
+        }
+
+        actions = [
+            "s3:GetObject",
+            "s3:ListBucket",
+        ]
+
+        resources = [
+            aws_s3_bucket.app_bucket.arn,
+            "${aws_s3_bucket.app_bucket.arn}/*",
+        ]
+    }
 }
 
 resource "aws_s3_bucket_website_configuration" "app_bucket_website" {
@@ -199,7 +253,9 @@ resource "aws_lambda_function" "function_limited" {
     environment {
         variables = {
             TABLE_NAME = aws_dynamodb_table.dynamodb_table.id
-            BUCKET_NAME = aws_s3_bucket.data_bucket.id
+            DATA_BUCKET_NAME = aws_s3_bucket.data_bucket.id
+            ASSETS_BUCKET_NAME = aws_s3_bucket.assets_bucket.id
+            DOMAIN = var.domain
             SQS_QUEUE_URL = aws_sqs_queue.fast_queue.id
             MAL_CLIENT_ID = var.mal_client_id
             MAL_CLIENT_SECRET = var.mal_client_secret # I know, I know, I should use Secrets Manager.
@@ -222,7 +278,9 @@ resource "aws_lambda_function" "function_heavyweight" {
     environment {
         variables = {
             TABLE_NAME = aws_dynamodb_table.dynamodb_table.id
-            BUCKET_NAME = aws_s3_bucket.data_bucket.id
+            DATA_BUCKET_NAME = aws_s3_bucket.data_bucket.id
+            ASSETS_BUCKET_NAME = aws_s3_bucket.assets_bucket.id
+            DOMAIN = var.domain
             SQS_QUEUE_URL = aws_sqs_queue.fast_queue.id
             MAL_CLIENT_ID = var.mal_client_id
             MAL_CLIENT_SECRET = var.mal_client_secret # I know, I know, I should use Secrets Manager.
@@ -245,7 +303,9 @@ resource "aws_lambda_function" "function_lightweight" {
     environment {
         variables = {
             TABLE_NAME = aws_dynamodb_table.dynamodb_table.id
-            BUCKET_NAME = aws_s3_bucket.data_bucket.id
+            DATA_BUCKET_NAME = aws_s3_bucket.data_bucket.id
+            ASSETS_BUCKET_NAME = aws_s3_bucket.assets_bucket.id
+            DOMAIN = var.domain
             SQS_QUEUE_URL = aws_sqs_queue.fast_queue.id
             MAL_CLIENT_ID = var.mal_client_id
             MAL_CLIENT_SECRET = var.mal_client_secret # I know, I know, I should use Secrets Manager.
@@ -446,9 +506,25 @@ resource "aws_route53_record" "cf_cert_validation_dns" {
     zone_id = data.aws_route53_zone.zone.zone_id
 }
 
+resource "aws_route53_record" "cf_dns" {
+    for_each = toset(["A", "AAAA"])
+
+    zone_id = data.aws_route53_zone.zone.zone_id
+
+    allow_overwrite = true
+    name = "${var.domain}"
+    type = each.key
+
+    alias {
+        name = "${aws_cloudfront_distribution.cf_distribution.domain_name}"
+        zone_id = "${aws_cloudfront_distribution.cf_distribution.hosted_zone_id}"
+        evaluate_target_health = false
+    }
+}
+
 resource "aws_acm_certificate_validation" "cf_cert_validation" {
     provider = aws.global
-    
+
     certificate_arn = aws_acm_certificate.cf_cert.arn
     validation_record_fqdns = [for record in aws_route53_record.cf_cert_validation_dns : record.fqdn]
 }
@@ -470,7 +546,7 @@ resource "aws_cloudfront_distribution" "cf_distribution" {
 
     origin {
         origin_id = "app"
-        domain_name = aws_s3_bucket_website_configuration.app_bucket_website.website_domain
+        domain_name = aws_s3_bucket_website_configuration.app_bucket_website.website_endpoint
 
         custom_origin_config {
             http_port = 80
@@ -532,6 +608,22 @@ resource "aws_cloudfront_distribution" "cf_distribution" {
         geo_restriction {
             restriction_type = "none"
         }
+    }
+
+    custom_error_response {
+        # 404 means the object was not found in the app bucket, we should return 200 in order to make clientside routing work
+        error_code = 404
+        error_caching_min_ttl = 3600
+        response_code = 200
+        response_page_path = "/index.html"
+    }
+
+    custom_error_response {
+        # 403 means the object was not found in the assets bucket, we should return 404 as the asset doesn't exist
+        error_code = 403
+        error_caching_min_ttl = 3600
+        response_code = 404
+        response_page_path = "/404.html"
     }
 
     price_class = "PriceClass_100"

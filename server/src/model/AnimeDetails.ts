@@ -8,6 +8,7 @@ import { IAnimeFull, IAnimeStats } from '@shineiichijo/marika';
 export interface AnimeData {
     details: IAnimeFull;
     stats: IAnimeStats;
+    poster: string;
 }
 
 export interface AnimeDetails {

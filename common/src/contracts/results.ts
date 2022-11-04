@@ -16,7 +16,7 @@ export interface Results {
 }
 
 export interface Anime {
-    thumbnailUrl: string;
+    thumbnailUrl: string | null;
     defaultTitle: string;
     englishTitle?: string;
     url: string;

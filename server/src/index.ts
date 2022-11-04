@@ -8,6 +8,7 @@ import { loadAnime } from './fetching/anime';
 import { initialiseJob, getPendingJobStatus, getFullStatus, processJob } from './fetching/job';
 import { convertExceptionToResponse } from './error';
 import { Contracts } from 'wrongopinions-common';
+import { Assets } from './assets';
 
 const db = new DB();
 const queue = new QueueDispatcher();
@@ -29,6 +30,7 @@ export async function handler<T>(event: T, context: Context): Promise<any> {
 
     const queue = new QueueDispatcher();
     const db = new DB();
+    const assets = new Assets();
 
     if(isSQSEvent(event)) {
         const results = await Promise.all(event.Records.map(async item => {
@@ -37,7 +39,7 @@ export async function handler<T>(event: T, context: Context): Promise<any> {
                 
                 switch(message.type) {
                     case QueueMessageType.Anime:
-                        await loadAnime(db, queue, message.id);
+                        await loadAnime(db, assets, queue, message.id);
                         break;
                     case QueueMessageType.Processing:
                         await processJob(db, message.username);

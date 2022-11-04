@@ -4,6 +4,7 @@ import { LocalDate, ZonedDateTime, ZoneOffset } from '@js-joda/core';
 import { Anime as MarikaAnime, IAnimeFull, IAnimeStats } from '@shineiichijo/marika';
 import { ratelimit, retry } from '../utils';
 import { Contracts } from "wrongopinions-common";
+import { Assets } from "../assets";
 import { default as axios } from 'axios';
 
 const marika = {
@@ -12,8 +13,7 @@ const marika = {
 
 axios.defaults.timeout = 10 * 1000; // Avoid pointless waiting when https://github.com/jikan-me/jikan-rest/issues/269 occurs
 
-export async function loadAnime(db: DB, queue: QueueDispatcher, id: number): Promise<void> {
-    console.log("Loading anime", id);
+export async function loadAnime(db: DB, assets: Assets, queue: QueueDispatcher, id: number): Promise<void> {
     let details: IAnimeFull;
     let stats: IAnimeStats;
     await ratelimit(1 * 2); // We need to make two requests, so we double the ratelimit.
@@ -41,10 +41,12 @@ export async function loadAnime(db: DB, queue: QueueDispatcher, id: number): Pro
         expires = LocalDate.now(ZoneOffset.UTC).plusMonths(3);
     }
 
+    const poster = await assets.rehostAnimePoster(id, details.images.jpg.image_url);
 
     const animeDetails = await db.markAnimeSuccessful(id, {
         details,
         stats,
+        poster: poster,
     }, expires);
 
     console.log("Loaded anime", id, details.title);
