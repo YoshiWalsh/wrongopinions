@@ -19,6 +19,6 @@ export class SpecialAwardComponent {
 
 	ngOnInit(): void {
 		this.properties = this.panel.getAwardProperties();
-		this.contributingAnime = this.panel.award.contributingAnime.slice(0, 6);
+		this.contributingAnime = this.panel.award.contributingAnime.filter(a => a.thumbnailUrl).slice(0, 6);
 	}
 }
