@@ -537,6 +537,32 @@ resource "aws_cloudfront_origin_access_control" "cf_oac" {
     signing_protocol = "sigv4"
 }
 
+resource "aws_cloudfront_response_headers_policy" "response_headers" {
+    name = join("-", ["wrongopinions", random_id.environment_identifier.hex])
+
+    cors_config {
+        access_control_allow_origins {
+            items = ["http://localhost:4200"]
+        }
+
+        access_control_allow_methods {
+            items = ["OPTIONS", "HEAD", "GET"]
+        }
+
+        access_control_allow_headers {
+            items = ["*"]
+        }
+
+        access_control_expose_headers {
+            items = ["*"]
+        }
+
+        access_control_allow_credentials = false
+        
+        origin_override = true
+    }
+}
+
 resource "aws_cloudfront_distribution" "cf_distribution" {
     origin {
         origin_id = "assets"
@@ -596,12 +622,16 @@ resource "aws_cloudfront_distribution" "cf_distribution" {
             cookies {
                 forward = "none"
             }
+
+            headers = [ "Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers" ]
         }
 
         viewer_protocol_policy = "redirect-to-https"
         min_ttl = 3600
         default_ttl = 3600
         max_ttl = 86400
+
+        response_headers_policy_id = aws_cloudfront_response_headers_policy.response_headers.id
     }
 
     restrictions {
