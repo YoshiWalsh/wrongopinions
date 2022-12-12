@@ -259,6 +259,7 @@ resource "aws_lambda_function" "function_limited" {
             SQS_QUEUE_URL = aws_sqs_queue.fast_queue.id
             MAL_CLIENT_ID = var.mal_client_id
             MAL_CLIENT_SECRET = var.mal_client_secret # I know, I know, I should use Secrets Manager.
+            NODE_OPTIONS = "--enable-source-maps"
         }
     }
 }
@@ -284,6 +285,7 @@ resource "aws_lambda_function" "function_heavyweight" {
             SQS_QUEUE_URL = aws_sqs_queue.fast_queue.id
             MAL_CLIENT_ID = var.mal_client_id
             MAL_CLIENT_SECRET = var.mal_client_secret # I know, I know, I should use Secrets Manager.
+            NODE_OPTIONS = "--enable-source-maps"
         }
     }
 }
@@ -309,6 +311,7 @@ resource "aws_lambda_function" "function_lightweight" {
             SQS_QUEUE_URL = aws_sqs_queue.fast_queue.id
             MAL_CLIENT_ID = var.mal_client_id
             MAL_CLIENT_SECRET = var.mal_client_secret # I know, I know, I should use Secrets Manager.
+            NODE_OPTIONS = "--enable-source-maps"
         }
     }
 }
