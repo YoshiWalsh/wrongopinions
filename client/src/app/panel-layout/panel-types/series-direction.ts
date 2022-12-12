@@ -14,7 +14,7 @@ export class SeriesDirectionPanel extends Panel {
     }
 
     getPossibleSizes(): Array<PossibleSize> {
-        const interest = 0.8 / (1 + this.seriesDirection.correlationScore ?? 0);
+        const interest = Math.max(0, -this.seriesDirection.correlationScore ?? 0) * 2;
         if(this.seriesDirection.sequence.length < 4) {
             return [
                 {
