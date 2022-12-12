@@ -1,6 +1,6 @@
 import { Component, ElementRef, Input, ViewChild } from '@angular/core';
 import { SeriesDirectionPanel } from 'src/app/panel-layout/panel-types/series-direction';
-import { Chart, LineElement, LineController, CategoryScale, LinearScale, PointElement } from 'chart.js';
+import { Chart, LineElement, LineController, CategoryScale, LinearScale, PointElement, Title } from 'chart.js';
 
 Chart.register(
 	LineElement,
@@ -8,6 +8,7 @@ Chart.register(
 	CategoryScale,
 	LinearScale,
 	PointElement,
+	Title,
 );
 
 @Component({
@@ -46,6 +47,12 @@ export class SeriesDirectionCorrelationComponent {
 			options: {
 				responsive: true,
 				maintainAspectRatio: false,
+				plugins: {
+					title: {
+						display: true,
+						text: this.panel.getSeriesName(),
+					},
+				},
 			}
 		})
 	}
