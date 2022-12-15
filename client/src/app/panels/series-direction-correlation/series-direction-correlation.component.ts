@@ -1,6 +1,6 @@
 import { Component, ElementRef, Input, ViewChild } from '@angular/core';
 import { SeriesDirectionPanel } from 'src/app/panel-layout/panel-types/series-direction';
-import { Chart, LineElement, LineController, CategoryScale, LinearScale, PointElement, Title } from 'chart.js';
+import { Chart, LineElement, LineController, CategoryScale, LinearScale, PointElement, Title, Legend } from 'chart.js';
 
 Chart.register(
 	LineElement,
@@ -9,6 +9,7 @@ Chart.register(
 	LinearScale,
 	PointElement,
 	Title,
+	Legend,
 );
 
 @Component({
@@ -23,14 +24,16 @@ export class SeriesDirectionCorrelationComponent {
 	@Input()
 	panel!: SeriesDirectionPanel;
 
+	seriesName!: string;
+
 	constructor() { }
 
 	ngAfterViewInit(): void {
-		const seriesName = this.panel.getSeriesName();
+		this.seriesName = this.panel.getSeriesName();
 		new Chart(this.canvasElm.nativeElement, {
 			type: 'line',
 			data: {
-				labels: this.panel.seriesDirection.sequence.map(a => this.panel.abbreviateInstalmentName(seriesName, a.anime.defaultTitle)),
+				labels: this.panel.seriesDirection.sequence.map(a => this.panel.abbreviateInstalmentName(this.seriesName, a.anime.defaultTitle)),
 				datasets: [
 					{
 						label: 'Your scores',
@@ -55,12 +58,22 @@ export class SeriesDirectionCorrelationComponent {
 				},
 				plugins: {
 					title: {
-						display: true,
-						text: this.panel.getSeriesName(),
+						display: false,
+						fullSize: false,
+						text: this.seriesName,
 					},
+					legend: {
+						display: true,
+						align: 'end',
+						fullSize: false,
+						labels: {
+							usePointStyle: true,
+							pointStyle: 'line',
+						}
+					}
 				},
 			}
-		})
+		});
 	}
 
 }

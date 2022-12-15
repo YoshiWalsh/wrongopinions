@@ -6,3 +6,14 @@
     left: 0;
     right: 0;
 }
+
+.title {
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 200px;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
