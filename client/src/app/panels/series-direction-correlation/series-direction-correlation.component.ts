@@ -47,6 +47,7 @@ export class SeriesDirectionCorrelationComponent {
 			options: {
 				responsive: true,
 				maintainAspectRatio: false,
+				animation: false,
 				scales: {
 					x: {
 						offset: true,
