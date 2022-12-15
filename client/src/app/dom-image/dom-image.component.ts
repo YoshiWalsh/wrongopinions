@@ -1,6 +1,6 @@
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 
-import domtoimage from 'dom-to-image-more'; // Requires 1904labs/dom-to-image-more#81 and 1904labs/dom-to-image-more#82
+import domtoimage from 'dom-to-image-more';
 
 @Component({
 	selector: 'app-dom-image',
