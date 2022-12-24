@@ -3,7 +3,7 @@ import { AdaptiveRetryStrategy } from '@aws-sdk/middleware-retry';
 import * as DynamoDBConverter from '@aws-sdk/util-dynamodb';
 import { AnimeData, AnimeDetails, AnimeMinimalDetails, AnimeStatus } from './model/AnimeDetails';
 import { Contracts } from 'wrongopinions-common';
-import { PendingJob } from './model/PendingJob';
+import { JobStatus, PendingJob } from './model/PendingJob';
 import { QueueStatus } from './model/QueueStatus';
 import { convert, LocalDate } from '@js-joda/core';
 import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, NotFound, NoSuchKey } from '@aws-sdk/client-s3';
@@ -316,7 +316,7 @@ export class DB {
                 ConditionExpression: 'attribute_not_exists(PK) OR jobStatus = :s',
                 ExpressionAttributeValues: {
                     ':s': {
-                        'S': Contracts.JobStatus.Waiting,
+                        'S': JobStatus.Waiting,
                     },
                 },
             })
@@ -329,14 +329,14 @@ export class DB {
         };
     }
 
-    async updateJobStatusAndRemoveDependencies(username: string, status: Contracts.JobStatus, animeIdsToRemove: Array<string>, lastDependencyQueuePosition: number): Promise<number> {
+    async updateJobWaiting(username: string, animeIdsToRemove: Array<string>, lastDependencyQueuePosition: number): Promise<PendingJob> {
         const results = await this.db.updateItem({
             TableName: this.tableName,
             Key: this.pk(`job-${username}`),
-            UpdateExpression: `SET jobStatus = :s, lastStateChange = :t, lastDependencyQueuePosition = :p${ animeIdsToRemove.length ? ` DELETE dependsOn :a` : '' }`,
+            UpdateExpression: `SET jobStatus = :s, initialised = :t, lastDependencyQueuePosition = :p${ animeIdsToRemove.length ? ` DELETE dependsOn :a` : '' }`,
             ExpressionAttributeValues: {
                 ':s': {
-                    'S': status,
+                    'S': JobStatus.Waiting,
                 },
                 ':t': {
                     'N': Date.now().toString(),
@@ -356,36 +356,17 @@ export class DB {
         });
 
         const job = unmarshall(results.Attributes as AttributeMap) as PendingJob;
-        return job.dependsOn.size - 1;
+        return job;
     }
 
-    async updateJobStatus(username: string, status: Contracts.JobStatus): Promise<PendingJob> {
+    async updateJobQueued(username: string, queuePosition: number): Promise<PendingJob> {
         const results = await this.db.updateItem({
             TableName: this.tableName,
             Key: this.pk(`job-${username}`),
-            UpdateExpression: `SET jobStatus = :s, lastStateChange = :t`,
+            UpdateExpression: `SET jobStatus = :s, queued = :t, processingQueuePosition = :p`,
             ExpressionAttributeValues: {
                 ':s': {
-                    'S': status,
-                },
-                ':t': {
-                    'N': Date.now().toString(),
-                },
-            },
-            ReturnValues: 'ALL_NEW',
-        });
-
-        return this.deserialiseJob(results.Attributes) as PendingJob;
-    }
-
-    async updateJobStatusAndSetQueuePosition(username: string, status: Contracts.JobStatus, queuePosition: number): Promise<number> {
-        const results = await this.db.updateItem({
-            TableName: this.tableName,
-            Key: this.pk(`job-${username}`),
-            UpdateExpression: `SET jobStatus = :s, lastStateChange = :t, processingQueuePosition = :p`,
-            ExpressionAttributeValues: {
-                ':s': {
-                    'S': status,
+                    'S': JobStatus.Queued,
                 },
                 ':t': {
                     'N': Date.now().toString(),
@@ -398,7 +379,61 @@ export class DB {
         });
 
         const job = unmarshall(results.Attributes as AttributeMap) as PendingJob;
-        return job.dependsOn.size - 1;
+        return job;
+    }
+
+    async updateJobProcessing(username: string): Promise<PendingJob> {
+        const results = await this.db.updateItem({
+            TableName: this.tableName,
+            Key: this.pk(`job-${username}`),
+            UpdateExpression: `SET jobStatus = :s, processingStarted = :t`,
+            ExpressionAttributeValues: {
+                ':s': {
+                    'S': JobStatus.Processing,
+                },
+                ':t': {
+                    'N': Date.now().toString(),
+                },
+            },
+            ReturnValues: 'ALL_NEW',
+        });
+
+        return this.deserialiseJob(results.Attributes) as PendingJob;
+    }
+
+    async updateJobProcessingRetry(username: string): Promise<PendingJob> {
+        const results = await this.db.updateItem({
+            TableName: this.tableName,
+            Key: this.pk(`job-${username}`),
+            UpdateExpression: `SET jobStatus = :s REMOVE processingStarted`,
+            ExpressionAttributeValues: {
+                ':s': {
+                    'S': JobStatus.Queued,
+                },
+            },
+            ReturnValues: 'ALL_NEW',
+        });
+
+        return this.deserialiseJob(results.Attributes) as PendingJob;
+    }
+
+    async updateJobProcessingFailed(username: string): Promise<PendingJob> {
+        const results = await this.db.updateItem({
+            TableName: this.tableName,
+            Key: this.pk(`job-${username}`),
+            UpdateExpression: `SET jobStatus = :s, failed = :t`,
+            ExpressionAttributeValues: {
+                ':s': {
+                    'S': JobStatus.Queued,
+                },
+                ':t': {
+                    'N': Date.now().toString(),
+                },
+            },
+            ReturnValues: 'ALL_NEW',
+        });
+
+        return this.deserialiseJob(results.Attributes) as PendingJob;
     }
 
     async removeAnimeFromJob(username: string, animeId: number): Promise<number> {

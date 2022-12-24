@@ -3,7 +3,6 @@ import { QueueDispatcher } from "./queueDispatcher";
 import { LocalDate, ZonedDateTime, ZoneOffset } from '@js-joda/core';
 import { Anime as MarikaAnime, IAnimeFull, IAnimeStats } from '@shineiichijo/marika';
 import { ratelimit, retry } from '../utils';
-import { Contracts } from "wrongopinions-common";
 import { Assets } from "../assets";
 import { default as axios } from 'axios';
 
@@ -59,7 +58,7 @@ export async function loadAnime(db: DB, assets: Assets, queue: QueueDispatcher, 
                 await queue.queueProcessing(username);
                 console.log("Increment job queue length: processed all requisite anime", username);
                 const jobQueueStatus = await db.incrementQueueProperty("job", "queueLength");
-                await db.updateJobStatusAndSetQueuePosition(username, Contracts.JobStatus.Queued, jobQueueStatus.queueLength);
+                await db.updateJobQueued(username, jobQueueStatus.queueLength);
 
                 console.log("Queued processing for job", username);
             }
