@@ -1,0 +1,40 @@
+.progressBar {
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+}
+
+.segment {
+    position: relative;
+
+    flex-basis: 0;
+    flex-shrink: 0;
+
+    height: 15px;
+    background: #333;
+
+    overflow: hidden;
+
+    transition: flex-grow 1s linear;
+
+    &:first-child {
+        border-top-left-radius: 10px;
+        border-bottom-left-radius: 10px;
+    }
+
+    &:last-child {
+        border-top-right-radius: 10px;
+        border-bottom-right-radius: 10px;
+    }
+}
+
+.progress {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+
+    background: #339;
+
+    transition: width 1s linear;
+}

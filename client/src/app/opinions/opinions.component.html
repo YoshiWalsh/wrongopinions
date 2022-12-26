@@ -1,3 +1,8 @@
+<app-progress-bar *ngIf="pendingJob && !pendingJob.failed" [intervals]="loadingIntervals" [progress]="loadingProgress"></app-progress-bar>
+<div class="status">
+    <span class="statusDescription">{{statusDescription}}</span>
+    <button (click)="startJob()">Update</button>
+</div>
 <app-dom-image *ngIf="results">
     <div class="container">
         <span class="fineprint">wrongopinions.moe</span>

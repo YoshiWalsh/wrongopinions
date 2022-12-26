@@ -52,6 +52,11 @@ export class OpinionsComponent implements OnInit {
 	results: Contracts.Results | null = null;
 	pendingJob: Contracts.PendingJobStatus | null = null;
 
+	loadingIntervals: Array<number> = [];
+	loadingProgress: number = 0;
+	loadingMaximumProgress: number = 0;
+	statusDescription: string = "";
+
 	panels: Array<Panel> = [];
 
 	constructor(
@@ -88,7 +93,9 @@ export class OpinionsComponent implements OnInit {
 			}
 			if(status.pending) {
 				this.pendingJob = status.pending;
+				this.processPendingStatus(this.username, Promise.resolve(this.pendingJob));
 			}
+			this.statusDescription = this.getStatusDescription();
 
 			if(!status.results && !status.pending) {
 				this.startJob();
@@ -96,7 +103,7 @@ export class OpinionsComponent implements OnInit {
 		});
 	}
 
-	private startJob() {
+	public startJob() {
 		if(!this.username) {
 			return;
 		}
@@ -111,12 +118,39 @@ export class OpinionsComponent implements OnInit {
 			}
 
 			this.pendingJob = status;
+
+			if(!status) {
+				throw new Error("Not pending");
+			}
+
+			this.loadingIntervals = [
+				status.created,
+				status.initialised,
+				status.queued,
+				status.processingStarted,
+				status.completed
+			].map(s => (new Date(s)).getTime() / 1000);
+
+			this.loadingProgress = (new Date(status.now)).getTime() / 1000;
+			this.loadingMaximumProgress = this.loadingIntervals.find(i => i > this.loadingProgress) || this.loadingProgress;
+			this.statusDescription = this.getStatusDescription();
+
+			if(!status.failed) {
+				const expectedTimeUntilStateChange = this.loadingMaximumProgress - this.loadingProgress;
+				const minimumRefreshInterval = 1;
+				const maximumRefreshInterval = 10;
+				const timeUntilRefresh = Math.min(maximumRefreshInterval, Math.max(minimumRefreshInterval, expectedTimeUntilStateChange / 5));
+				setTimeout(() => {
+					this.processPendingStatus(username, this.api.getPendingJobStatus(username));
+				}, timeUntilRefresh * 1000);
+			}
 		}).catch(ex => {
 			if(this.username != username) {
 				return;
 			}
 
 			this.pendingJob = null;
+			this.statusDescription = this.getStatusDescription();
 
 			this.api.getFullStatus(username).then(fullStatus => {
 				this.results = fullStatus.results;
@@ -144,9 +178,44 @@ export class OpinionsComponent implements OnInit {
 			...this.results.seriesDirectionCorrelations.map(sd => new SeriesDirectionPanel(sd)),
 		];
 	}
-
 	
 	getBakaIcon() {
 		return bakaRanks[this.results?.bakaRank?.name as string].icon;
+	}
+
+	getStatusDescription(): string {
+		if(!this.pendingJob) {
+			if(this.results) {
+				return `Current as of ${(new Date(this.results.requested)).toLocaleString()}`;
+			}
+			return "";
+		}
+
+		if(this.pendingJob.failed) {
+			return "Failed, please try again.";
+		}
+
+		if(this.pendingJob.now < this.pendingJob.initialised) {
+			return "Initialising...";
+		}
+
+		if(this.pendingJob.now < this.pendingJob.queued) {
+			return `Loading required anime... (${this.pendingJob.totalAnime - this.pendingJob.remainingAnime} / ${this.pendingJob.totalAnime})` +
+			(
+				this.pendingJob.now < this.pendingJob.queued ?
+				` Your last required anime is #${this.pendingJob.animeQueuePosition} in the queue.` :
+				''
+			);
+		}
+
+		if(this.pendingJob.now < this.pendingJob.processingStarted) {
+			return `All required anime loaded, queued for processing. Your job is #${this.pendingJob.jobQueuePosition} in the queue.`;
+		}
+
+		if(this.pendingJob.now < this.pendingJob.completed) {
+			return "Crunching the numbers...";
+		}
+		
+		return "Unknown";
 	}
 }
