@@ -153,7 +153,7 @@ export async function initialiseJob(db: DB, queue: QueueDispatcher, username: st
     }
 
     let jobQueueStatus: QueueStatus;
-    if(job.dependsOn.size < 1) {
+    if(job.dependsOn.size - 1 < 1) {
         await queue.queueProcessing(username);
         console.log("Increment job queue length: all anime already loaded", username);
         jobQueueStatus = await db.incrementQueueProperty("job", "queueLength");
