@@ -80,9 +80,7 @@ export async function initialiseJob(db: DB, queue: QueueDispatcher, username: st
         jobStatus: JobStatus.Creating,
         created: now,
     };
-    if(!await db.addJob(job)) {
-        throw new Error("Unable to create job"); // TODO: Improve error
-    }
+    await db.addJob(job);
 
     console.log("Queueing anime");
     const newlyQueued: Array<number> = [];

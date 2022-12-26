@@ -313,18 +313,9 @@ export class DB {
                     ...this.pk(`job-${job.username}`),
                     ...marshall(job),
                 },
-                ConditionExpression: 'attribute_not_exists(PK) OR jobStatus = :s',
-                ExpressionAttributeValues: {
-                    ':s': {
-                        'S': JobStatus.Waiting,
-                    },
-                },
             })
             return true;
         } catch (ex) {
-            if(ex instanceof ConditionalCheckFailedException) {
-                return false;
-            }
             throw ex;
         };
     }
