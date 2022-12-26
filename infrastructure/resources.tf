@@ -244,7 +244,7 @@ resource "aws_lambda_function" "function_limited" {
     architectures = [ "arm64" ]
     runtime = "nodejs16.x"
     memory_size = "128"
-    timeout = "240" # Usually this function will complete in ~100 seconds, but if it times out it breaks our queue length logic and we really want to avoid that.
+    timeout = "120" # Usually this function will complete in ~50 seconds, but if it times out it breaks our queue length logic and we really want to avoid that.
 
     reserved_concurrent_executions = var.limited_function_concurrency
 
@@ -425,7 +425,7 @@ resource "aws_lambda_permission" "lambda_apigateway_permission_heavy" {
 resource "aws_sqs_queue" "fast_queue" {
     name = join("-", ["wrongopinions", random_id.environment_identifier.hex, "fast"])
     delay_seconds = 0
-    visibility_timeout_seconds = 250 # Slightly longer than the lambda timeout
+    visibility_timeout_seconds = 130 # Slightly longer than the lambda timeout
     sqs_managed_sse_enabled = true
     redrive_policy = jsonencode({
         deadLetterTargetArn = aws_sqs_queue.slow_queue.arn
@@ -437,7 +437,7 @@ resource "aws_lambda_event_source_mapping" "fast_queue_lambda" {
     event_source_arn = aws_sqs_queue.fast_queue.arn
     function_name    = aws_lambda_function.function_limited.arn
 
-    batch_size = 10
+    batch_size = 5
     maximum_batching_window_in_seconds = 15
     function_response_types = ["ReportBatchItemFailures"]
 
@@ -462,7 +462,7 @@ resource "aws_lambda_event_source_mapping" "slow_queue_lambda" {
     event_source_arn = aws_sqs_queue.slow_queue.arn
     function_name    = aws_lambda_function.function_limited.arn
 
-    batch_size = 10
+    batch_size = 5
     maximum_batching_window_in_seconds = 15
     function_response_types = ["ReportBatchItemFailures"]
 
