@@ -75,6 +75,7 @@ export async function initialiseJob(db: DB, queue: QueueDispatcher, username: st
     await db.saveAnimeList(username, animeList);
     let job: PendingJob = {
         username,
+        dependencyCount: requiredAnime.length,
         dependsOn: new Set([''].concat(requiredAnime.map(i => `anime-${i}`))),
         jobStatus: JobStatus.Creating,
         created: now,
@@ -203,6 +204,10 @@ function calculateJobStatus(job: PendingJob, animeQueueStatus: QueueStatus, jobQ
         processingStarted: processingStarted.toString(),
         completed: completed.toString(),
         failed: failed?.toString(),
+        totalAnime: job.dependencyCount,
+        remainingAnime: job.dependsOn.size - 1,
+        animeQueuePosition,
+        jobQueuePosition,
     };
 }
 

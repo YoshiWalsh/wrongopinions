@@ -8,6 +8,7 @@ export enum JobStatus {
 }
 export interface PendingJob {
     username: string;
+    dependencyCount: number;
     dependsOn: Set<string>;
     jobStatus: JobStatus;
     lastDependencyQueuePosition?: number;

@@ -42,6 +42,26 @@ export interface PendingJobStatus {
      * This will only be filled after the retry limit has been reached.
      */
     failed?: string;
+
+    /**
+     * Total required anime count
+     */
+    totalAnime: number;
+
+    /**
+     * Anime still waiting to be loaded
+     */
+    remainingAnime: number;
+
+    /**
+     * Position in anime queue
+     */
+    animeQueuePosition?: number;
+
+    /**
+     * Position in job queue
+     */
+    jobQueuePosition?: number;
 }
 
 export interface FullStatus {
