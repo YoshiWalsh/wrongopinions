@@ -9,8 +9,9 @@ import { crunchJob } from "../crunching/cruncher";
 import { QueueStatus } from "../model/QueueStatus";
 
 const MAL_PAGE_SIZE = 1000;
+const ESTIMATED_QUEUE_LATENCY = 5;
 const ESTIMATED_SECONDS_PER_ANIME = 2;
-const ESTIMATED_SECONDS_PER_JOB = 5;
+const ESTIMATED_SECONDS_PER_JOB = 10;
 
 export async function initialiseJob(db: DB, queue: QueueDispatcher, username: string): Promise<Contracts.PendingJobStatus> {
     console.log("Initialising job for", username);
@@ -175,27 +176,36 @@ export async function initialiseJob(db: DB, queue: QueueDispatcher, username: st
     return calculateJobStatus(job, animeQueueStatus, jobQueueStatus);
 }
 
+function maxInstant(a: Instant, b: Instant) {
+    return a.isAfter(b) ? a : b;
+}
+
 function calculateJobStatus(job: PendingJob, animeQueueStatus: QueueStatus, jobQueueStatus: QueueStatus): Contracts.PendingJobStatus {
+    const now = Instant.now();
+
     const created = Instant.ofEpochMilli(job.created);
+
+    const animeQueuePosition = Math.max(0, (job.lastDependencyQueuePosition ?? animeQueueStatus.queueLength ?? 0) - (animeQueueStatus.processedItems ?? 0));
+    const jobQueuePosition = Math.max(0, (job.processingQueuePosition ?? jobQueueStatus.queueLength ?? 0) - (jobQueueStatus.processedItems ?? 0));
 
     const initialised = job.initialised ?
         Instant.ofEpochMilli(job.initialised) :
-        created.plusSeconds(10);
+        maxInstant(created.plusSeconds(10), now.plusSeconds(1));
     
     const queued = job.queued ?
         Instant.ofEpochMilli(job.queued) :
-        initialised.plusSeconds(((job.lastDependencyQueuePosition ?? animeQueueStatus.queueLength ?? 0) - (animeQueueStatus.processedItems ?? 0)) * ESTIMATED_SECONDS_PER_ANIME);
+        maxInstant(initialised.plusSeconds(ESTIMATED_QUEUE_LATENCY), now).plusSeconds(animeQueuePosition * ESTIMATED_SECONDS_PER_ANIME);
 
     const processingStarted = job.processingStarted ?
         Instant.ofEpochMilli(job.processingStarted) :
-        queued.plusSeconds(((job.processingQueuePosition ?? jobQueueStatus.queueLength ?? 0) - (jobQueueStatus.processedItems ?? 0)) * ESTIMATED_SECONDS_PER_JOB);
+        maxInstant(queued.plusSeconds(ESTIMATED_QUEUE_LATENCY), now).plusSeconds(jobQueuePosition * ESTIMATED_SECONDS_PER_JOB);
 
-    const completed = processingStarted.plusSeconds(ESTIMATED_SECONDS_PER_JOB);
+    const completed = maxInstant(processingStarted.plusSeconds(ESTIMATED_SECONDS_PER_JOB), now.plusSeconds(5));
 
     const failed = job.failed ? Instant.ofEpochMilli(job.failed) : undefined;
 
     return {
-        now: Instant.now().toString(),
+        now: now.toString(),
         created: created.toString(),
         initialised: initialised.toString(),
         queued: queued.toString(),
