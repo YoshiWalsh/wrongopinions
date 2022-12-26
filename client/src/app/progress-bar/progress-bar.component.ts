@@ -18,6 +18,8 @@ export class ProgressBarComponent implements OnInit, OnChanges {
 	@Input()
 	progress!: number;
 
+	Infinity = Infinity;
+
 	segments: Array<Segment> = [];
 
 	constructor() { }
@@ -39,5 +41,13 @@ export class ProgressBarComponent implements OnInit, OnChanges {
 	trackByIndex = (index: number): number => {
 		return index;
 	};
+
+	public get start(): number {
+		return this.intervals[0];
+	}
+
+	public get end(): number {
+		return this.intervals[this.intervals.length - 1];
+	}
 
 }

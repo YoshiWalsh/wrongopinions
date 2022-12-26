@@ -1,6 +1,9 @@
 <div class="progressBar">
     <div class="segment" *ngFor="let segment of segments; trackBy:trackByIndex" [style.flex-grow]="segment.end - segment.start" >
-        <div class="progress" [style.width]="clamp((progress - segment.start) / (segment.end - segment.start), 0, 1) * 100 + '%'">
+        <div class="progress"
+            [style.left]="clamp((start - segment.start) / (segment.end - segment.start), -Infinity, 0) * 100 + '%'"
+            [style.width]="clamp((progress - start) / (segment.end - segment.start), 0, Infinity) * 100 + '%'"
+        >
 
         </div>
     </div>

@@ -15,7 +15,7 @@
 
     overflow: hidden;
 
-    transition: flex-grow 1s linear;
+    transition: flex-grow 1.1s linear;
 
     &:first-child {
         border-top-left-radius: 10px;
@@ -36,5 +36,5 @@
 
     background: #339;
 
-    transition: width 1s linear;
+    transition: width 1.1s linear, left 1.1s linear;
 }
