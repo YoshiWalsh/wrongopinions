@@ -427,7 +427,7 @@ export class DB {
         return this.deserialiseJob(results.Attributes) as PendingJob;
     }
 
-    async removeAnimeFromJob(username: string, animeId: number): Promise<number> {
+    async removeAnimeFromJob(username: string, animeId: number): Promise<PendingJob> {
         const results = await this.db.updateItem({
             TableName: this.tableName,
             Key: this.pk(`job-${username}`),
@@ -441,7 +441,7 @@ export class DB {
         });
 
         const job = unmarshall(results.Attributes as AttributeMap) as PendingJob;
-        return job.dependsOn.size - 1;
+        return job;
     }
 
     async removeJob(username: string): Promise<void> {

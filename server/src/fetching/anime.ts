@@ -52,7 +52,8 @@ export async function loadAnime(db: DB, assets: Assets, queue: QueueDispatcher, 
 
     await Promise.all(Array.from(animeDetails.dependentJobs?.values() ?? []).filter(a => a).map(async username => {
         try {
-            const remainingAnime = await db.removeAnimeFromJob(username, id);
+            const pendingJob = await db.removeAnimeFromJob(username, id);
+            const remainingAnime = pendingJob.dependsOn.size - 1;
             console.log("Removed anime", id, "from job", username, ",", remainingAnime, "remaining");
             if(remainingAnime < 1) {
                 await queue.queueProcessing(username);
