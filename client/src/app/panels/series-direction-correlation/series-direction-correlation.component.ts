@@ -26,10 +26,13 @@ export class SeriesDirectionCorrelationComponent {
 
 	seriesName!: string;
 
-	constructor() { }
+	constructor() {}
+
+	ngOnInit(): void {
+		this.seriesName = this.panel.getSeriesName();
+	}
 
 	ngAfterViewInit(): void {
-		this.seriesName = this.panel.getSeriesName();
 		new Chart(this.canvasElm.nativeElement, {
 			type: 'line',
 			data: {
