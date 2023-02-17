@@ -23,9 +23,6 @@ export class UnpopularScoreComponent extends AnimeTableComponent<UnpopularScoreP
 		if(percentage >= 10) {
 			return percentage.toFixed(0);
 		}
-		if(percentage >= 1) {
-			return percentage.toFixed(1);
-		}
-		return percentage.toFixed(2);
+		return percentage.toFixed(1);
 	}
 }
