@@ -1,6 +1,7 @@
 <app-progress-bar *ngIf="pendingJob && !pendingJob.failed" [intervals]="loadingIntervals" [progress]="loadingProgress"></app-progress-bar>
 <div class="status">
     <span class="statusDescription">{{statusDescription}}</span>
+    <span class="eta" *ngIf="pendingJob && pendingJob.completed && pendingJob.now">{{loadingEstimatedCompletionTime}} seconds</span>
     <button (click)="startJob()">Update</button>
 </div>
 <app-dom-image *ngIf="results">

@@ -55,6 +55,7 @@ export class OpinionsComponent implements OnInit {
 	loadingIntervals: Array<number> = [];
 	loadingProgress: number = 0;
 	loadingMaximumProgress: number = 0;
+	loadingEstimatedCompletionTime: number = 0;
 	statusDescription: string = "";
 
 	panels: Array<Panel> = [];
@@ -133,6 +134,7 @@ export class OpinionsComponent implements OnInit {
 
 			this.loadingProgress = (new Date(status.now)).getTime() / 1000;
 			this.loadingMaximumProgress = this.loadingIntervals.find(i => i > this.loadingProgress) || this.loadingProgress;
+			this.loadingEstimatedCompletionTime = this.loadingIntervals[this.loadingIntervals.length - 1] - this.loadingProgress;
 			this.statusDescription = this.getStatusDescription();
 
 			if(!status.failed) {
