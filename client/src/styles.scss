@@ -16,3 +16,23 @@ body {
     padding: 10px;
     max-width: 1280px;
 }
+
+blockquote {
+    &::before {
+        display: inline;
+        content: '“';
+    }
+
+    &::after {
+        display: inline;
+        content: '”';
+    }
+}
+
+dt {
+    font-weight: bold;
+}
+
+dd {
+    margin: 0;
+}
