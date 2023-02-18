@@ -136,6 +136,7 @@ export class OpinionsComponent implements OnInit {
 				status.completed
 			].map(s => (new Date(s)).getTime() / 1000);
 
+			this.loading = false;
 			this.loadingProgress = (new Date(status.now)).getTime() / 1000;
 			this.loadingMaximumProgress = this.loadingIntervals.find(i => i > this.loadingProgress) || this.loadingProgress;
 			this.loadingEstimatedCompletionTime = this.loadingIntervals[this.loadingIntervals.length - 1] - this.loadingProgress;
