@@ -17,7 +17,7 @@
     }
 
     .halftone::after {
-        mask-image: linear-gradient(3deg, black, transparent 20%, transparent 80%, black),
+        mask-image: linear-gradient(3deg, black, transparent 40%, transparent 80%, black),
             linear-gradient(40deg, black, transparent 30%, transparent 70%, black),
             linear-gradient(80deg, black, transparent 20%, transparent 80%, black);
     }
@@ -26,16 +26,18 @@
 .contentContainer {
     position: relative;
 
-    .halftone::after {
-        mask-image: linear-gradient(110deg, black, black calc(50% - 640px), transparent calc(50% - 640px), transparent),
-            linear-gradient(70deg, black, black calc(50% - 640px), transparent calc(50% - 640px), transparent),
-            linear-gradient(110deg, transparent, transparent calc(50% + 640px), black calc(50% + 640px), black),
-            linear-gradient(70deg, transparent, transparent calc(50% + 640px), black calc(50% + 640px), black),;
+    padding-top: 100px;
 
-        mask-position: 0 0, 0 0, 0 60px, 0 60px;
-        mask-size: 100% 120px;
-        // mask-repeat: no-repeat;
-        mask-repeat: repeat-y;
+    .halftone::after {
+        mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 90%), transparent 200px, transparent),
+            radial-gradient(circle at center, black, transparent 150px),
+            radial-gradient(circle at center, black, transparent 150px),
+            linear-gradient(to right, black, transparent calc(50% - 750px), transparent calc(50% + 750px), black);
+
+        mask-position: 0 0, -800px 0px, 800px 110px;
+        mask-size: 100% 100%, 100% 220px, 100% 220px;
+        //mask-repeat: no-repeat;
+        mask-repeat: no-repeat, repeat-y, repeat-y;
     }
 }
 
@@ -68,7 +70,6 @@
             black var(--min-dot-size),
             transparent var(--max-dot-size)
         );
-        // background-color: black;
         background-size: var(--dot-spacing) var(--dot-spacing);
         background-position: 0 0, calc(var(--dot-spacing) / 2) calc(var(--dot-spacing) / 2);
         background-attachment: fixed;
