@@ -205,13 +205,13 @@ export class OpinionsComponent implements OnInit {
 			return `Loading required anime... (${this.pendingJob.totalAnime - this.pendingJob.remainingAnime} / ${this.pendingJob.totalAnime})` +
 			(
 				this.pendingJob.now < this.pendingJob.queued ?
-				` Your last required anime is #${this.pendingJob.animeQueuePosition} in the queue.` :
+				` Your last required anime is #${(this.pendingJob.animeQueuePosition as number) + 1} in the queue.` :
 				''
 			);
 		}
 
 		if(this.pendingJob.now < this.pendingJob.processingStarted) {
-			return `All required anime loaded, queued for processing. Your job is #${this.pendingJob.jobQueuePosition} in the queue.`;
+			return `All required anime loaded, queued for processing. Your job is #${(this.pendingJob.jobQueuePosition as number) + 1} in the queue.`;
 		}
 
 		if(this.pendingJob.now < this.pendingJob.completed) {
