@@ -26,6 +26,19 @@
 .contentContainer {
     position: relative;
 
+    .halftone::after {
+        mask-image: linear-gradient(110deg, black, black calc(50% - 640px), transparent calc(50% - 640px), transparent),
+            linear-gradient(70deg, black, black calc(50% - 640px), transparent calc(50% - 640px), transparent),
+            linear-gradient(110deg, transparent, transparent calc(50% + 640px), black calc(50% + 640px), black),
+            linear-gradient(70deg, transparent, transparent calc(50% + 640px), black calc(50% + 640px), black),;
+
+        mask-position: 0 0, 0 0, 0 60px, 0 60px;
+        mask-size: 100% 120px;
+        // mask-repeat: no-repeat;
+        mask-repeat: repeat-y;
+    }
+}
+
 
 .halftone {
     --min-dot-size: 0.2px;
