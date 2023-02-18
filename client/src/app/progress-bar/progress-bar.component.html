@@ -1,4 +1,14 @@
 <div class="progressBar">
+    <div *ngIf="segments; then determinate; else indeterminate"></div>
+</div>
+
+<ng-template #indeterminate>
+    <div class="segment indeterminate">
+        <div class="progress"></div>
+    </div>
+</ng-template>
+
+<ng-template #determinate>
     <div class="segment" *ngFor="let segment of segments; trackBy:trackByIndex" [style.flex-grow]="segment.end - segment.start" >
         <div class="progress"
             [style.left]="clamp((start - segment.start) / (segment.end - segment.start), -Infinity, 0) * 100 + '%'"
@@ -7,4 +17,4 @@
 
         </div>
     </div>
-</div>
+</ng-template>

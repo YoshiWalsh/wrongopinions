@@ -26,6 +26,32 @@
         border-top-right-radius: 10px;
         border-bottom-right-radius: 10px;
     }
+
+    &.indeterminate {
+        flex-grow: 1;
+        
+        .progress {
+            @keyframes indeterminate {
+                0% {
+                    left: 0%;
+                    right: 100%;
+                }
+                50% {
+                    left: 25%;
+                    right: 25%;
+                }
+                100% {
+                    left: 100%;
+                    right: 0%;
+                }
+            }
+
+            animation-name: indeterminate;
+            animation-duration: 2s;
+            animation-iteration-count: infinite;
+            animation-timing-function: ease-in-out;
+        }
+    }
 }
 
 .progress {

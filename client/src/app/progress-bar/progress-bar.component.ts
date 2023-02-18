@@ -13,14 +13,14 @@ export interface Segment {
 })
 export class ProgressBarComponent implements OnInit, OnChanges {
 	@Input()
-	intervals!: Array<number>;
+	intervals?: Array<number>;
 
 	@Input()
 	progress!: number;
 
 	Infinity = Infinity;
 
-	segments: Array<Segment> = [];
+	segments?: Array<Segment> = [];
 
 	constructor() { }
 
@@ -28,10 +28,15 @@ export class ProgressBarComponent implements OnInit, OnChanges {
 	}
 
 	ngOnChanges(changes: SimpleChanges): void {
-		this.segments = this.intervals.slice(1).map((end, index) => ({
-			start: this.intervals[index],
-			end,
-		}));
+		const intervals = this.intervals;
+		if(intervals !== undefined) {
+			this.segments = intervals.slice(1).map((end, index) => ({
+				start: intervals[index],
+				end,
+			}));
+		} else {
+			this.segments = undefined;
+		}
 	}
 
 	public clamp(x: number, min: number, max: number) {
@@ -43,11 +48,11 @@ export class ProgressBarComponent implements OnInit, OnChanges {
 	};
 
 	public get start(): number {
-		return this.intervals[0];
+		return this.intervals?.[0] ?? 0;
 	}
 
 	public get end(): number {
-		return this.intervals[this.intervals.length - 1];
+		return this.intervals?.[this.intervals.length - 1] ?? 1;
 	}
 
 }

@@ -52,7 +52,7 @@ export class OpinionsComponent implements OnInit {
 	results: Contracts.Results | null = null;
 	pendingJob: Contracts.PendingJobStatus | null = null;
 
-	loadingIntervals: Array<number> = [];
+	loadingIntervals?: Array<number> = undefined;
 	loadingProgress: number = 0;
 	loadingMaximumProgress: number = 0;
 	loadingEstimatedCompletionTime: number = 0;
@@ -78,6 +78,7 @@ export class OpinionsComponent implements OnInit {
 			return;
 		}
 		this.loading = true;
+		this.statusDescription = "Loading...";
 
 		const username = this.username;
 
@@ -109,6 +110,9 @@ export class OpinionsComponent implements OnInit {
 			return;
 		}
 
+		this.statusDescription = "Initialising job...";
+		this.loadingIntervals = undefined;
+		this.loading = true;
 		this.processPendingStatus(this.username, this.api.startJob(this.username));
 	}
 
