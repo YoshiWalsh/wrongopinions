@@ -1,5 +1,121 @@
-<form (ngSubmit)="go()">
-    <label for="username">Username: </label>
-    <input name="username" type="text" [(ngModel)]="username" />
-    <button type="submit">Go</button>
-</form>
+<div class="hero">
+    <div class="inner">
+        <h1>WrongOpinions.moe</h1>
+        <form (ngSubmit)="go()">
+            <label for="username">Username: </label>
+            <input name="username" type="text" [(ngModel)]="username" />
+            <button type="submit">Go</button>
+        </form>
+    </div>
+</div>
+<div class="contentContainer">
+    <div class="content">
+        <h2>FAQ</h2>
+        <dl class="faq">
+            <dt>What?</dt>
+            <dd>
+                <p>
+                    WrongOpinions is a system that analyses your MyAnimeList profile and uses statistics
+                    to automatically detect objectively incorrect anime-related opinions that you hold.
+                </p>
+                <p>
+                    You can kind of think of it as like The Anime Man's "Roasting *'s HORRIBLE Taste in Anime" series,
+                    but for people who Joey doesn't even know exist. (Like you)
+                </p>
+                <p>
+                    WrongOpinions generates a sharable infographic explaining your worst takes,
+                    so you can show off your awful taste on social media like some misguided badge of pride.
+                </p>
+            </dd>
+
+            <dt>Why?</dt>
+            <dd>
+                <p>
+                    If I'm talking to someone and I find out they watch anime, naturally I ask "What kind of anime do you like?".
+                    But this usually has a boring answer. I don't care that you like FMA:B, Violet Evergarden, or Steins;Gate, everyone does.
+                </p>
+                <p>
+                    Someone's taste in anime is better understood by their controversial takes. What's a popular anime that you hate,
+                    or an unpopular anime that you love? Maybe I'll learn something about you, or maybe it'll just start a fun argument.
+                </p>
+                <p>
+                    Is that the reason, or just an excuse? Truthfully, a lot of you just have terrible taste and I don't have time to
+                    point that out to you individually. Automating the process was necessary.
+                </p>
+            </dd>
+
+            <dt>Who?</dt>
+            <dd>
+                <p>
+                    WrongOpinions is made entirely by Joshua Walsh, a software developer from Sydney, Australia.
+                </p>
+            </dd>
+
+            <dt>How?</dt>
+            <dd>
+                <p>
+                    WrongOpinions uses publicly available data from MyAnimeList.
+                </p>
+                <p>
+                    I'll write a <a href="https://blog.joshwalsh.me/" target="_blank">blog post</a> in future that explains the technical details.
+                </p>
+                <p>
+                    WrongOpinions is/will be also open source, check out the repo <a href="https://github.com/JoshuaWalsh/wrongopinions" target="_blank">here</a>.
+                </p>
+            </dd>
+
+            <dt>I don't have a MAL account / my MAL account has no ratings</dt>
+            <dd>
+                <p>
+                    WrongOpinions works by crunching data. If you can't supply the data, you can't use the site.
+                </p>
+                <blockquote>
+                    <p>
+                        Pray, Mr. Babbage, if you put into the machine wrong figures, will the right answers come out?
+                    </p>
+                </blockquote>
+                <p>
+                    Yeah, that's what you sound like. Come back once you've made an account and rated some shows.
+                </p>
+            </dd>
+
+            <dt>But I have an AniList / Kitsu list...</dt>
+            <dd>
+                <p>
+                    It's taken me long enough to get this damned website working for MAL. At the moment I don't have
+                    time or motivation to support other data sources.
+                </p>
+            </dd>
+
+            <dt>I want to know which of my manga opinions are wrong too!</dt>
+            <dd>
+                <p>
+                    Theoretically this wouldn't be <em>too</em> difficult to support in future.
+                    Let me know if it's something you want. Don't hold your breath though, I'm a busy person.
+                </p>
+            </dd>
+
+            <dt>WrongOpinions was wrong</dt>
+            <dd>
+                <p>
+                    <del>
+                        WrongOpinions isn't perfect. For example, WrongOpinions even seems to think that some of <em>my</em>
+                        opinions are wrong, but that's obviously not true. All of my opinions are objectively correct.
+                    </del>
+                </p>
+                <p>
+                    <del>
+                        While I have tried hard to crunch data in ways that are statistically-sound, I had to balance that against
+                        entertainment value. WrongOpinions is designed to generate spicy insults, and was balanced such that it
+                        should be able to produce something of interest for most users. Additionally, I don't actually have any
+                        background in statistics, so I mostly just Googled how to use a lot of these formulas.
+                    </del>
+                </p>
+                <p>
+                    That's impossible, stop lying. WrongOpinions uses statistics to identify <strong>objectively incorrect</strong> opinions.
+                    As the arbiter of truth, it is incapable of being wrong itself. There will be no second opinions. 
+                </p>
+            </dd>
+        </dl>
+    </div>
+</div>

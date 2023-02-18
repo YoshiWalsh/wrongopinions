@@ -1,0 +1,22 @@
+.hero {
+    position: relative;
+    min-height: 100vh;
+
+    .inner {
+        position: absolute;
+
+        z-index: 0;
+    
+        top: 50%;
+        left: 0;
+        right: 0;
+
+        transform: translateY(-50%);
+
+        text-align: center;
+    }
+}
+
+.contentContainer {
+    position: relative;
+}
