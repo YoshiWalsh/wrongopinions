@@ -8,6 +8,8 @@ import { demand } from 'ts-demand';
 interface Point {
 	horizontalOffset: number;
 	verticalOffset: number;
+	horizontalSeparation: number;
+	verticalSeparation: number;
 }
 
 @Component({
@@ -86,6 +88,8 @@ export class PanelOutlinesComponent implements OnInit, OnChanges {
 		const points: Array<Array<Point>> = Array(this.columns + 1).fill(null).map(() => Array(this.rows + 1).fill(null).map(() => demand<Point>({
 			horizontalOffset: 0,
 			verticalOffset: 0,
+			horizontalSeparation: 0,
+			verticalSeparation: 0,
 		})));
 
 		for (let i = 1; i < this.columns; i++) {
@@ -103,9 +107,18 @@ export class PanelOutlinesComponent implements OnInit, OnChanges {
 					const interestDifference = positiveInterest - negativeInterest;
 					const slantAmount = Math.min(interestDifference * 2, 1) * this.gaps;
 
+					const sideAInterests = panelsMap[i - 1].slice(lineStartRow, i2).map(p => p ? (p.size.interest / p.size.rows / p.size.columns) : 0);
+					const sideBInterests = panelsMap[i].slice(lineStartRow, i2).map(p => p ? (p.size.interest / p.size.rows / p.size.columns) : 0);
+
+					const sideATotalInterest = sideAInterests.reduce((acc, cur) => acc + cur, 0);
+					const sideBTotalInterest = sideBInterests.reduce((acc, cur) => acc + cur, 0);
+
+					const horizontalSeparation = Math.max(sideATotalInterest, sideBTotalInterest) > Math.min(sideATotalInterest, sideBTotalInterest) * 1.1;
+
 					for(let y = lineStartRow; y <= i2; y++) {
 						const slantFactor = (y - lineStartRow) / (i2 - lineStartRow) - 0.5;
-						points[i][y].horizontalOffset = slantAmount * slantFactor;
+						points[i][y].horizontalOffset = slantAmount * slantFactor * (horizontalSeparation ? 0.5 : 1);
+						points[i][y].horizontalSeparation = horizontalSeparation ? this.gaps / 2 : 0;
 					}
 
 					console.log("Line in column", i, "from row", lineStartRow, "to row", i2);
@@ -129,9 +142,18 @@ export class PanelOutlinesComponent implements OnInit, OnChanges {
 					const interestDifference = positiveInterest - negativeInterest;
 					const slantAmount = Math.max(-1, Math.min(interestDifference * 2, 1)) * this.gaps;
 
+					const sideAInterests = (panelsMap.slice(lineStartColumn, i2) ?? []).map(a => a[i - 1]).map(p => p ? (p.size.interest / p.size.rows / p.size.columns) : 0);
+					const sideBInterests = (panelsMap.slice(lineStartColumn, i2) ?? []).map(a => a[i]).map(p => p ? (p.size.interest / p.size.rows / p.size.columns) : 0);
+
+					const sideATotalInterest = sideAInterests.reduce((acc, cur) => acc + cur, 0);
+					const sideBTotalInterest = sideBInterests.reduce((acc, cur) => acc + cur, 0);
+
+					const verticalSeparation = Math.max(sideATotalInterest, sideBTotalInterest) > Math.min(sideATotalInterest, sideBTotalInterest) * 1.1;
+
 					for(let x = lineStartColumn; x <= i2; x++) {
 						const slantFactor = (x - lineStartColumn) / (i2 - lineStartColumn) - 0.5;
-						points[x][i].verticalOffset = slantAmount * slantFactor;
+						points[x][i].verticalOffset = slantAmount * slantFactor * (verticalSeparation ? 0.5 : 1);
+						points[x][i].verticalSeparation = verticalSeparation ? this.gaps / 2 : 0;
 					}
 					
 					console.log("Line in row", i, "from column", lineStartColumn, "to column", i2);
@@ -152,11 +174,11 @@ export class PanelOutlinesComponent implements OnInit, OnChanges {
 			const rightX = this.getColumnX(panel.position.endColumn);
 
 			this.svg.path([
-				['M', leftX + topLeft.horizontalOffset, topY + topLeft.verticalOffset],
-				['L', rightX + topRight.horizontalOffset, topY + topRight.verticalOffset],
-				['L', rightX + bottomRight.horizontalOffset, bottomY + bottomRight.verticalOffset],
-				['L', leftX + bottomLeft.horizontalOffset, bottomY + bottomLeft.verticalOffset],
-				['L', leftX + topLeft.horizontalOffset, topY + topLeft.verticalOffset],
+				['M', leftX + topLeft.horizontalOffset + topLeft.horizontalSeparation, topY + topLeft.verticalOffset + topLeft.verticalSeparation],
+				['L', rightX + topRight.horizontalOffset - topRight.horizontalSeparation, topY + topRight.verticalOffset + topRight.verticalSeparation],
+				['L', rightX + bottomRight.horizontalOffset - bottomRight.horizontalSeparation, bottomY + bottomRight.verticalOffset - bottomRight.verticalSeparation],
+				['L', leftX + bottomLeft.horizontalOffset + bottomLeft.horizontalSeparation, bottomY + bottomLeft.verticalOffset - bottomLeft.verticalSeparation],
+				['L', leftX + topLeft.horizontalOffset + topLeft.horizontalSeparation, topY + topLeft.verticalOffset + topLeft.verticalSeparation],
 			]).stroke({ color: '#000', width: 4, linecap: 'round', linejoin: 'round' }).fill('none').filterWith(filter);
 		}
 	}
