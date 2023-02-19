@@ -1,9 +1,9 @@
 app-panel-outlines {
-    // position: absolute;
+    position: absolute;
 }
 .panel-grid {
     display: grid;
-    grid-template-columns: repeat(var(--columns), 1fr);
+    margin: 5px;
     grid-template-rows: repeat(var(--rows), 115px);
     grid-gap: 10px;
 

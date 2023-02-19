@@ -114,6 +114,32 @@ export class PanelOutlinesComponent implements OnInit, OnChanges {
 			}
 		}
 
+		for (let i = 1; i < this.rows; i++) {
+			let lineStartColumn: number | null = null;
+			for (let i2 = 0; i2 <= this.columns; i2++) {
+				const topPanel = panelsMap[i2]?.[i - 1];
+				const bottomPanel = panelsMap[i2]?.[i];
+				const interferingPanel = topPanel && topPanel === bottomPanel;
+				if(!interferingPanel && lineStartColumn === null) {
+					lineStartColumn = i2;
+				}
+				if((interferingPanel || i2 >= this.columns) && lineStartColumn !== null) {
+					const negativeInterest = (panelsMap[lineStartColumn]?.[i - 1]?.size?.interest ?? 0) + (panelsMap[i2]?.[i]?.size?.interest ?? 0) * 0.6;
+					const positiveInterest = (panelsMap[lineStartColumn]?.[i]?.size?.interest ?? 0) + (panelsMap[i2]?.[i - 1]?.size?.interest ?? 0) * 0.6;
+					const interestDifference = positiveInterest - negativeInterest;
+					const slantAmount = Math.max(-1, Math.min(interestDifference * 2, 1)) * this.gaps;
+
+					for(let x = lineStartColumn; x <= i2; x++) {
+						const slantFactor = (x - lineStartColumn) / (i2 - lineStartColumn) - 0.5;
+						points[x][i].verticalOffset = slantAmount * slantFactor;
+					}
+					
+					console.log("Line in row", i, "from column", lineStartColumn, "to column", i2);
+					lineStartColumn = null;
+				}
+			}
+		}
+
 		for (const panel of this.panelLayout) {
 			const topLeft = points[panel.position.startColumn][panel.position.startRow];
 			const topRight = points[panel.position.endColumn][panel.position.startRow];
