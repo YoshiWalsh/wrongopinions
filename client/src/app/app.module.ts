@@ -15,6 +15,7 @@ import { UnpopularScoreComponent } from './panels/unpopular-score/unpopular-scor
 import { SpecialAwardComponent } from './panels/special-award/special-award.component';
 import { SeriesDirectionCorrelationComponent } from './panels/series-direction-correlation/series-direction-correlation.component';
 import { ProgressBarComponent } from './progress-bar/progress-bar.component';
+import { PanelOutlinesComponent } from './panel-outlines/panel-outlines.component';
 
 @NgModule({
 	declarations: [
@@ -28,6 +29,7 @@ import { ProgressBarComponent } from './progress-bar/progress-bar.component';
 		SpecialAwardComponent,
 		SeriesDirectionCorrelationComponent,
 		ProgressBarComponent,
+		PanelOutlinesComponent,
 	],
 	imports: [
 		CommonModule,

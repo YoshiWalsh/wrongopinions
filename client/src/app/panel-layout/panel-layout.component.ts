@@ -18,7 +18,7 @@ interface PanelPosition {
 	endRow: number;
 }
 
-interface PositionedPanel<T extends Panel> {
+export interface PositionedPanel<T extends Panel> {
 	panel: T;
 	position: PanelPosition;
 	size: PossibleSize;

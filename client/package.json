@@ -19,10 +19,12 @@
     "@angular/router": "^14.2.0",
     "@fontsource/open-sans": "^4.5.11",
     "@fontsource/roboto-mono": "^4.5.8",
+    "@svgdotjs/svg.js": "^3.1.2",
     "chart.js": "^3.9.1",
     "dom-to-image-more": "^2.13.0",
     "rxjs": "~7.5.0",
     "string-algorithms": "^1.0.31",
+    "ts-demand": "^1.0.1",
     "tslib": "^2.3.0",
     "wrongopinions-common": "file:../common",
     "zone.js": "~0.11.4"
