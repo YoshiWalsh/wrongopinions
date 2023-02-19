@@ -2,6 +2,7 @@ import { Component, ElementRef, Input, OnChanges, OnInit, SimpleChanges, ViewChi
 import { PositionedPanel } from '../panel-layout/panel-layout.component';
 import { Panel } from '../panel-layout/panel-types/panel-type';
 import { SVG, Svg, Element as SVGjsElement } from '@svgdotjs/svg.js';
+import '@svgdotjs/svg.filter.js';
 import { demand } from 'ts-demand';
 
 interface Point {
@@ -60,6 +61,15 @@ export class PanelOutlinesComponent implements OnInit, OnChanges {
 	render() {
 		this.svg.clear();
 		this.svg.size(this.getColumnX(this.columns + 1) + this.margins * 0.5, this.getRowY(this.rows + 1) + this.margins * 0.5);
+		const filter = this.svg.filter(filter => {
+			const turb = filter.turbulence(0.067114093959731544, 5, 0, 'noStitch', 'turbulence');
+			filter.displacementMap(filter.$source, turb, 1, 'A', 'A');
+		}).attr({
+			'x': '-100%',
+			'y': '-100%',
+			'width': '300%',
+			'height': '300%',
+		});
 
 		const panelsMap: Array<Array<PositionedPanel<Panel> | null>> = Array(this.columns).fill(null).map(() => Array(this.rows).fill(null));
 		for (const panel of this.panelLayout) {
@@ -112,25 +122,13 @@ export class PanelOutlinesComponent implements OnInit, OnChanges {
 			const leftX = this.getColumnX(panel.position.startColumn);
 			const rightX = this.getColumnX(panel.position.endColumn);
 
-			this.svg.polyline([
-				[leftX + topLeft.horizontalOffset, topY + topLeft.verticalOffset],
-				[leftX + bottomLeft.horizontalOffset, bottomY + bottomLeft.verticalOffset],
-			]).stroke({ color: '#000', width: 2, linecap: 'round', linejoin: 'round' });
-
-			this.svg.polyline([
-				[rightX + topRight.horizontalOffset, topY + topRight.verticalOffset],
-				[rightX + bottomRight.horizontalOffset, bottomY + bottomRight.verticalOffset],
-			]).stroke({ color: '#000', width: 2, linecap: 'round', linejoin: 'round' });
-
-			this.svg.polyline([
-				[leftX + topLeft.horizontalOffset, topY + topLeft.verticalOffset],
-				[rightX + topRight.horizontalOffset, topY + topRight.verticalOffset],
-			]).stroke({ color: '#000', width: 2, linecap: 'round', linejoin: 'round' });
-
-			this.svg.polyline([
-				[leftX + bottomLeft.horizontalOffset, bottomY + bottomLeft.verticalOffset],
-				[rightX + bottomRight.horizontalOffset, bottomY + bottomRight.verticalOffset],
-			]).stroke({ color: '#000', width: 2, linecap: 'round', linejoin: 'round' });
+			this.svg.path([
+				['M', leftX + topLeft.horizontalOffset, topY + topLeft.verticalOffset],
+				['L', rightX + topRight.horizontalOffset, topY + topRight.verticalOffset],
+				['L', rightX + bottomRight.horizontalOffset, bottomY + bottomRight.verticalOffset],
+				['L', leftX + bottomLeft.horizontalOffset, bottomY + bottomLeft.verticalOffset],
+				['L', leftX + topLeft.horizontalOffset, topY + topLeft.verticalOffset],
+			]).stroke({ color: '#000', width: 4, linecap: 'round', linejoin: 'round' }).fill('none').filterWith(filter);
 		}
 	}
 
