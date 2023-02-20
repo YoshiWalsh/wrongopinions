@@ -12,6 +12,7 @@ import { Assets } from './assets';
 
 const db = new DB();
 const queue = new QueueDispatcher();
+const assets = new Assets();
 
 function isSQSEvent(event: any): event is SQSEvent {
     return event?.Records;
@@ -27,10 +28,6 @@ export async function handler<APIGatewayProxyEventV2WithoutAuthorization>(event:
 export async function handler<SQSEvent>(event: SQSEvent, context: Context): Promise<SQSBatchResponse>
 export async function handler<T>(event: T, context: Context): Promise<any> {
     console.log("Handling request", JSON.stringify({ event, context }));
-
-    const queue = new QueueDispatcher();
-    const db = new DB();
-    const assets = new Assets();
 
     if(isSQSEvent(event)) {
         const results = await Promise.all(event.Records.map(async item => {
