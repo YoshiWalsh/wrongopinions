@@ -5,7 +5,13 @@ import { AnalysedAnime, AnalysedById, convertAnalysedAnimeToContractScoredAnime,
 export function getSeriesDirectionCorrelations(analysedById: AnalysedById) {
     const sequences = getAllSequences(analysedById);
 
-    return sequences.filter(s => s.length > 1).map(getSeriesDirectionCorrelation);
+    const sequenceCorrelations = sequences.filter(s => s.length > 1).map(getSeriesDirectionCorrelation);
+    const deduplicatedSequenceCorrelations = deduplicateSequenceCorrelations(sequenceCorrelations);
+    console.log({
+        sequenceCorrelations,
+        deduplicatedSequenceCorrelations,
+    });
+    return deduplicatedSequenceCorrelations;
 }
 
 function getAllSequences(analysedById: AnalysedById) {
@@ -38,4 +44,18 @@ function getSeriesDirectionCorrelation(sequence: Array<AnalysedAnime>): Contract
         correlationCoefficient: correlationCoefficient,
         correlationScore: (correlationCoefficient * Math.pow(animeCountScalingFactor, 1) * Math.pow(userMagnitude * averageMagnitude, 0.5)) || 0,
     };
+}
+
+function deduplicateSequenceCorrelations(sequenceCorrelations: Array<Contracts.SeriesDirectionCorrelation>) {
+    const animeWorstCorrelationScores: {[title: string]: number} = {};
+
+    for(const sequenceCorrelation of sequenceCorrelations) {
+        for(const anime of sequenceCorrelation.sequence) {
+            if(sequenceCorrelation.correlationScore < (animeWorstCorrelationScores[anime.anime.defaultTitle] ?? Infinity)) {
+                animeWorstCorrelationScores[anime.anime.defaultTitle] = sequenceCorrelation.correlationScore
+            }
+        }
+    }
+
+    return sequenceCorrelations.filter(sequenceCorrelation => !sequenceCorrelation.sequence.find(a => sequenceCorrelation.correlationScore > animeWorstCorrelationScores[a.anime.defaultTitle]));
 }
