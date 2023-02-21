@@ -44,9 +44,9 @@
 
 // Adapted from https://css-irl.info/css-halftone-patterns/
 .halftone {
-    --min-dot-size: 0.2px;
-    --max-dot-size: 7px;
-    --dot-spacing: 16px;
+    --min-dot-size: 0.3px;
+    --max-dot-size: 9px;
+    --dot-spacing: 19px;
 
     position: absolute;
     top: 0;
