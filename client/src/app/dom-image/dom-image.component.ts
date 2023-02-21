@@ -1,4 +1,4 @@
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, EventEmitter, OnInit, Output, ViewChild } from '@angular/core';
 
 import domtoimage from 'dom-to-image-more';
 
@@ -13,6 +13,9 @@ export class DomImageComponent implements OnInit {
 	canvasElm!: ElementRef<HTMLDivElement>;
 
 	png?: string;
+
+	@Output()
+	dataUrl = new EventEmitter<string>();
 
 	private observer!: MutationObserver;
 

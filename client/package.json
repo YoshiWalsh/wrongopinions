@@ -28,6 +28,7 @@
     "dom-to-image-more": "^2.13.0",
     "humanize-duration": "^3.28.0",
     "rxjs": "~7.5.0",
+    "sanitize-filename": "^1.6.3",
     "string-algorithms": "^1.0.31",
     "ts-demand": "^1.0.1",
     "tslib": "^2.3.0",

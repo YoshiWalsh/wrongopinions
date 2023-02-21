@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { default as sanitizeFilename } from 'sanitize-filename';
 import { ActivatedRoute } from '@angular/router';
 import { Contracts } from 'wrongopinions-common';
 import { PendingJobStatus } from 'wrongopinions-common/dist/contracts';
@@ -60,6 +61,10 @@ export class OpinionsComponent implements OnInit {
 	statusDescription: string = "";
 
 	panels: Array<Panel> = [];
+
+	dataUrl: string | undefined;
+	file: File | undefined;
+	canShare: boolean = false;
 
 	constructor(
 		private route: ActivatedRoute,
@@ -228,5 +233,46 @@ export class OpinionsComponent implements OnInit {
 		}
 		
 		return "Unknown";
+	}
+
+	async dataUrlChanged(newUrl: string) {
+		if(!this.username || !this.results) {
+			return;
+		}
+
+		this.dataUrl = newUrl;
+
+		if(!navigator.canShare) {
+			this.canShare = false;
+			return;
+		}
+
+		const result = await fetch(newUrl);
+		const blob = await result.blob();
+
+		this.file = new File([blob], `WrongOpinions.moe ${sanitizeFilename(this.username)}.png`, {
+			type: 'image/png',
+			lastModified: new Date(this.results.completed).valueOf(),
+		});
+
+		this.canShare = navigator.canShare({
+			title: `${this.username}'s awful taste in anime | WrongOpinions.moe`,
+			files: [
+				this.file
+			],
+		});
+	}
+
+	async share() {
+		if(!this.username || !this.file) {
+			return;
+		}
+
+		navigator.share({
+			title: `${this.username}'s awful taste in anime | WrongOpinions.moe`,
+			files: [
+				this.file
+			],
+		});
 	}
 }

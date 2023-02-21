@@ -40,4 +40,8 @@
             </div>
         </div>
     </app-dom-image>
+    <div class="sharing">
+        <a class="button" download [href]="dataUrl">Download</a>
+        <a class="button" *ngIf="canShare" (click)="share()">Share</a>
+    </div>
 </div>

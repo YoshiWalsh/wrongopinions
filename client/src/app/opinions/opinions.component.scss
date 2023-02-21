@@ -112,6 +112,32 @@ app-dom-image {
                 font-size: 40px;
                 font-weight: bold;
             }
+
+.sharing {
+    display: flex;
+    flex-direction: row;
+
+    margin: -4px;
+
+    > * {
+        flex: 1;
+    }
+
+    a {
+        display: block;
+        text-decoration: none;
+        color: black;
+        height: 3rem;
+        line-height: 3rem;
+
+        margin: 4px;
+
+        text-align: center;
+
+        border: 1px solid black;
+
+        &:hover {
+            background: grey;
         }
     }
 }
