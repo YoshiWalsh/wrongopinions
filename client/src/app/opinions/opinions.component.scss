@@ -1,3 +1,25 @@
+h1, h2 {
+    margin: 0;
+}
+
+.status {
+    display: flex;
+    flex-direction: row;
+
+    .statusDescription {
+        flex-grow: 1;
+    }
+
+    .eta {
+        padding-right: 0.5em;
+    }
+}
+
+app-dom-image {
+    margin-top: 20px;
+    display: block;
+}
+
 .container {
     background: white;
     

@@ -46,9 +46,9 @@ form {
         mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 90%), transparent 200px, transparent),
             radial-gradient(circle at center, black, transparent 150px),
             radial-gradient(circle at center, black, transparent 150px),
-            linear-gradient(to right, black calc(50% - 900px), transparent calc(50% - 750px), transparent calc(50% + 750px), black calc(50% + 900px));
+            linear-gradient(to right, black calc(50% - 800px), transparent calc(50% - 650px), transparent calc(50% + 650px), black calc(50% + 800px));
 
-        mask-position: 0 0, -800px 0px, 800px 110px;
+        mask-position: 0 0, -700px 0px, 700px 110px;
         mask-size: 100% 100%, 100% 220px, 100% 220px;
         //mask-repeat: no-repeat;
         mask-repeat: no-repeat, repeat-y, repeat-y;

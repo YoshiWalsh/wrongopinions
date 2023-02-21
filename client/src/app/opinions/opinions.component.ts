@@ -9,6 +9,7 @@ import { ScoreDifferencePanel } from '../panel-layout/panel-types/score-differen
 import { SeriesDirectionPanel } from '../panel-layout/panel-types/series-direction';
 import { SpecialAwardPanel } from '../panel-layout/panel-types/special-award';
 import { UnpopularScorePanel } from '../panel-layout/panel-types/unpopular-score';
+import humanizeDuration from 'humanize-duration';
 
 export interface RankProperties {
     icon: string;
@@ -55,7 +56,7 @@ export class OpinionsComponent implements OnInit {
 	loadingIntervals?: Array<number> = undefined;
 	loadingProgress: number = 0;
 	loadingMaximumProgress: number = 0;
-	loadingEstimatedCompletionTime: number = 0;
+	loadingEstimatedCompletionTime: string = "";
 	statusDescription: string = "";
 
 	panels: Array<Panel> = [];
@@ -139,7 +140,10 @@ export class OpinionsComponent implements OnInit {
 			this.loading = false;
 			this.loadingProgress = (new Date(status.now)).getTime() / 1000;
 			this.loadingMaximumProgress = this.loadingIntervals.find(i => i > this.loadingProgress) || this.loadingProgress;
-			this.loadingEstimatedCompletionTime = this.loadingIntervals[this.loadingIntervals.length - 1] - this.loadingProgress;
+			const remainingMilliseconds = (this.loadingIntervals[this.loadingIntervals.length - 1] - this.loadingProgress) * 1000;
+			this.loadingEstimatedCompletionTime = humanizeDuration(remainingMilliseconds, {
+				round: true,
+			});
 			this.statusDescription = this.getStatusDescription();
 
 			if(!status.failed) {
