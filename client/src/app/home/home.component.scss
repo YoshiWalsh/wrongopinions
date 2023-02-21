@@ -23,6 +23,20 @@
     }
 }
 
+form {
+    margin: auto;
+    width: 300px;
+    max-width: 90vw;
+
+    > * {
+        display: block;
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        box-sizing: border-box;
+    }
+}
+
 .contentContainer {
     position: relative;
 
