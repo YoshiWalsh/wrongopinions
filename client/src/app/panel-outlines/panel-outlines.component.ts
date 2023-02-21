@@ -65,7 +65,7 @@ export class PanelOutlinesComponent implements OnInit, OnChanges {
 		// Adapted from https://observablehq.com/@oliviafvane/simple-pencil-ink-pen-effect-for-svg-path-using-filters
 		const filter = this.svg.filter(filter => {
 			const turb = filter.turbulence(0.067114093959731544, 5, 0, 'noStitch', 'turbulence');
-			filter.displacementMap(filter.$source, turb, 1, 'A', 'A');
+			filter.displacementMap(filter.$source, turb, 1.5, 'A', 'A');
 		}).attr({
 			// Expand the drawn area for the filter to avoid our lines being cropped.
 			'x': '-100%',
