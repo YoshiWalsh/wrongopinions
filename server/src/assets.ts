@@ -1,7 +1,7 @@
 import { Upload } from "@aws-sdk/lib-storage";
 import { ListObjectsV2Command, S3Client } from "@aws-sdk/client-s3";
 import { AdaptiveRetryStrategy } from '@aws-sdk/middleware-retry';
-import { get } from 'https';
+import { https } from 'follow-redirects';
 import { extname } from "path";
 
 export class Assets {
@@ -24,7 +24,7 @@ export class Assets {
         return new Promise((resolve, reject) => {
             const path = (new URL(url)).pathname;
             const extension = extname(path);
-            get(url, async response => {
+            https.get(url, async response => {
                 try {
                     const key = `assets/anime/posters/${id}${extension}`;
                     const uploader = new Upload({
