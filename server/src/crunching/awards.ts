@@ -420,7 +420,7 @@ const awards: Array<Award> = [
         description: "Your anti-AI prejudice has blinded you to the quality of the objectively-best robot anime."
     }),
     new ComparisonAward({
-        name: "Yaegerist",
+        name: "Yeagerist",
         description: "You liked Attack on Titan when it was just about yelling and fighting, but not so much once it required you to think.",
         reason: "Awarded for scoring Shingeki no Kyoujin S3/S4P1 lower than S1/S2.",
         worseShowIds: [

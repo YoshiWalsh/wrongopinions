@@ -59,8 +59,8 @@ const specialAwards: {[name: string]: AwardProperties} = {
         icon: "/assets/special-award-icons/neo-luddite.svg",
         interest: 1,
     },
-    "Yaegerist": {
-        icon: "/assets/special-award-icons/yaegerist.svg",
+    "Yeagerist": {
+        icon: "/assets/special-award-icons/yeagerist.svg",
         interest: 1,
     },
     "Newer = Better?": {
