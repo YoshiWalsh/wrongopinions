@@ -48,7 +48,7 @@ const specialAwards: {[name: string]: AwardProperties} = {
         interest: 1,
     },
     "Humourless": {
-        icon: "/assets/special-award-icons/humourless.svg", // TODO
+        icon: "/assets/special-award-icons/humourless.svg",
         interest: 1,
     },
     "Sociopath": {
@@ -56,7 +56,7 @@ const specialAwards: {[name: string]: AwardProperties} = {
         interest: 1,
     },
     "Neo-Luddite": {
-        icon: "/assets/special-award-icons/neo-luddite.svg", // TODO
+        icon: "/assets/special-award-icons/neoluddite.svg",
         interest: 1,
     },
     "Yeagerist": {
