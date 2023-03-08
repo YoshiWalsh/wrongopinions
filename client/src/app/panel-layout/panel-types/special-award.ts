@@ -92,11 +92,11 @@ const specialAwards: {[name: string]: AwardProperties} = {
         interest: 1,
     },
     "Bin Diver": {
-        icon: "/assets/special-award-icons/bindiver.svg", // TODO
+        icon: "/assets/special-award-icons/bindiver.svg",
         interest: 1,
     },
     "Silver Spoon": {
-        icon: "/assets/special-award-icons/silverspoon.svg", // TODO
+        icon: "/assets/special-award-icons/silverspoon.svg",
         interest: 1,
     },
     "Loner": {
@@ -104,15 +104,15 @@ const specialAwards: {[name: string]: AwardProperties} = {
         interest: 1,
     },
     "Judging by the cover": {
-        icon: "/assets/special-award-icons/judgingbythecover.svg", // TODO
+        icon: "/assets/special-award-icons/judgingbythecover.svg",
         interest: 1,
     },
     "Hasty": {
-        icon: "/assets/special-award-icons/hasty.svg", // TODO
+        icon: "/assets/special-award-icons/hasty.svg",
         interest: 1,
     },
     "Quitter": {
-        icon: "/assets/special-award-icons/quitter.svg", // TODO
+        icon: "/assets/special-award-icons/quitter.svg",
         interest: 1,
     },
     "Theoretical Weeb": {
