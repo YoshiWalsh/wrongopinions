@@ -119,8 +119,8 @@ const specialAwards: {[name: string]: AwardProperties} = {
         icon: "/assets/special-award-icons/theoreticalweeb2.svg",
         interest: 1,
     },
-    "Cryostatis": {
-        icon: "/assets/special-award-icons/cryostatis.svg",
+    "Cryostasis": {
+        icon: "/assets/special-award-icons/cryostasis.svg",
         interest: 1,
     },
     "Unbalanced": {

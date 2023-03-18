@@ -573,7 +573,7 @@ const awards: Array<Award> = [
         threshold: 0.5
     }),
     new AmountListedAward({
-        name: "Cryostatis",
+        name: "Cryostasis",
         description: "Be honest with yourself, are you ever going to resume those shows? Just mark them 'dropped' and move on with your life.",
         reason: "Have more than 10 shows in on-hold status.",
         predicate: a => a.list_status.status == 'on_hold',
