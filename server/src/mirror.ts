@@ -4,9 +4,9 @@ import { AdaptiveRetryStrategy } from '@aws-sdk/middleware-retry';
 import { https } from 'follow-redirects';
 import { extname } from "path";
 
-export class Assets {
+export class Mirror {
     s3: S3Client;
-    assetsBucketName: string;
+    mirrorBucketName: string;
     domain: string;
 
     constructor() {
@@ -16,7 +16,7 @@ export class Assets {
                 
             })
         });
-        this.assetsBucketName = process.env.ASSETS_BUCKET_NAME as string;
+        this.mirrorBucketName = process.env.MIRROR_BUCKET_NAME as string;
         this.domain = process.env.DOMAIN as string;
     }
 
@@ -26,11 +26,11 @@ export class Assets {
             const extension = extname(path);
             https.get(url, async response => {
                 try {
-                    const key = `assets/anime/posters/${id}${extension}`;
+                    const key = `mirrored/anime/posters/${id}${extension}`;
                     const uploader = new Upload({
                         client: this.s3,
                         params: {
-                            Bucket: this.assetsBucketName,
+                            Bucket: this.mirrorBucketName,
                             Key: key,
                             Body: response,
                         },
@@ -47,8 +47,8 @@ export class Assets {
 
     async getAnimePosterUrl(id: number): Promise<string | null> {
         const response = await this.s3.send(new ListObjectsV2Command({
-            Bucket: this.assetsBucketName,
-            Prefix: `assets/anime/posters/${id}.`,
+            Bucket: this.mirrorBucketName,
+            Prefix: `mirrored/anime/posters/${id}.`,
         }));
         const objects = response.Contents;
         if(!objects) {

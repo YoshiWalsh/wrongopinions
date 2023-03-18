@@ -8,11 +8,11 @@ import { loadAnime } from './fetching/anime';
 import { initialiseJob, getPendingJobStatus, getFullStatus, processJob } from './fetching/job';
 import { convertExceptionToResponse } from './error';
 import { Contracts } from 'wrongopinions-common';
-import { Assets } from './assets';
+import { Mirror } from './mirror';
 
 const db = new DB();
 const queue = new QueueDispatcher();
-const assets = new Assets();
+const mirror = new Mirror();
 
 function isSQSEvent(event: any): event is SQSEvent {
     return event?.Records;
@@ -36,7 +36,7 @@ export async function handler<T>(event: T, context: Context): Promise<any> {
                 
                 switch(message.type) {
                     case QueueMessageType.Anime:
-                        await loadAnime(db, assets, queue, message.id);
+                        await loadAnime(db, mirror, queue, message.id);
                         break;
                     case QueueMessageType.Processing:
                         await processJob(db, message.username);

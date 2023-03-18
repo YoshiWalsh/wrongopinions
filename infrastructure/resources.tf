@@ -16,16 +16,16 @@ resource "aws_s3_bucket" "data_bucket" {
     bucket = join("-", ["wrongopinions", random_id.environment_identifier.hex, "data"])
 }
 
-resource "aws_s3_bucket" "assets_bucket" {
-    bucket = join("-", ["wrongopinions", random_id.environment_identifier.hex, "assets"])
+resource "aws_s3_bucket" "mirror_bucket" {
+    bucket = join("-", ["wrongopinions", random_id.environment_identifier.hex, "mirror"])
 }
 
-resource "aws_s3_bucket_policy" "assets_policy_attachment" {
-    bucket = aws_s3_bucket.assets_bucket.id
-    policy = data.aws_iam_policy_document.assets_policy.json
+resource "aws_s3_bucket_policy" "mirror_policy_attachment" {
+    bucket = aws_s3_bucket.mirror_bucket.id
+    policy = data.aws_iam_policy_document.mirror_policy.json
 }
 
-data "aws_iam_policy_document" "assets_policy" {
+data "aws_iam_policy_document" "mirror_policy" {
     statement {
         principals {
             type = "Service"
@@ -38,8 +38,8 @@ data "aws_iam_policy_document" "assets_policy" {
         ]
 
         resources = [
-            aws_s3_bucket.assets_bucket.arn,
-            "${aws_s3_bucket.assets_bucket.arn}/*",
+            aws_s3_bucket.mirror_bucket.arn,
+            "${aws_s3_bucket.mirror_bucket.arn}/*",
         ]
 
         condition {
@@ -50,8 +50,8 @@ data "aws_iam_policy_document" "assets_policy" {
     }
 }
 
-resource "aws_s3_bucket_cors_configuration" "assets_bucket_cors" {
-    bucket = aws_s3_bucket.assets_bucket.id
+resource "aws_s3_bucket_cors_configuration" "mirror_bucket_cors" {
+    bucket = aws_s3_bucket.mirror_bucket.id
 
     cors_rule {
         allowed_methods = ["GET"]
@@ -190,7 +190,7 @@ resource "aws_iam_role_policy" "function_role_s3" {
                 Effect   = "Allow",
                 Resource = [
                     aws_s3_bucket.data_bucket.arn,
-                    aws_s3_bucket.assets_bucket.arn,
+                    aws_s3_bucket.mirror_bucket.arn,
                 ]
             },
             {
@@ -201,7 +201,7 @@ resource "aws_iam_role_policy" "function_role_s3" {
                 Effect   = "Allow",
                 Resource = [
                     join("/", [aws_s3_bucket.data_bucket.arn, "*"]),
-                    join("/", [aws_s3_bucket.assets_bucket.arn, "*"]),
+                    join("/", [aws_s3_bucket.mirror_bucket.arn, "*"]),
                 ]
             }
         ]
@@ -254,7 +254,7 @@ resource "aws_lambda_function" "function_limited" {
         variables = {
             TABLE_NAME = aws_dynamodb_table.dynamodb_table.id
             DATA_BUCKET_NAME = aws_s3_bucket.data_bucket.id
-            ASSETS_BUCKET_NAME = aws_s3_bucket.assets_bucket.id
+            MIRROR_BUCKET_NAME = aws_s3_bucket.mirror_bucket.id
             DOMAIN = var.domain
             SQS_QUEUE_URL = aws_sqs_queue.fast_queue.id
             MAL_CLIENT_ID = var.mal_client_id
@@ -280,7 +280,7 @@ resource "aws_lambda_function" "function_heavyweight" {
         variables = {
             TABLE_NAME = aws_dynamodb_table.dynamodb_table.id
             DATA_BUCKET_NAME = aws_s3_bucket.data_bucket.id
-            ASSETS_BUCKET_NAME = aws_s3_bucket.assets_bucket.id
+            MIRROR_BUCKET_NAME = aws_s3_bucket.mirror_bucket.id
             DOMAIN = var.domain
             SQS_QUEUE_URL = aws_sqs_queue.fast_queue.id
             MAL_CLIENT_ID = var.mal_client_id
@@ -306,7 +306,7 @@ resource "aws_lambda_function" "function_lightweight" {
         variables = {
             TABLE_NAME = aws_dynamodb_table.dynamodb_table.id
             DATA_BUCKET_NAME = aws_s3_bucket.data_bucket.id
-            ASSETS_BUCKET_NAME = aws_s3_bucket.assets_bucket.id
+            MIRROR_BUCKET_NAME = aws_s3_bucket.mirror_bucket.id
             DOMAIN = var.domain
             SQS_QUEUE_URL = aws_sqs_queue.fast_queue.id
             MAL_CLIENT_ID = var.mal_client_id
@@ -568,8 +568,8 @@ resource "aws_cloudfront_response_headers_policy" "response_headers" {
 
 resource "aws_cloudfront_distribution" "cf_distribution" {
     origin {
-        origin_id = "assets"
-        domain_name = aws_s3_bucket.assets_bucket.bucket_regional_domain_name
+        origin_id = "mirror"
+        domain_name = aws_s3_bucket.mirror_bucket.bucket_regional_domain_name
         origin_access_control_id = aws_cloudfront_origin_access_control.cf_oac.id
     }
 
@@ -612,12 +612,12 @@ resource "aws_cloudfront_distribution" "cf_distribution" {
     }
 
     ordered_cache_behavior {
-        path_pattern = "/assets/*"
+        path_pattern = "/mirrored/*"
 
         allowed_methods = ["GET", "HEAD", "OPTIONS"]
         cached_methods = ["GET", "HEAD"]
 
-        target_origin_id = "assets"
+        target_origin_id = "mirror"
 
         forwarded_values {
             query_string = false
@@ -652,7 +652,7 @@ resource "aws_cloudfront_distribution" "cf_distribution" {
     }
 
     custom_error_response {
-        # 403 means the object was not found in the assets bucket, we should return 404 as the asset doesn't exist
+        # 403 means the object was not found in the mirror bucket, we should return 404 as the asset doesn't exist
         error_code = 403
         error_caching_min_ttl = 3600
         response_code = 404
