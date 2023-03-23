@@ -132,7 +132,7 @@ const specialAwards: {[name: string]: AwardProperties} = {
         interest: 1,
     },
     "Creature of Habit": {
-        icon: "/assets/special-award-icons/creatureofhabit.svg", // TODO
+        icon: "/assets/special-award-icons/creatureofhabit.svg",
         interest: 1,
     },    
 };
