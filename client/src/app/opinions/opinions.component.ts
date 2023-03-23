@@ -182,8 +182,8 @@ export class OpinionsComponent implements OnInit {
 		}
 
 		const animeListPanels = [
-			new ScoreDifferencePanel(this.results.mostOverratedShows),
-			new ScoreDifferencePanel(this.results.mostUnderratedShows),
+			new ScoreDifferencePanel(true, this.results.mostOverratedShows),
+			new ScoreDifferencePanel(false, this.results.mostUnderratedShows),
 			new UnpopularScorePanel(this.results.leastPopularScores),
 		];
 		AnimeListPanel.tournamentArc(animeListPanels);

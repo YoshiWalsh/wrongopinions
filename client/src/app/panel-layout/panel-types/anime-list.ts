@@ -15,11 +15,6 @@ interface Layout {
 const layouts = [
     {
         columns: 1,
-        rows: 1,
-        animeCount: 1
-    },
-    {
-        columns: 1,
         rows: 2,
         animeCount: 3
     },

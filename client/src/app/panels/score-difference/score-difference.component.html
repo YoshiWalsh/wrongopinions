@@ -1,3 +1,5 @@
+<h3 *ngIf="panel.overrated">You actually like this stuff?</h3>
+<h3 *ngIf="!panel.overrated">How don't you like...?</h3>
 <div class="container">
     <div class="column" *ngFor="let column of animeByColumns">
         <table>

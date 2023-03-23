@@ -23,11 +23,13 @@ app-dom-image {
 .container {
     background: white;
     
-    width: 1080px;
-    height: 1350px;
+    width: 1020px;
+    height: 1060px;
 
     display: flex;
     flex-direction: column;
+
+    font-family: 'Itim', sans-serif;
 
     position: relative;
 
@@ -37,13 +39,14 @@ app-dom-image {
         left: 0;
         right: 0;
         text-align: center;
-        font-family: 'Roboto Mono', monospace;
+        font-family: 'Carter One', monospace;
         font-size: 14px;
     }
 
     .titleRow {
         display: flex;
         flex-direction: row;
+        height: 80px;
 
         .icon {
             flex-grow: 0;
@@ -62,7 +65,8 @@ app-dom-image {
 
             .username {
                 font-size: 30px;
-                font-weight: bold;
+                font-weight: 300;
+                font-family: 'Rowdies';
             }
 
             .bakaRank {
@@ -71,14 +75,20 @@ app-dom-image {
                 .bakaRankName {
                     font-size: 30px;
                     font-weight: normal;
+                    font-family: 'Carter One';
+                }
+
+                .bakaRankCaptionContainer {
+                    position: relative;
                 }
 
                 .bakaRankCaption {
+                    position: absolute;
                     margin-left: 10px;
                     font-size: 16px;
+                    height: 3em;
 
                     overflow: hidden;
-                    position: relative;
 
                     width: fit-content;
 
@@ -110,8 +120,12 @@ app-dom-image {
 
             .bakaScore {
                 font-size: 40px;
-                font-weight: bold;
+                font-weight: 700;
+                font-family: 'Gajraj One';
             }
+        }
+    }
+}
 
 .sharing {
     display: flex;

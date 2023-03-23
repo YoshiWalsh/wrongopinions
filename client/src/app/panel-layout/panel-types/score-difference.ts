@@ -2,6 +2,13 @@ import { Contracts } from "wrongopinions-common";
 import { AnimeListPanel } from "./anime-list";
 
 export class ScoreDifferencePanel extends AnimeListPanel {
+    overrated: boolean;
+    constructor(overrated: boolean, anime: Array<Contracts.ScoredAnime>) {
+        super(anime);
+
+        this.overrated = overrated;
+    }
+
     protected override getAnimeInterest(anime: Contracts.ScoredAnime): number {
         const direction = Math.sign(anime.userScore - anime.globalScore);
         const maximumPossibleDeviation = direction === 1 ? (10 - anime.globalScore) : (anime.globalScore - 1);

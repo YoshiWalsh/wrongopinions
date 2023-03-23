@@ -4,10 +4,19 @@
 @import "~@fontsource/open-sans/700.css";
 @import "~@fontsource/open-sans/700-italic.css";
 @import "~@fontsource/roboto-mono";
+@import "~@fontsource/carter-one/400.css";
+@import "~@fontsource/itim/400.css";
+@import "~@fontsource/rowdies/300.css";
+@import "~@fontsource/rowdies/700.css";
+@import "~@joshuawalsh/gajraj-one/latin-400.css";
 
 body {
     font-family: 'Open Sans', sans-serif;
     margin: 0;
+}
+
+h1 {
+    font-family: 'Carter One', sans-serif;
 }
 
 .content {

@@ -101,7 +101,7 @@ export class PanelOutlinesComponent implements OnInit, OnChanges {
 					const negativeInterest = (panelsMap[i - 1][lineStartRow]?.size?.interest ?? 0) + (panelsMap[i][i2]?.size?.interest ?? 0) * 0.6;
 					const positiveInterest = (panelsMap[i][lineStartRow]?.size?.interest ?? 0) + (panelsMap[i - 1][i2]?.size?.interest ?? 0) * 0.6;
 					const interestDifference = positiveInterest - negativeInterest;
-					const slantAmount = Math.min(interestDifference * 2, 1) * this.gaps;
+					const slantAmount = Math.min(interestDifference * 2, 1) * this.gaps * 0.75;
 
 					for(let y = lineStartRow; y <= i2; y++) {
 						const slantFactor = (y - lineStartRow) / (i2 - lineStartRow) - 0.5;
@@ -127,7 +127,7 @@ export class PanelOutlinesComponent implements OnInit, OnChanges {
 					const negativeInterest = (panelsMap[lineStartColumn]?.[i - 1]?.size?.interest ?? 0) + (panelsMap[i2]?.[i]?.size?.interest ?? 0) * 0.6;
 					const positiveInterest = (panelsMap[lineStartColumn]?.[i]?.size?.interest ?? 0) + (panelsMap[i2]?.[i - 1]?.size?.interest ?? 0) * 0.6;
 					const interestDifference = positiveInterest - negativeInterest;
-					const slantAmount = Math.max(-1, Math.min(interestDifference * 2, 1)) * this.gaps;
+					const slantAmount = Math.max(-1, Math.min(interestDifference * 2, 1)) * this.gaps * 0.75;
 
 					for(let x = lineStartColumn; x <= i2; x++) {
 						const slantFactor = (x - lineStartColumn) / (i2 - lineStartColumn) - 0.5;

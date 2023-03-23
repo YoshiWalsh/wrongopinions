@@ -1,15 +1,20 @@
 app-panel-outlines {
     position: absolute;
+    z-index: 1;
 }
+
 .panel-grid {
+    position: relative;
     display: grid;
     margin: 5px;
-    grid-template-rows: repeat(var(--rows), 115px);
+    grid-template-columns: repeat(var(--columns), 500px);
+    grid-template-rows: repeat(var(--rows), 130px);
     grid-gap: 10px;
+
+    z-index: 0;
 
     .panel {
         position: relative;
-        border: 1px solid black;
         border-radius: 2px;
     }
 }
