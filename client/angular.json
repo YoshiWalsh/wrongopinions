@@ -30,6 +30,12 @@
             "styles": [
               "src/styles.scss"
             ],
+            "sourceMap": {
+              "hidden": false,
+              "scripts": true,
+              "styles": true,
+              "vendor": true
+            },
             "scripts": []
           },
           "configurations": {
