@@ -581,7 +581,7 @@ const awards: Array<Award> = [
     }),
     new UnbalancedAward({
         name: "Unbalanced",
-        description: "It wouldn't kill you to go outside of your comfort zone some time.",
+        description: "Other genres exist, you know?",
         threshold: 0.7,
         commonality: 'relating to the same genre',
         getTags: a => a.details.genres.concat(a.details.explicit_genres).map(a => a.name),
