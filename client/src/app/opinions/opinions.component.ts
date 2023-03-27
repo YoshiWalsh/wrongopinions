@@ -207,6 +207,9 @@ export class OpinionsComponent implements OnInit {
 			if(this.inProgressRender === renderId) {
 				this.imageRendered(png);
 			}
+		}, () => {
+			this.loading = false;
+			this.statusDescription = "Your browser is not supported. Please try again using Chrome or Firefox."
 		});
 	}
 	

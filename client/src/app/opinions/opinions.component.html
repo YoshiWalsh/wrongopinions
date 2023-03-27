@@ -41,7 +41,7 @@
         </div>
     </app-dom-image>
     <img [hidden]="!dataUrl" [src]="dataUrl" class="renderedImage" />
-    <div class="sharing" *ngIf="results">
+    <div class="sharing" *ngIf="dataUrl">
         <a class="button" download [href]="dataUrl">Save</a>
         <a class="button" *ngIf="canShare" (click)="share()">Share</a>
     </div>
