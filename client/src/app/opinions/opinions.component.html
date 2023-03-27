@@ -7,8 +7,8 @@
         <span class="eta" *ngIf="pendingJob && pendingJob.completed && pendingJob.now">~{{loadingEstimatedCompletionTime}}</span>
         <button [disabled]="loading" (click)="startJob()">{{ pendingJob ? 'Resubmit' : 'Update'}}</button>
     </div>
-    <app-dom-image *ngIf="results" (dataUrl)="dataUrlChanged($event)">
-        <div class="container">
+    <app-dom-image>
+        <div class="container" *ngIf="results">
             <span class="fineprint">WrongOpinions.moe</span>
             <div class="titleRow">
                 <div class="icon" [ngStyle]="{
@@ -40,8 +40,9 @@
             </div>
         </div>
     </app-dom-image>
-    <div class="sharing">
-        <a class="button" download [href]="dataUrl">Download</a>
+    <img [hidden]="!dataUrl" [src]="dataUrl" class="renderedImage" />
+    <div class="sharing" *ngIf="results">
+        <a class="button" download [href]="dataUrl">Save</a>
         <a class="button" *ngIf="canShare" (click)="share()">Share</a>
     </div>
 </div>

@@ -127,6 +127,12 @@ app-dom-image {
     }
 }
 
+.renderedImage {
+    display: block;
+    margin: auto;
+    max-width: 100%;
+}
+
 .sharing {
     display: flex;
     flex-direction: row;

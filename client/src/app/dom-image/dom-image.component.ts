@@ -1,4 +1,4 @@
-import { Component, ElementRef, EventEmitter, OnInit, Output, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 
 import domtoimage from 'dom-to-image-more';
 
@@ -12,40 +12,34 @@ export class DomImageComponent implements OnInit {
 	@ViewChild("canvas")
 	canvasElm!: ElementRef<HTMLDivElement>;
 
-	png?: string;
-
-	@Output()
-	dataUrl = new EventEmitter<string>();
-
-	private observer!: MutationObserver;
-
 	constructor() { }
 
 	ngOnInit(): void {
 	}
 
-	ngAfterViewInit() {
-		this.observer = new MutationObserver(mutations => {
-			this.renderImage();
-		});
+	public async renderImage(): Promise<string> {
+		await delay(0);
 
-		this.observer.observe(this.canvasElm.nativeElement, { subtree: true, attributes: true, childList: true, characterData: true });
-
-		this.renderImage();
-	}
-
-	private renderImage() {
 		const bounding = this.canvasElm.nativeElement.getBoundingClientRect();
-		domtoimage.toPng(this.canvasElm.nativeElement as Element, {
-			quality: 100,
-			width: bounding.width + 1,
-			height: bounding.height + 1,
-		}).then((res) => {
-			this.png = res;
-		});
-	}
 
-	ngOnDestroy() {
-		this.observer.disconnect();
+		try {
+			const png = await domtoimage.toPng(this.canvasElm.nativeElement as Element, {
+				quality: 100,
+				width: bounding.width,
+				height: bounding.height,
+			});
+			return png;
+		} catch (ex) {
+			console.error(ex);
+			throw ex;
+		}
 	}
+}
+
+function delay(ms: number): Promise<void> {
+	return new Promise(resolve => {
+		setTimeout(() => {
+			resolve();
+		}, ms);
+	});
 }

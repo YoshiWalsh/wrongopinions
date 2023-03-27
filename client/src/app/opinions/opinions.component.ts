@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { default as sanitizeFilename } from 'sanitize-filename';
 import { ActivatedRoute } from '@angular/router';
 import { Contracts } from 'wrongopinions-common';
@@ -11,6 +11,7 @@ import { SeriesDirectionPanel } from '../panel-layout/panel-types/series-directi
 import { SpecialAwardPanel } from '../panel-layout/panel-types/special-award';
 import { UnpopularScorePanel } from '../panel-layout/panel-types/unpopular-score';
 import humanizeDuration from 'humanize-duration';
+import { DomImageComponent } from '../dom-image/dom-image.component';
 
 export interface RankProperties {
     icon: string;
@@ -66,6 +67,10 @@ export class OpinionsComponent implements OnInit {
 	file: File | undefined;
 	canShare: boolean = false;
 
+	@ViewChild(DomImageComponent)
+	renderer!: DomImageComponent;
+	inProgressRender: Symbol | null = null;
+
 	constructor(
 		private route: ActivatedRoute,
 		private api: ApiService,
@@ -93,8 +98,6 @@ export class OpinionsComponent implements OnInit {
 				return;
 			}
 			
-			this.loading = false;
-
 			if(status.results) {
 				this.results = status.results;
 				this.setUpPanels();
@@ -103,7 +106,6 @@ export class OpinionsComponent implements OnInit {
 				this.pendingJob = status.pending;
 				this.processPendingStatus(this.username, Promise.resolve(this.pendingJob));
 			}
-			this.statusDescription = this.getStatusDescription();
 
 			if(!status.results && !status.pending) {
 				this.startJob();
@@ -166,7 +168,9 @@ export class OpinionsComponent implements OnInit {
 			}
 
 			this.pendingJob = null;
-			this.statusDescription = this.getStatusDescription();
+			this.loading = true;
+			this.statusDescription = "Loading...";
+			this.loadingIntervals = undefined;
 
 			this.api.getFullStatus(username).then(fullStatus => {
 				this.results = fullStatus.results;
@@ -193,6 +197,17 @@ export class OpinionsComponent implements OnInit {
 			...this.results.specialAwards.map(a => new SpecialAwardPanel(a)),
 			...this.results.seriesDirectionCorrelations.map(sd => new SeriesDirectionPanel(sd)),
 		];
+
+		this.loading = true;
+		this.statusDescription = "Rendering image...";
+
+		const renderId = Symbol("renderId");
+		this.inProgressRender = renderId;
+		this.renderer.renderImage().then(png => {
+			if(this.inProgressRender === renderId) {
+				this.imageRendered(png);
+			}
+		});
 	}
 	
 	getBakaIcon() {
@@ -235,11 +250,13 @@ export class OpinionsComponent implements OnInit {
 		return "Unknown";
 	}
 
-	async dataUrlChanged(newUrl: string) {
+	async imageRendered(newUrl: string) {
 		if(!this.username || !this.results) {
 			return;
 		}
 
+		this.loading = false;
+		this.statusDescription = this.getStatusDescription();
 		this.dataUrl = newUrl;
 
 		if(!navigator.canShare) {
