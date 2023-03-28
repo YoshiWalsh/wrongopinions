@@ -76,11 +76,11 @@ const specialAwards: {[name: string]: AwardProperties} = {
         interest: 1,
     },
     "Uncritical": {
-        icon: "/assets/special-award-icons/uncritical.svg", // TODO
+        icon: "/assets/special-award-icons/uncritical.svg",
         interest: 1,
     },
     "Jaded": {
-        icon: "/assets/special-award-icons/jaded.svg", // TODO
+        icon: "/assets/special-award-icons/jaded.svg",
         interest: 1,
     },
     "Whippersnapper": {
