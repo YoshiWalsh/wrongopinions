@@ -365,8 +365,8 @@ const awards: Array<Award> = [
     new GenreAward({
         genre: 'Harem',
         direction: 1,
-        name: 'Greedy',
-        description: 'A bigamist like you isn\'t satisfied by disappointing only a single romantic partner. You treat people like Pokémon, trying to collect them all.',
+        name: 'Bigamist',
+        description: 'You’re too greedy to be satisfied by disappointing only a single romantic partner. You treat people like Pokémon, trying to collect them all.',
     }),
     new GenreAward({
         genre: 'Slice of Life',

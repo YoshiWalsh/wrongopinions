@@ -23,8 +23,8 @@ const specialAwards: {[name: string]: AwardProperties} = {
         icon: "/assets/special-award-icons/heartless.svg",
         interest: 1,
     },
-    "Greedy": {
-        icon: "/assets/special-award-icons/greedy.svg", // TODO
+    "Bigamist": {
+        icon: "/assets/special-award-icons/bigamist.svg",
         interest: 1,
     },
     "Boring": {
