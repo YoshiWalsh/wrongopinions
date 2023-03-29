@@ -434,8 +434,8 @@ const awards: Array<Award> = [
         ]
     }),
     new ComparisonAward({
-        name: "Newer = Better?",
-        description: "Neon Genesis and End of Evangelion are masterpieces, while Rebuild of Evangelion is a disjointed mess. Do you just like the modern visuals?",
+        name: "Superficial",
+        description: "I guess you'll accept a disjointed mess of a story if it means higher budget visuals. Or are you just a Mari simp?",
         reason: "Awarded for scoring the Rebuilds higher than NGE+EoE.",
         worseShowIds: [
             2759, // 1.0

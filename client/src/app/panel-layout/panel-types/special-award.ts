@@ -63,8 +63,8 @@ const specialAwards: {[name: string]: AwardProperties} = {
         icon: "/assets/special-award-icons/yeagerist.svg",
         interest: 1,
     },
-    "Newer = Better?": {
-        icon: "/assets/special-award-icons/newerbetter.svg", // TODO
+    "Superficial": {
+        icon: "/assets/special-award-icons/superficial.svg",
         interest: 1,
     },
     "Only Child": {
