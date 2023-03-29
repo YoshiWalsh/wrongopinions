@@ -12,7 +12,7 @@ const specialAwards: {[name: string]: AwardProperties} = {
         interest: 1,
     },
     "Pretentious": {
-        icon: "/assets/special-award-icons/pretentious2.svg",
+        icon: "/assets/special-award-icons/pretentious.svg",
         interest: 1,
     },
     "Meathead": {
@@ -24,7 +24,7 @@ const specialAwards: {[name: string]: AwardProperties} = {
         interest: 1,
     },
     "Bigamist": {
-        icon: "/assets/special-award-icons/bigamist2.svg",
+        icon: "/assets/special-award-icons/bigamist.svg",
         interest: 1,
     },
     "Boring": {
@@ -68,7 +68,7 @@ const specialAwards: {[name: string]: AwardProperties} = {
         interest: 1,
     },
     "Only Child": {
-        icon: "/assets/special-award-icons/onlychild2.svg",
+        icon: "/assets/special-award-icons/onlychild.svg",
         interest: 1,
     },
     "Hipster": {
@@ -116,7 +116,7 @@ const specialAwards: {[name: string]: AwardProperties} = {
         interest: 1,
     },
     "Theoretical Weeb": {
-        icon: "/assets/special-award-icons/theoreticalweeb2.svg",
+        icon: "/assets/special-award-icons/theoreticalweeb.svg",
         interest: 1,
     },
     "Cryostasis": {
