@@ -100,7 +100,7 @@ const specialAwards: {[name: string]: AwardProperties} = {
         interest: 1,
     },
     "Loner": {
-        icon: "/assets/special-award-icons/loner.svg", // TODO
+        icon: "/assets/special-award-icons/loner.svg",
         interest: 1,
     },
     "Judging by the cover": {
