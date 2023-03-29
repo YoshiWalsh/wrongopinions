@@ -144,7 +144,7 @@ export class DB {
             return acc;
         }, {});
 
-        const unprocessedIds = result.UnprocessedKeys?.[this.tableName]?.Keys?.map(k => parseInt(k["PK"].S as string, 10)) ?? [];
+        const unprocessedIds = result.UnprocessedKeys?.[this.tableName]?.Keys?.map(k => parseInt(k["PK"].S?.replace(/^anime-/, "") as string, 10)) ?? [];
         return {
             ...keyed,
             ...(ids.length > BATCH_READ_SIZE || unprocessedIds.length ?
