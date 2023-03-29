@@ -32,7 +32,7 @@ const specialAwards: {[name: string]: AwardProperties} = {
         interest: 1,
     },
     "Prude": {
-        icon: "/assets/special-award-icons/prude.svg", // TODO
+        icon: "/assets/special-award-icons/prude.svg",
         interest: 1,
     },
     "Tasteless": {
