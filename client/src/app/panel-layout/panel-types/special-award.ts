@@ -24,7 +24,7 @@ const specialAwards: {[name: string]: AwardProperties} = {
         interest: 1,
     },
     "Bigamist": {
-        icon: "/assets/special-award-icons/bigamist.svg",
+        icon: "/assets/special-award-icons/bigamist2.svg",
         interest: 1,
     },
     "Boring": {
