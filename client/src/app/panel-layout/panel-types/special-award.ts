@@ -68,7 +68,7 @@ const specialAwards: {[name: string]: AwardProperties} = {
         interest: 1,
     },
     "Only Child": {
-        icon: "/assets/special-award-icons/onlychild3.svg",
+        icon: "/assets/special-award-icons/onlychild2.svg",
         interest: 1,
     },
     "Hipster": {
