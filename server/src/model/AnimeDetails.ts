@@ -3,11 +3,12 @@ export enum AnimeStatus {
     Cached = "cached",
     Failed = "failed",
 }
-import { IAnimeFull, IAnimeStats } from '@shineiichijo/marika';
+import { IAnimeCharacters, IAnimeFull, IAnimeStats } from '@shineiichijo/marika';
 
 export interface AnimeData {
     details: IAnimeFull;
     stats: IAnimeStats;
+    characters: IAnimeCharacters;
     poster: string;
 }
 

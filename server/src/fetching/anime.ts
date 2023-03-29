@@ -1,7 +1,7 @@
 import { DB } from "../db";
 import { QueueDispatcher } from "./queueDispatcher";
 import { LocalDate, ZonedDateTime, ZoneOffset } from '@js-joda/core';
-import { Anime as MarikaAnime, IAnimeFull, IAnimeStats } from '@shineiichijo/marika';
+import { Anime as MarikaAnime, IAnimeFull, IAnimeStats, IAnimeCharacters } from '@shineiichijo/marika';
 import { ratelimit, retry } from '../utils';
 import { Mirror } from "../mirror";
 import { default as axios } from 'axios';
@@ -15,19 +15,26 @@ axios.defaults.timeout = 10 * 1000; // Avoid pointless waiting when https://gith
 export async function loadAnime(db: DB, mirror: Mirror, queue: QueueDispatcher, id: number): Promise<void> {
     let details: IAnimeFull;
     let stats: IAnimeStats;
-    await ratelimit(1 * 2); // We need to make two requests, so we double the ratelimit.
+    let characters: IAnimeCharacters;
+    await ratelimit(1 * 3); // We need to make three requests but ideally we don't want to wait unnecessarily between requests.
     console.log("Loading anime", id);
     try {
-        details = await retry(() => marika.anime.getAnimeFullById(id), 3, 2);
+        details = await retry(() => marika.anime.getAnimeFullById(id), 3, 1);
     } catch (ex) {
         console.error(ex);
         throw new Error(`Failed to get details for anime ${id}`);
     }
     try {
-        stats = await retry(() => marika.anime.getAnimeStats(id), 3, 2);
+        stats = await retry(() => marika.anime.getAnimeStats(id), 3, 1);
     } catch (ex) {
         console.error(ex);
         throw new Error(`Failed to get stats for anime ${id}`);
+    }
+    try {
+        characters = await retry(() => marika.anime.getAnimeCharacters(id), 3, 1);
+    } catch (ex) {
+        console.error(ex);
+        throw new Error(`Failed to get characters for anime ${id}`);
     }
 
     let expires: LocalDate;
@@ -45,6 +52,7 @@ export async function loadAnime(db: DB, mirror: Mirror, queue: QueueDispatcher, 
     const animeDetails = await db.markAnimeSuccessful(id, {
         details,
         stats,
+        characters,
         poster: poster,
     }, expires);
 

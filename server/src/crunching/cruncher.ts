@@ -1,5 +1,5 @@
 import { Instant } from "@js-joda/core";
-import { IAnimeFull, IAnimeStats } from "@shineiichijo/marika";
+import { IAnimeCharacters, IAnimeFull, IAnimeStats } from "@shineiichijo/marika";
 import { UserListAnimeEntry } from "myanimelist-api";
 import { Contracts } from "wrongopinions-common";
 import { DB } from "../db";
@@ -14,6 +14,7 @@ export interface AnalysedAnime {
     watched: UserListAnimeEntry;
     details: IAnimeFull;
     stats: IAnimeStats;
+    characters: IAnimeCharacters;
     poster: string;
     scoreDifference: number;
     scorePopularity: number;
@@ -66,7 +67,7 @@ export async function crunchJob(job: PendingJob, animeList: Array<UserListAnimeE
         if(!anime?.animeData) {
             continue;
         }
-        const { details, stats, poster } = anime.animeData;
+        const { details, stats, characters, poster } = anime.animeData;
 
         if(!details || !stats || !details.score) {
             continue; // Skip any anime that we can't retrieve details about
@@ -79,6 +80,7 @@ export async function crunchJob(job: PendingJob, animeList: Array<UserListAnimeE
             watched,
             details,
             stats,
+            characters,
             poster,
             scoreDifference: watched.list_status.score - details.score,
             scorePopularity: stats.scores[scoreIndex].percentage,
