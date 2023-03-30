@@ -55,6 +55,7 @@ export class OpinionsComponent implements OnInit {
 	results: Contracts.Results | null = null;
 	pendingJob: Contracts.PendingJobStatus | null = null;
 
+	loadingIdentifier: Symbol | null = null;
 	loadingIntervals?: Array<number> = undefined;
 	loadingProgress: number = 0;
 	loadingMaximumProgress: number = 0;
@@ -104,12 +105,16 @@ export class OpinionsComponent implements OnInit {
 			}
 			if(status.pending) {
 				this.pendingJob = status.pending;
-				this.processPendingStatus(this.username, Promise.resolve(this.pendingJob));
+				this.loadingIdentifier = Symbol("loading");
+				this.processPendingStatus(this.username, Promise.resolve(this.pendingJob), this.loadingIdentifier);
 			}
 
 			if(!status.results && !status.pending) {
 				this.startJob();
 			}
+		}).catch(ex => {
+			this.loading = false;
+			this.statusDescription = "Failed to load results, please try again.";
 		});
 	}
 
@@ -121,12 +126,28 @@ export class OpinionsComponent implements OnInit {
 		this.statusDescription = "Initialising job...";
 		this.loadingIntervals = undefined;
 		this.loading = true;
-		this.processPendingStatus(this.username, this.api.startJob(this.username));
+		const username = this.username;
+		const loadingIdentifier = this.loadingIdentifier = Symbol("loading");
+
+		this.api.startJob(this.username).then(status => {
+			this.processPendingStatus(username, Promise.resolve(status), loadingIdentifier)
+		}).catch(ex => {
+			console.error(ex);
+			this.loading = false;
+			this.statusDescription = "Failed to submit job, please try again later.";
+		});
 	}
 
-	private processPendingStatus(username: string, promise: Promise<PendingJobStatus>) {
+	private processPendingStatus(username: string, promise: Promise<PendingJobStatus>, loadingIdentifier: Symbol) {		
 		promise.then(status => {
-			if(this.username != username) {
+			if(loadingIdentifier !== this.loadingIdentifier) {
+				// While a job is pending we repeatedly check the pending status by having this function call itself.
+				// If the user clicks the Resubmit/Update button, we call this function again, and that instance of
+				// this function will also call itself. This results in us twice as many status check requests to the
+				// API, and if the user keeps clicking the button then even more will be sent.
+				
+				// In order to avoid this, each time we start checking for statuses we set a symbol, and we will only
+				// continue to call ourselves until the symbol changes.
 				return;
 			}
 
@@ -159,11 +180,11 @@ export class OpinionsComponent implements OnInit {
 				const maximumRefreshInterval = 10;
 				const timeUntilRefresh = Math.min(maximumRefreshInterval, Math.max(minimumRefreshInterval, expectedTimeUntilStateChange / 5));
 				setTimeout(() => {
-					this.processPendingStatus(username, this.api.getPendingJobStatus(username));
+					this.processPendingStatus(username, this.api.getPendingJobStatus(username), loadingIdentifier);
 				}, timeUntilRefresh * 1000);
 			}
 		}).catch(ex => {
-			if(this.username != username) {
+			if(loadingIdentifier !== this.loadingIdentifier) {
 				return;
 			}
 
@@ -175,6 +196,9 @@ export class OpinionsComponent implements OnInit {
 			this.api.getFullStatus(username).then(fullStatus => {
 				this.results = fullStatus.results;
 				this.setUpPanels();
+			}).catch(ex => {
+				this.loading = false;
+				this.statusDescription = "Failed to load results, please try again.";
 			});
 		});
 	}
@@ -226,7 +250,7 @@ export class OpinionsComponent implements OnInit {
 		}
 
 		if(this.pendingJob.failed) {
-			return "Failed, please try again.";
+			return "Failed to process, please try again.";
 		}
 
 		if(this.pendingJob.now < this.pendingJob.initialised) {
