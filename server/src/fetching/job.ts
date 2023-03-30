@@ -164,14 +164,14 @@ export async function initialiseJob(db: DB, queue: QueueDispatcher, username: st
 
     } else {
         jobQueueStatus = await db.getQueueStatus("job");
+        
+        let jobsToWaitFor = 0;
+        if(lastQueuePosition > 0) {
+            jobsToWaitFor = lastQueuePosition - (animeQueueStatus.processedItems ?? 0);
+            console.log("Job for", username, "requires loading anime. Queue length is", jobsToWaitFor);
+        }
     }
 
-    let jobsToWaitFor = 0;
-    if(lastQueuePosition > 0) {
-        jobsToWaitFor = lastQueuePosition - (animeQueueStatus.processedItems ?? 0);
-    }
-
-    console.log("Job for", username, "requires loading anime. Queue length is", jobsToWaitFor);
 
     return calculateJobStatus(job, animeQueueStatus, jobQueueStatus);
 }
@@ -267,4 +267,9 @@ export async function processJob(db: DB, username: string): Promise<void> {
         const job = await db.updateJobProcessingRetry(username);
         throw ex;
     }
+}
+
+export async function markJobFailed(db: DB, username: string): Promise<void> {
+    console.log("Marking job failed", username);
+    await db.updateJobProcessingFailed(username);
 }
