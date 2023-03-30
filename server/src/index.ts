@@ -5,7 +5,7 @@ import { SQSEvent, Context, SQSBatchResponse, APIGatewayProxyEventV2WithRequestC
 import { DB } from './db';
 import { QueueDispatcher, QueueMessage, QueueMessageType } from './fetching/queueDispatcher';
 import { loadAnime } from './fetching/anime';
-import { initialiseJob, getPendingJobStatus, getFullStatus, processJob } from './fetching/job';
+import { initialiseJob, getPendingJobStatus, getFullStatus, processJob, markJobFailed } from './fetching/job';
 import { convertExceptionToResponse } from './error';
 import { Contracts } from 'wrongopinions-common';
 import { Mirror } from './mirror';
@@ -39,7 +39,11 @@ export async function handler<T>(event: T, context: Context): Promise<any> {
                         await loadAnime(db, mirror, queue, message.id);
                         break;
                     case QueueMessageType.Processing:
-                        await processJob(db, message.username);
+                        if(item.eventSourceARN === process.env.SQS_FAILED_QUEUE_ARN) {
+                            await markJobFailed(db, message.username);
+                        } else {
+                            await processJob(db, message.username);
+                        }
                         break;
                 }
             } catch (ex) {

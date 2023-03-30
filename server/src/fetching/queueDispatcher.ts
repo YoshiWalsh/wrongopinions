@@ -7,6 +7,11 @@ export enum QueueMessageType {
     Processing = 'processing',
 }
 
+const queues: {[type in QueueMessageType]: string | undefined} = {
+    'anime': process.env.SQS_ANIME_QUEUE_URL,
+    'processing': process.env.SQS_JOB_QUEUE_URL,
+};
+
 interface QueueMessageBase {
     type: QueueMessageType;
 }
@@ -25,11 +30,9 @@ export type QueueMessage = QueueMessageAnime | QueueMessageProcessing;
 
 export class QueueDispatcher {
     sqs: SQS | null;
-    queueName: string;
 
     constructor() {
-        this.queueName = process.env.SQS_QUEUE_URL as string;
-        if(this.queueName) {
+        if(!Object.values(queues).includes(undefined)) {
             this.sqs = new SQS({
                 region: process.env.AWS_REGION as string,
             });
@@ -41,7 +44,7 @@ export class QueueDispatcher {
     protected async sendMessage(payload: QueueMessage) {
         if(this.sqs) {
             await this.sqs.sendMessage({
-                QueueUrl: this.queueName,
+                QueueUrl: queues[payload.type],
                 MessageBody: JSON.stringify(payload),
             });
         } else {

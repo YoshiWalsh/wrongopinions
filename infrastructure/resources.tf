@@ -169,7 +169,9 @@ resource "aws_iam_role_policy" "function_role_sqs" {
                 Effect   = "Allow",
                 Resource = [
                     aws_sqs_queue.fast_queue.arn,
-                    aws_sqs_queue.slow_queue.arn
+                    aws_sqs_queue.slow_queue.arn,
+                    aws_sqs_queue.processing_queue.arn,
+                    aws_sqs_queue.failed_queue.arn
                 ]
             }
         ]
@@ -256,7 +258,9 @@ resource "aws_lambda_function" "function_limited" {
             DATA_BUCKET_NAME = aws_s3_bucket.data_bucket.id
             MIRROR_BUCKET_NAME = aws_s3_bucket.mirror_bucket.id
             DOMAIN = var.domain
-            SQS_QUEUE_URL = aws_sqs_queue.fast_queue.id
+            SQS_ANIME_QUEUE_URL = aws_sqs_queue.fast_queue.id
+            SQS_JOB_QUEUE_URL = aws_sqs_queue.processing_queue.id
+            SQS_FAILED_QUEUE_ARN = aws_sqs_queue.failed_queue.arn
             MAL_CLIENT_ID = var.mal_client_id
             MAL_CLIENT_SECRET = var.mal_client_secret # I know, I know, I should use Secrets Manager.
             NODE_OPTIONS = "--enable-source-maps"
@@ -282,7 +286,9 @@ resource "aws_lambda_function" "function_heavyweight" {
             DATA_BUCKET_NAME = aws_s3_bucket.data_bucket.id
             MIRROR_BUCKET_NAME = aws_s3_bucket.mirror_bucket.id
             DOMAIN = var.domain
-            SQS_QUEUE_URL = aws_sqs_queue.fast_queue.id
+            SQS_ANIME_QUEUE_URL = aws_sqs_queue.fast_queue.id
+            SQS_JOB_QUEUE_URL = aws_sqs_queue.processing_queue.id
+            SQS_FAILED_QUEUE_ARN = aws_sqs_queue.failed_queue.arn
             MAL_CLIENT_ID = var.mal_client_id
             MAL_CLIENT_SECRET = var.mal_client_secret # I know, I know, I should use Secrets Manager.
             NODE_OPTIONS = "--enable-source-maps"
@@ -308,7 +314,9 @@ resource "aws_lambda_function" "function_lightweight" {
             DATA_BUCKET_NAME = aws_s3_bucket.data_bucket.id
             MIRROR_BUCKET_NAME = aws_s3_bucket.mirror_bucket.id
             DOMAIN = var.domain
-            SQS_QUEUE_URL = aws_sqs_queue.fast_queue.id
+            SQS_ANIME_QUEUE_URL = aws_sqs_queue.fast_queue.id
+            SQS_JOB_QUEUE_URL = aws_sqs_queue.processing_queue.id
+            SQS_FAILED_QUEUE_ARN = aws_sqs_queue.failed_queue.arn
             MAL_CLIENT_ID = var.mal_client_id
             MAL_CLIENT_SECRET = var.mal_client_secret # I know, I know, I should use Secrets Manager.
             NODE_OPTIONS = "--enable-source-maps"
@@ -462,7 +470,7 @@ resource "aws_lambda_event_source_mapping" "slow_queue_lambda" {
     event_source_arn = aws_sqs_queue.slow_queue.arn
     function_name    = aws_lambda_function.function_limited.arn
 
-    batch_size = 5
+    batch_size = 1
     maximum_batching_window_in_seconds = 15
     function_response_types = ["ReportBatchItemFailures"]
 
@@ -478,6 +486,51 @@ resource "aws_sqs_queue" "dead_queue" {
     visibility_timeout_seconds = 0
     message_retention_seconds = 1209600
     sqs_managed_sse_enabled = true
+}
+
+resource "aws_sqs_queue" "processing_queue" {
+    name = join("-", ["wrongopinions", random_id.environment_identifier.hex, "processing"])
+    delay_seconds = 0
+    visibility_timeout_seconds = 130
+    sqs_managed_sse_enabled = true
+    redrive_policy = jsonencode({
+        deadLetterTargetArn = aws_sqs_queue.failed_queue.arn
+        maxReceiveCount = 2
+    })
+}
+
+resource "aws_lambda_event_source_mapping" "processing_queue_lambda" {
+    event_source_arn = aws_sqs_queue.processing_queue.arn
+    function_name    = aws_lambda_function.function_heavyweight.arn
+
+    batch_size = 1
+    maximum_batching_window_in_seconds = 15
+    function_response_types = ["ReportBatchItemFailures"]
+
+    depends_on = [
+        aws_iam_role_policy.function_role_sqs
+    ]
+}
+
+resource "aws_sqs_queue" "failed_queue" {
+    name = join("-", ["wrongopinions", random_id.environment_identifier.hex, "failed"])
+    delay_seconds = 0
+    visibility_timeout_seconds = 120
+    message_retention_seconds = 1209600
+    sqs_managed_sse_enabled = true
+}
+
+resource "aws_lambda_event_source_mapping" "failed_queue_lambda" {
+    event_source_arn = aws_sqs_queue.failed_queue.arn
+    function_name    = aws_lambda_function.function_lightweight.arn
+
+    batch_size = 1
+    maximum_batching_window_in_seconds = 15
+    function_response_types = ["ReportBatchItemFailures"]
+
+    depends_on = [
+        aws_iam_role_policy.function_role_sqs
+    ]
 }
 
 resource "aws_acm_certificate" "cf_cert" {
