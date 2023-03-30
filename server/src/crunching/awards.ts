@@ -325,11 +325,12 @@ class UnbalancedAward extends Award {
         tagsWithCounts.sort((a, b) => b.count - a.count); // Descending
         const unbalancedTags = tagsWithCounts.filter(g => g.count > anime.length * this.threshold).map(g => g.tag);
         if(unbalancedTags.length > 0) {
-            const contributingAnime = anime.filter(a => a.tags.findIndex(t => unbalancedTags.includes(t)) !== -1);
+            const leastBalancedTag = unbalancedTags[0];
+            const contributingAnime = anime.filter(a => this.getTags(a).findIndex(t => t === leastBalancedTag) !== -1);
             return {
                 name: this.name,
                 description: this.description,
-                reason: `Awarded for more than ${(this.threshold * 100).toFixed(0)}% of scored shows ${this.commonality}. (${unbalancedTags.join(", ")})`,
+                reason: `Awarded for more than ${(this.threshold * 100).toFixed(0)}% of scored shows ${this.commonality}. (${leastBalancedTag})`,
                 contributingAnime: contributingAnime.map(a => convertAnimeDetailsToContractAnime(a.details, a.poster)),
             };
         }
