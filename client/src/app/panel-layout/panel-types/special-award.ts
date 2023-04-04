@@ -28,7 +28,7 @@ const specialAwards: {[name: string]: AwardProperties} = {
         interest: 1,
     },
     "Boring": {
-        icon: "/assets/special-award-icons/boring.svg", // TODO
+        icon: "/assets/special-award-icons/boring.svg",
         interest: 1,
     },
     "Prude": {
@@ -52,7 +52,7 @@ const specialAwards: {[name: string]: AwardProperties} = {
         interest: 1,
     },
     "Sociopath": {
-        icon: "/assets/special-award-icons/sociopath.svg", // TODO
+        icon: "/assets/special-award-icons/sociopath.svg",
         interest: 1,
     },
     "Neo-Luddite": {
