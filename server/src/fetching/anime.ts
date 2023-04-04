@@ -12,6 +12,17 @@ const marika = {
 
 axios.defaults.timeout = 10 * 1000; // Avoid pointless waiting when https://github.com/jikan-me/jikan-rest/issues/269 occurs
 
+// Workaround for https://github.com/LuckyYam/Marika/issues/6
+function detectJikanErrors<T extends {}>(promise: Promise<T>): Promise<T> {
+    return promise.then(response => {
+        const cast = response as {error?: string};
+        if(!cast || cast['error']) {
+            throw new Error(cast?.['error'] ?? "No response from Jikan");
+        }
+        return response;
+    });
+}
+
 export async function loadAnime(db: DB, mirror: Mirror, queue: QueueDispatcher, id: number): Promise<void> {
     let details: IAnimeFull;
     let stats: IAnimeStats;
@@ -20,11 +31,11 @@ export async function loadAnime(db: DB, mirror: Mirror, queue: QueueDispatcher, 
     // Allow one request per second, even if the previous one is still running.
     // We go in this order because stats and characters seem to take longer to load than details.
     await ratelimit(1);
-    const statsPromise = retry(() => marika.anime.getAnimeStats(id), 3, 1);
+    const statsPromise = retry(() => detectJikanErrors(marika.anime.getAnimeStats(id)), 3, 1);
     await ratelimit(1);
-    const charactersPromise = retry(() => marika.anime.getAnimeCharacters(id), 3, 1);
+    const charactersPromise = retry(() => detectJikanErrors(marika.anime.getAnimeCharacters(id)), 3, 1);
     await ratelimit(1);
-    const detailsPromise = retry(() => marika.anime.getAnimeFullById(id), 3, 1);
+    const detailsPromise = retry(() => detectJikanErrors(marika.anime.getAnimeFullById(id)), 3, 1);
     try {
         details = await detailsPromise;
     } catch (ex) {
