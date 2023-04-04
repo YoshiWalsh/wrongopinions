@@ -16,22 +16,29 @@ export async function loadAnime(db: DB, mirror: Mirror, queue: QueueDispatcher, 
     let details: IAnimeFull;
     let stats: IAnimeStats;
     let characters: IAnimeCharacters;
-    await ratelimit(1 * 3); // We need to make three requests but ideally we don't want to wait unnecessarily between requests.
     console.log("Loading anime", id);
+    // Allow one request per second, even if the previous one is still running.
+    // We go in this order because stats and characters seem to take longer to load than details.
+    await ratelimit(1);
+    const statsPromise = retry(() => marika.anime.getAnimeStats(id), 3, 1);
+    await ratelimit(1);
+    const charactersPromise = retry(() => marika.anime.getAnimeCharacters(id), 3, 1);
+    await ratelimit(1);
+    const detailsPromise = retry(() => marika.anime.getAnimeFullById(id), 3, 1);
     try {
-        details = await retry(() => marika.anime.getAnimeFullById(id), 3, 1);
+        details = await detailsPromise;
     } catch (ex) {
         console.error(ex);
         throw new Error(`Failed to get details for anime ${id}`);
     }
     try {
-        stats = await retry(() => marika.anime.getAnimeStats(id), 3, 1);
+        stats = await statsPromise;
     } catch (ex) {
         console.error(ex);
         throw new Error(`Failed to get stats for anime ${id}`);
     }
     try {
-        characters = await retry(() => marika.anime.getAnimeCharacters(id), 3, 1);
+        characters = await charactersPromise;
     } catch (ex) {
         console.error(ex);
         throw new Error(`Failed to get characters for anime ${id}`);
