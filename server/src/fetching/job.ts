@@ -272,4 +272,6 @@ export async function processJob(db: DB, username: string): Promise<void> {
 export async function markJobFailed(db: DB, username: string): Promise<void> {
     console.log("Marking job failed", username);
     await db.updateJobProcessingFailed(username);
+    console.log("Increment job processed items: failed", username);
+    await db.incrementQueueProperty("job", "processedItems");
 }
