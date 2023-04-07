@@ -196,7 +196,7 @@ export class DB {
                         "N": queuePosition.toString(),
                     },
                     ':j': {
-                        "SS": [ "", username ],
+                        "SS": [ "", username.toLowerCase() ],
                     },
                 },
             });
@@ -222,7 +222,7 @@ export class DB {
                         "S": AnimeStatus.Pending,
                     },
                     ':j': {
-                        "SS": [ username ],
+                        "SS": [ username.toLowerCase() ],
                     },
                 },
                 ReturnValues: 'ALL_NEW',
@@ -299,7 +299,7 @@ export class DB {
         const result = await this.db.getItem({
             ConsistentRead: stronglyConsistent,
             TableName: this.tableName,
-            Key: this.pk(`job-${username}`),
+            Key: this.pk(`job-${username.toLowerCase()}`),
         });
 
         return this.deserialiseJob(result.Item);
@@ -310,7 +310,7 @@ export class DB {
             await this.db.putItem({
                 TableName: this.tableName,
                 Item: {
-                    ...this.pk(`job-${job.username}`),
+                    ...this.pk(`job-${job.username.toLowerCase()}`),
                     ...marshall(job),
                 },
             })
@@ -323,7 +323,7 @@ export class DB {
     async updateJobWaiting(username: string, animeIdsToRemove: Array<string>, lastDependencyQueuePosition: number): Promise<PendingJob> {
         const results = await this.db.updateItem({
             TableName: this.tableName,
-            Key: this.pk(`job-${username}`),
+            Key: this.pk(`job-${username.toLowerCase()}`),
             UpdateExpression: `SET jobStatus = :s, initialised = :t, lastDependencyQueuePosition = :p${ animeIdsToRemove.length ? ` DELETE dependsOn :a` : '' }`,
             ExpressionAttributeValues: {
                 ':s': {
@@ -353,7 +353,7 @@ export class DB {
     async updateJobQueued(username: string, queuePosition: number): Promise<PendingJob> {
         const results = await this.db.updateItem({
             TableName: this.tableName,
-            Key: this.pk(`job-${username}`),
+            Key: this.pk(`job-${username.toLowerCase()}`),
             UpdateExpression: `SET jobStatus = :s, queued = :t, processingQueuePosition = :p`,
             ExpressionAttributeValues: {
                 ':s': {
@@ -376,7 +376,7 @@ export class DB {
     async updateJobProcessing(username: string): Promise<PendingJob> {
         const results = await this.db.updateItem({
             TableName: this.tableName,
-            Key: this.pk(`job-${username}`),
+            Key: this.pk(`job-${username.toLowerCase()}`),
             UpdateExpression: `SET jobStatus = :s, processingStarted = :t`,
             ExpressionAttributeValues: {
                 ':s': {
@@ -395,7 +395,7 @@ export class DB {
     async updateJobProcessingRetry(username: string): Promise<PendingJob> {
         const results = await this.db.updateItem({
             TableName: this.tableName,
-            Key: this.pk(`job-${username}`),
+            Key: this.pk(`job-${username.toLowerCase()}`),
             UpdateExpression: `SET jobStatus = :s REMOVE processingStarted`,
             ExpressionAttributeValues: {
                 ':s': {
@@ -411,7 +411,7 @@ export class DB {
     async updateJobProcessingFailed(username: string): Promise<PendingJob> {
         const results = await this.db.updateItem({
             TableName: this.tableName,
-            Key: this.pk(`job-${username}`),
+            Key: this.pk(`job-${username.toLowerCase()}`),
             UpdateExpression: `SET jobStatus = :s, failed = :t`,
             ExpressionAttributeValues: {
                 ':s': {
@@ -430,7 +430,7 @@ export class DB {
     async removeAnimeFromJob(username: string, animeId: number): Promise<PendingJob> {
         const results = await this.db.updateItem({
             TableName: this.tableName,
-            Key: this.pk(`job-${username}`),
+            Key: this.pk(`job-${username.toLowerCase()}`),
             UpdateExpression: `DELETE dependsOn :a`,
             ExpressionAttributeValues: {
                 ':a': {
@@ -447,7 +447,7 @@ export class DB {
     async removeJob(username: string): Promise<void> {
         await this.db.deleteItem({
             TableName: this.tableName,
-            Key: this.pk(`job-${username}`),
+            Key: this.pk(`job-${username.toLowerCase()}`),
         });
     }
 
@@ -458,7 +458,7 @@ export class DB {
         try {
             const object = await this.s3.send(new GetObjectCommand({
                 Bucket: this.dataBucketName,
-                Key: `completed-${username}.json`,
+                Key: `completed-${username.toLowerCase()}.json`,
             }));
             return JSON.parse(await getStream(object.Body as Readable)) as Contracts.Results;
         } catch (ex) {
@@ -472,7 +472,7 @@ export class DB {
     async addCompleted(results: Contracts.Results): Promise<void> {
         await this.s3.send(new PutObjectCommand({
             Bucket: this.dataBucketName,
-            Key: `completed-${results.username}.json`,
+            Key: `completed-${results.username.toLowerCase()}.json`,
             Body: JSON.stringify(results),
         }));
     }
@@ -481,7 +481,7 @@ export class DB {
     async saveAnimeList(username: string, animeList: Array<UserListAnimeEntry>): Promise<void> {
         await this.s3.send(new PutObjectCommand({
             Bucket: this.dataBucketName,
-            Key: `animeList-${username}.json`,
+            Key: `animeList-${username.toLowerCase()}.json`,
             Body: JSON.stringify(animeList),
         }));
     }
@@ -489,7 +489,7 @@ export class DB {
     async loadAnimeList(username: string): Promise<Array<UserListAnimeEntry>> {
         const object = await this.s3.send(new GetObjectCommand({
             Bucket: this.dataBucketName,
-            Key: `animeList-${username}.json`,
+            Key: `animeList-${username.toLowerCase()}.json`,
         }));
         return JSON.parse(await getStream(object.Body as Readable)) as Array<UserListAnimeEntry>;
     }
@@ -497,7 +497,7 @@ export class DB {
     async deleteAnimeList(username: string): Promise<void> {
         await this.s3.send(new DeleteObjectCommand({
             Bucket: this.dataBucketName,
-            Key: `animeList-${username}.json`,
+            Key: `animeList-${username.toLowerCase()}.json`,
         }));
     }
 }
