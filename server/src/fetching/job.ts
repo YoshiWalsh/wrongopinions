@@ -187,6 +187,7 @@ function calculateJobStatus(job: PendingJob, animeQueueStatus: QueueStatus, jobQ
 
     const animeQueuePosition = Math.max(0, (job.lastDependencyQueuePosition ?? animeQueueStatus.queueLength ?? 0) - (animeQueueStatus.processedItems ?? 0));
     const jobQueuePosition = Math.max(0, (job.processingQueuePosition ?? jobQueueStatus.queueLength ?? 0) - (jobQueueStatus.processedItems ?? 0));
+    const remainingAnime = job.dependsOn.size - 1; // In case the anime queue is out of sync, verify that the queue position is not less than the remaining anime
 
     const initialised = job.initialised ?
         Instant.ofEpochMilli(job.initialised) :
@@ -194,7 +195,7 @@ function calculateJobStatus(job: PendingJob, animeQueueStatus: QueueStatus, jobQ
     
     const queued = job.queued ?
         Instant.ofEpochMilli(job.queued) :
-        maxInstant(initialised.plusSeconds(ESTIMATED_QUEUE_LATENCY), now).plusSeconds(animeQueuePosition * ESTIMATED_SECONDS_PER_ANIME);
+        maxInstant(initialised.plusSeconds(ESTIMATED_QUEUE_LATENCY), now).plusSeconds(Math.max(animeQueuePosition, remainingAnime) * ESTIMATED_SECONDS_PER_ANIME);
 
     const processingStarted = job.processingStarted ?
         Instant.ofEpochMilli(job.processingStarted) :
