@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnChanges, OnInit, SimpleChanges } from '@angular/core';
 import { Panel, PossibleSize } from './panel-types/panel-type';
 import { ScoreDifferencePanel } from './panel-types/score-difference';
 import { SeriesDirectionPanel } from './panel-types/series-direction';
@@ -34,7 +34,7 @@ interface PotentialPanel<T extends Panel> {
 	templateUrl: './panel-layout.component.html',
 	styleUrls: ['./panel-layout.component.scss']
 })
-export class PanelLayoutComponent implements OnInit {
+export class PanelLayoutComponent implements OnInit, OnChanges {
 
 	@Input()
 	panels!: Array<Panel>;
@@ -170,6 +170,10 @@ export class PanelLayoutComponent implements OnInit {
 	}
 
 	ngOnInit(): void {
+		this.initialisePanelLayout();
+	}
+
+	ngOnChanges(changes: SimpleChanges): void {
 		this.initialisePanelLayout();
 	}
 
