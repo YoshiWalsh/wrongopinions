@@ -340,13 +340,13 @@ class UnbalancedAward extends Award {
 
 const awards: Array<Award> = [
     new GenreAward({
-        genre: 'Dementia',
+        genre: 'Avant Garde',
         direction: -1,
         name: 'Small Brain',
         description: 'You can’t understand what a show is about unless it spells it out for you clearly and literally. Learn to read between the lines.',
     }),
     new GenreAward({
-        genre: 'Dementia',
+        genre: 'Avant Garde',
         direction: 1,
         name: 'Pretentious',
         description: 'Your superiority complex is ugly to see. Avant-garde is just a euphemism for elitist incomprehensible bullshit.',
@@ -388,13 +388,13 @@ const awards: Array<Award> = [
         description: 'When it comes to anime rating, you use your genitals more than your head. You don’t care about quality when it comes to art style, animation, voice acting, or writing. You might claim to be cultured, but with your undiscerning eye you’re just a porn addict.',
     }),
     new GenreAward({
-        genre: 'Yaoi',
+        genre: 'Boys Love',
         direction: -1,
         name: 'Homophobe',
         description: `It's ${(new Date).getFullYear()}, gay people exist, get over it.`,
     }),
     new GenreAward({
-        genre: 'Yuri',
+        genre: 'Girls Love',
         direction: 1,
         name: 'Objectifier',
         description: `Fetishising lesbians doesn't make you progressive.`,
