@@ -23,6 +23,13 @@ export class DomImageComponent implements OnInit {
 		const bounding = this.canvasElm.nativeElement.getBoundingClientRect();
 
 		try {
+			const discard = await domtoimage.toPng(this.canvasElm.nativeElement as Element, {
+				quality: 100,
+				width: bounding.width,
+				height: bounding.height,
+			});
+			// We render the image twice in order to work around a bug in Firefox. (webcompat/web-bugs#119834)
+			// The second render seems to be quick anyway, so this is a small price to pay.
 			const png = await domtoimage.toPng(this.canvasElm.nativeElement as Element, {
 				quality: 100,
 				width: bounding.width,
