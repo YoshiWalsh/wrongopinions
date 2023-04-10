@@ -30,11 +30,18 @@ declare module 'myanimelist-api' {
     export type ListStatus = "watching" | "completed" | "on_hold" | "dropped" | "plan_to_watch";
     export type ListSort = "list_score" | "list_updated_at" | "anime_title" | "anime_start_date" | "anime_id";
 
-    export interface UserListAnimeParameters {
-        status?: ListStatus;
-        sort?: ListSort;
+    export interface ListParameters {
         limit?: number;
         offset?: number;
+    }
+
+    export interface CommonParameters {
+        nsfw?: boolean;
+    }
+
+    export interface UserListAnimeParameters extends ListParameters, CommonParameters {
+        status?: ListStatus;
+        sort?: ListSort;
         fields?: string;
     }
 

@@ -33,6 +33,7 @@ export async function initialiseJob(db: DB, queue: QueueDispatcher, username: st
             limit: MAL_PAGE_SIZE,
             offset,
             fields: 'list_status',
+            nsfw: true,
         });
         animeList = animeList.concat(result.data.data);
         if(!result.data.paging.next) {
