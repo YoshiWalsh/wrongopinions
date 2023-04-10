@@ -490,7 +490,7 @@ const awards: Array<Award> = [
         description: "When people ask what your favourite anime is, you just say they've probably never heard of it.",
         reason: "Awarded for mostly watching anime with fewer than 100,000 votes.",
         predicate: a => a.details.scored_by < 100000,
-        threshold: 0.5
+        threshold: 0.5,
     }),
     new ProportionWatchedAward({
         name: "Uncritical",
@@ -509,8 +509,8 @@ const awards: Array<Award> = [
     new ProportionWatchedAward({
         name: "Whippersnapper",
         description: "Those who don’t study history are doomed to repeat it.",
-        reason: "Awarded for mostly watching anime released since 2015.",
-        predicate: a => !a.details.aired.from || ZonedDateTime.parse(a.details.aired.from).isAfter(ZonedDateTime.parse("2015-01-01T00:00:00+08:00")),
+        reason: "Awarded for mostly watching anime released since 2018.",
+        predicate: a => !a.details.aired.from || ZonedDateTime.parse(a.details.aired.from).isAfter(ZonedDateTime.parse("2018-01-01T00:00:00+08:00")),
         threshold: 0.5
     }),
     new ProportionWatchedAward({
@@ -530,16 +530,16 @@ const awards: Array<Award> = [
     new ProportionWatchedAward({
         name: "Silver Spoon",
         description: "You privileged snob, do you think you're better than us!? Why not at least try watching some of the anime the peasants enjoy?",
-        reason: "Awarded for more than 70% of watched anime being scored higher than 7.5.",
-        predicate: a => a.details.score > 7.5,
+        reason: "Awarded for more than 70% of watched anime being scored higher than 8.",
+        predicate: a => a.details.score > 8,
         threshold: 0.7
     }),
     new ProportionWatchedAward({
         name: "Loner",
         description: "You have ventured into previously uncharted territories, plundering the depths of awful opinions.",
-        reason: "Awarded for choosing the least popular score for a show.",
+        reason: "Awarded for choosing the least popular score for more than 5% of scored shows.",
         predicate: a => a.scoreRank >= 9,
-        threshold: 0
+        threshold: 0.05
     }),
     new ProportionListedAward({
         name: "Judging by the cover",
@@ -555,15 +555,15 @@ const awards: Array<Award> = [
         reason: "Awarded for scoring shows without finishing them.",
         widePredicate: a => !!a.list_status.score,
         narrowPredicate: a => a.list_status.status != 'completed',
-        threshold: 0.05
+        threshold: 0.1
     }),
     new ProportionListedAward({
         name: "Quitter",
         description: "When the going gets tough, you just give up.",
-        reason: "Drop more than 10% of shows.",
+        reason: "Drop more than 20% of shows.",
         widePredicate: a => a.list_status.status != 'plan_to_watch',
         narrowPredicate: a => a.list_status.status == 'dropped',
-        threshold: 0.1
+        threshold: 0.2
     }),
     new ProportionListedAward({
         name: "Theoretical Weeb",
@@ -576,9 +576,9 @@ const awards: Array<Award> = [
     new AmountListedAward({
         name: "Cryostasis",
         description: "Be honest with yourself, are you ever going to resume those shows? Just mark them 'dropped' and move on with your life.",
-        reason: "Have more than 10 shows in on-hold status.",
+        reason: "Have more than 50 shows in on-hold status.",
         predicate: a => a.list_status.status == 'on_hold',
-        threshold: 10
+        threshold: 50
     }),
     new UnbalancedAward({
         name: "Unbalanced",
@@ -590,7 +590,7 @@ const awards: Array<Award> = [
     new UnbalancedAward({
         name: "Stan",
         description: "Being a superfan is one thing, but you're almost obsessive.",
-        threshold: 0.2,
+        threshold: 0.4,
         commonality: 'including the same voice actor',
         getTags: a => a.voiceActors,
     }),
