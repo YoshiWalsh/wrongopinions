@@ -29,11 +29,13 @@ export function getAwardedAwards(anime: Array<AnalysedAnime>, listedAnime: Array
 abstract class BiasConfidenceAward extends Award {
     public type = "";
     public direction: -1 | 1;
+    public threshold: number;
 
-    constructor(data: {name: string, description: string, direction: -1 | 1}) {
+    constructor(data: {name: string, description: string, direction: -1 | 1, threshold: number}) {
         super(data);
 
         this.direction = data.direction;
+        this.threshold = data.threshold;
     }
 
     shouldAnimeBeSampled(anime: AnalysedAnime): boolean {
@@ -57,7 +59,7 @@ abstract class BiasConfidenceAward extends Award {
         const meanDifference = jstat.mean(matchingScoreDifferences) - jstat.mean(nonMatchingScoreDifferences);
         const confidence = (1-pValue) * 100;
 
-        if(confidence >= 90 && meanDifference * this.direction > 0) {
+        if(confidence >= this.threshold && meanDifference * this.direction > 0) {
             matchingAnime.sort((a, b) => (a.scoreDifference - b.scoreDifference) * this.direction * -1);
             const contributingAnime = matchingAnime.slice(0, matchingAnime.findIndex(a => a.scoreDifference * this.direction < 0));
 
@@ -77,7 +79,7 @@ class GenreAward extends BiasConfidenceAward {
     public type = "genre";
     private genre: string;
 
-    constructor(data: {name: string, description: string, genre: string, direction: -1 | 1}) {
+    constructor(data: {name: string, description: string, genre: string, direction: -1 | 1, threshold: number}) {
         super(data);
 
         this.genre = data.genre;
@@ -98,7 +100,7 @@ class SubjectAward extends BiasConfidenceAward {
     private subject: string;
     private animeWithSubject: Array<number>;
 
-    constructor(data: {name: string, description: string, subject: string, animeWithSubject: Array<number>, genre?: string, direction: -1 | 1}) {
+    constructor(data: {name: string, description: string, subject: string, animeWithSubject: Array<number>, genre?: string, direction: -1 | 1, threshold: number}) {
         super(data);
 
         this.animeWithSubject = data.animeWithSubject;
@@ -344,60 +346,70 @@ const awards: Array<Award> = [
         direction: -1,
         name: 'Small Brain',
         description: 'You can’t understand what a show is about unless it spells it out for you clearly and literally. Learn to read between the lines.',
+        threshold: 95,
     }),
     new GenreAward({
         genre: 'Avant Garde',
         direction: 1,
         name: 'Pretentious',
         description: 'Your superiority complex is ugly to see. Avant-garde is just a euphemism for elitist incomprehensible bullshit.',
+        threshold: 90,
     }),
     new GenreAward({
         genre: 'Psychological',
         direction: -1,
         name: 'Meathead',
         description: 'You don’t like it when people think too much. Introspection is vital for self-improvement, maybe you should try it.',
+        threshold: 90,
     }),
     new GenreAward({
         genre: 'Romance',
         direction: -1,
         name: 'Heartless',
         description: 'You’re so lonely that the sight of happy couples makes you feel nothing but bitterness.',
+        threshold: 95,
     }),
     new GenreAward({
         genre: 'Harem',
         direction: 1,
         name: 'Bigamist',
         description: 'You’re too greedy to be satisfied by disappointing only a single romantic partner. You treat people like Pokémon, trying to collect them all.',
+        threshold: 90,
     }),
     new GenreAward({
         genre: 'Slice of Life',
         direction: 1,
         name: 'Boring',
         description: 'Your own life must be really empty if your idea of fun is to watch fictional people do nothing. Get a hobby, or some friends.',
+        threshold: 95,
     }),
     new GenreAward({
         genre: 'Ecchi',
         direction: -1,
         name: 'Prude',
         description: 'You’re the sort of person who thinks women shouldn’t expose their ankles in public. If you don’t like fanservice, why are you even watching anime?',
+        threshold: 95,
     }),
     new GenreAward({
         genre: 'Hentai',
         direction: 1,
         name: 'Tasteless',
         description: 'When it comes to anime rating, you use your genitals more than your head. You don’t care about quality when it comes to art style, animation, voice acting, or writing. You might claim to be cultured, but with your undiscerning eye you’re just a porn addict.',
+        threshold: 90,
     }),
     new GenreAward({
         genre: 'Boys Love',
         direction: -1,
         name: 'Homophobe',
         description: `It's ${(new Date).getFullYear()}, gay people exist, get over it.`,
+        threshold: 90,
     }),
     new GenreAward({
         genre: 'Girls Love',
         direction: 1,
         name: 'Objectifier',
         description: `Fetishising lesbians doesn't make you progressive.`,
+        threshold: 90,
     }),
     new ShowAward({
         mal_id: 33255, // Saiki K
@@ -483,7 +495,8 @@ const awards: Array<Award> = [
             32667, // Baka na Imouto wo Rikou ni Suru no wa Ore no xx dake na Ken ni Tsuite
             11321, // Nee Summer
             35936, // Imouto Bitch ni Shiboraretai
-        ]
+        ],
+        threshold: 90,
     }),
     new ProportionWatchedAward({
         name: "Hipster",
