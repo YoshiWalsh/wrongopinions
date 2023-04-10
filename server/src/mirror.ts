@@ -44,19 +44,4 @@ export class Mirror {
             });
         });
     }
-
-    async getAnimePosterUrl(id: number): Promise<string | null> {
-        const response = await this.s3.send(new ListObjectsV2Command({
-            Bucket: this.mirrorBucketName,
-            Prefix: `mirrored/anime/posters/${id}.`,
-        }));
-        const objects = response.Contents;
-        if(!objects) {
-            return null;
-        }
-        objects.sort((a, b) => (b.LastModified?.valueOf() ?? 0) - (a.LastModified?.valueOf() ?? 0));
-        const key = objects[0].Key;
-        const rehostedUrl = `https://${this.domain}/${key}`;
-        return rehostedUrl;
-    }
 }
