@@ -14,7 +14,7 @@ export interface AnalysedAnime {
     watched: UserListAnimeEntry;
     details: IAnimeFull;
     stats: IAnimeStats;
-    characters: IAnimeCharacters;
+    voiceActors: Array<string>;
     poster: string;
     scoreDifference: number;
     scorePopularity: number;
@@ -67,7 +67,7 @@ export async function crunchJob(job: PendingJob, animeList: Array<UserListAnimeE
         if(!anime?.animeData) {
             continue;
         }
-        const { details, stats, characters, poster } = anime.animeData;
+        const { details, stats, voiceActors, poster } = anime.animeData;
 
         if(!details || !stats || !details.score) {
             continue; // Skip any anime that we can't retrieve details about
@@ -80,7 +80,7 @@ export async function crunchJob(job: PendingJob, animeList: Array<UserListAnimeE
             watched,
             details,
             stats,
-            characters,
+            voiceActors,
             poster,
             scoreDifference: watched.list_status.score - details.score,
             scorePopularity: stats.scores[scoreIndex].percentage,

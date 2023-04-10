@@ -592,7 +592,7 @@ const awards: Array<Award> = [
         description: "Being a superfan is one thing, but you're almost obsessive.",
         threshold: 0.2,
         commonality: 'including the same voice actor',
-        getTags: a => a.characters.data.flatMap(c => c.voice_actors.filter(va => ["Japanese"].includes(va.language)).map(va => va.person.name)),
+        getTags: a => a.voiceActors,
     }),
     new UnbalancedAward({
         name: "Creature of Habit",

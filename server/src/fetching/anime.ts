@@ -67,10 +67,13 @@ export async function loadAnime(db: DB, mirror: Mirror, queue: QueueDispatcher, 
 
     const poster = await mirror.rehostAnimePoster(id, details.images.jpg.image_url);
 
+    // Since some shows can have many characters and many languages, we filter this down before storing it in order to stay within DynamoDB's document size limit
+    const voiceActors = characters.data.flatMap(c => c.voice_actors.filter(va => ["Japanese"].includes(va.language)).map(va => va.person.name));
+
     const animeDetails = await db.markAnimeSuccessful(id, {
         details,
         stats,
-        characters,
+        voiceActors,
         poster: poster,
     }, expires);
 
