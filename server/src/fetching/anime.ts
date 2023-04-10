@@ -10,6 +10,7 @@ const marika = {
     anime: new MarikaAnime(),
 }
 
+export const over18Poster = "/assets/over18.svg";
 axios.defaults.timeout = 10 * 1000; // Avoid pointless waiting when https://github.com/jikan-me/jikan-rest/issues/269 occurs
 
 // Workaround for https://github.com/LuckyYam/Marika/issues/6
@@ -65,7 +66,8 @@ export async function loadAnime(db: DB, mirror: Mirror, queue: QueueDispatcher, 
         expires = LocalDate.now(ZoneOffset.UTC).plusMonths(3);
     }
 
-    const poster = await mirror.rehostAnimePoster(id, details.images.jpg.image_url);
+    const isHentai = details.rating === "Rx - Hentai"; // Avoid rehosting hentai posters
+    const poster = isHentai ? over18Poster : await mirror.rehostAnimePoster(id, details.images.jpg.image_url);
 
     // Since some shows can have many characters and many languages, we filter this down before storing it in order to stay within DynamoDB's document size limit
     const voiceActors = characters.data.flatMap(c => c.voice_actors.filter(va => ["Japanese"].includes(va.language)).map(va => va.person.name));

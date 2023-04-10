@@ -3,6 +3,7 @@ import { IAnimeCharacters, IAnimeFull, IAnimeStats } from "@shineiichijo/marika"
 import { UserListAnimeEntry } from "myanimelist-api";
 import { Contracts } from "wrongopinions-common";
 import { DB } from "../db";
+import { over18Poster } from "../fetching/anime";
 import { QueueDispatcher } from "../fetching/queueDispatcher";
 import { AnimeDetails } from "../model/AnimeDetails";
 import { PendingJob } from "../model/PendingJob";
@@ -35,11 +36,12 @@ export function convertAnimeDetailsToContractAnime(animeDetails: IAnimeFull, pos
     const defaultTitle = titles?.find(t => t.type == "Default")?.title ?? animeDetails.title;
     const englishTitle = titles?.find(t => t.type == "English")?.title ?? animeDetails.title_english;
     const hasDistinctEnglishTitle = defaultTitle?.toLowerCase().replace(/[^a-z]/g, "") != englishTitle?.toLowerCase().replace(/[^a-z]/g, "");
+    const isHentai = animeDetails.rating === "Rx - Hentai"; // In case a hentai poster has been hosted, avoid displaying it
     return {
         defaultTitle: defaultTitle ?? "",
         englishTitle: hasDistinctEnglishTitle ? englishTitle : undefined,
         url: animeDetails.url,
-        thumbnailUrl: poster,
+        thumbnailUrl: isHentai ? over18Poster : poster,
     };
 }
 
