@@ -313,10 +313,10 @@ class UnbalancedAward extends Award {
 
     public getAward(anime: Array<AnalysedAnime>, listedAnime: Array<UserListAnimeEntry>) {
         const allTagsList = anime.flatMap(this.getTags);
-        const tagCounts: {[genre: string]: number} = allTagsList.reduce((acc, cur) => ({
-            ...acc,
-            [cur]: (acc[cur] ?? 0) + 1,
-        }), {} as {[genre: string]: number});
+        const tagCounts: {[genre: string]: number} = {};
+        for(const tag of allTagsList) {
+            tagCounts[tag] = (tagCounts[tag] ?? 0) + 1;
+        }
 
         const tags = Object.keys(tagCounts);
         const tagsWithCounts = tags.map(g => ({
