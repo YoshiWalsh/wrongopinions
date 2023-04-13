@@ -58,7 +58,7 @@ export class DB {
     async incrementQueueProperty(queueName: string, property: "queueLength" | "processedItems", decrement?: boolean): Promise<QueueStatus> {
         const result = await this.db.updateItem({
             TableName: this.tableName,
-            Key: this.pk(`${queueName}-queue-status`),
+            Key: this.pk(`queue-status-${queueName}`),
             UpdateExpression: `ADD ${property} :q`,
             ExpressionAttributeValues: marshall({
                 ':q': decrement ? -1 : 1
@@ -73,7 +73,7 @@ export class DB {
         const result = await this.db.getItem({
             ConsistentRead: false,
             TableName: this.tableName,
-            Key: this.pk(`${queueName}-queue-status`),
+            Key: this.pk(`queue-status-${queueName}`),
         });
 
         return result.Item ? unmarshall(result.Item) as QueueStatus : {
