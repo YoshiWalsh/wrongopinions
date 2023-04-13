@@ -17,3 +17,9 @@ Takes in a folder of the output JSON files from the server component. (These can
 Counts the number of times each award appears within these files.
 
 The results are useful for tuning the criteria for when awards are given, as well as the interest values which govern when the awards are displayed.
+
+## missing.js
+
+Takes in a folder of output JSON files from the server component and a file of usernames. Looks for usernames which don't have a corresponding JSON file.
+
+The results allow for identifying users which were not processed successfully.
