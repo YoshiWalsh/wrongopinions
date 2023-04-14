@@ -121,6 +121,9 @@ export class DB {
     bulkGetAnime(ids: Array<number>, stronglyConsistent?: boolean, minimal?: false): Promise<{[id: number]: AnimeDetails | undefined}>
     bulkGetAnime(ids: Array<number>, stronglyConsistent?: boolean, minimal?: true): Promise<{[id: number]: AnimeMinimalDetails | undefined}>
     async bulkGetAnime(ids: Array<number>, stronglyConsistent?: boolean, minimal?: boolean) {
+        if(ids.length < 1) {
+            return {};
+        }
         const result = await this.db.batchGetItem({
             RequestItems: {
                 [this.tableName]: {
