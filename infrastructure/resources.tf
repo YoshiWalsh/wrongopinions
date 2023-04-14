@@ -690,6 +690,32 @@ resource "aws_cloudfront_distribution" "cf_distribution" {
         response_headers_policy_id = aws_cloudfront_response_headers_policy.response_headers.id
     }
 
+    ordered_cache_behavior {
+        path_pattern = "/completed/*"
+
+        allowed_methods = ["GET", "HEAD", "OPTIONS"]
+        cached_methods = ["GET", "HEAD"]
+
+        target_origin_id = "mirror"
+
+        forwarded_values {
+            query_string = false
+
+            cookies {
+                forward = "none"
+            }
+
+            headers = [ "Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers" ]
+        }
+
+        viewer_protocol_policy = "redirect-to-https"
+        min_ttl = 3600
+        default_ttl = 3600
+        max_ttl = 86400
+
+        response_headers_policy_id = aws_cloudfront_response_headers_policy.response_headers.id
+    }
+
     restrictions {
         geo_restriction {
             restriction_type = "none"

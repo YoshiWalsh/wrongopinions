@@ -65,6 +65,6 @@ export interface PendingJobStatus {
 }
 
 export interface FullStatus {
-    results: Results | null;
+    resultsUrl: string | null;
     pending: PendingJobStatus | null;
 }

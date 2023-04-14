@@ -240,7 +240,7 @@ export async function getPendingJobStatus(db: DB, username: string): Promise<Con
 export async function getFullStatus(db: DB, username: string): Promise<Contracts.FullStatus> {
     return {
         pending: await getPendingJobStatus(db, username),
-        results: await db.getCompleted(username),
+        resultsUrl: await db.getCompletedUrl(username),
     };
 }
 

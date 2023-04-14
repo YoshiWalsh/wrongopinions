@@ -6,7 +6,7 @@ import { Contracts } from 'wrongopinions-common';
 import { JobStatus, PendingJob } from './model/PendingJob';
 import { QueueStatus } from './model/QueueStatus';
 import { convert, LocalDate } from '@js-joda/core';
-import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, NotFound, NoSuchKey } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, NotFound, NoSuchKey, HeadObjectCommand } from '@aws-sdk/client-s3';
 import { UserListAnimeEntry } from 'myanimelist-api';
 import { default as getStream } from 'get-stream';
 import { Readable } from 'stream';
@@ -29,6 +29,8 @@ export class DB {
     s3: S3Client;
     tableName: string;
     dataBucketName: string;
+    assetsBucketName: string;
+    assetsDomain: string;
 
     constructor() {
         this.db = new DynamoDB({
@@ -45,6 +47,8 @@ export class DB {
         });
         this.tableName = process.env.TABLE_NAME as string;
         this.dataBucketName = process.env.DATA_BUCKET_NAME as string;
+        this.assetsBucketName = process.env.MIRROR_BUCKET_NAME as string;
+        this.assetsDomain = process.env.DOMAIN as string;
     }
 
     private pk(key: string): AttributeMap {
@@ -457,13 +461,15 @@ export class DB {
 
     
 
-    async getCompleted(username: string): Promise<Contracts.Results | null> {
+    async getCompletedUrl(username: string): Promise<string | null> {
+        const key = `completed/${username.toLowerCase()}.json`;
         try {
-            const object = await this.s3.send(new GetObjectCommand({
-                Bucket: this.dataBucketName,
-                Key: `completed-${username.toLowerCase()}.json`,
-            }));
-            return JSON.parse(await getStream(object.Body as Readable)) as Contracts.Results;
+            const params = {
+                Bucket: this.assetsBucketName,
+                Key: key,
+            };
+            await this.s3.send(new HeadObjectCommand(params)); // We don't care about the result, only that it doesn't throw
+            return `https://${this.assetsDomain}/${key}`;
         } catch (ex) {
             if(ex instanceof NoSuchKey) {
                 return null;
@@ -473,9 +479,10 @@ export class DB {
     }
 
     async addCompleted(results: Contracts.Results): Promise<void> {
+        const key = `completed/${results.username.toLowerCase()}.json`;
         await this.s3.send(new PutObjectCommand({
-            Bucket: this.dataBucketName,
-            Key: `completed-${results.username.toLowerCase()}.json`,
+            Bucket: this.assetsBucketName,
+            Key: key,
             Body: JSON.stringify(results),
         }));
     }

@@ -4,6 +4,10 @@ import { Contracts } from 'wrongopinions-common';
 import { environment } from '../environments/environment';
 import { lastValueFrom, Observable } from 'rxjs';
 
+export interface FullStatusWithResults extends Contracts.FullStatus {
+	results: Contracts.Results | null;
+}
+
 @Injectable({
 	providedIn: 'root'
 })
@@ -16,12 +20,26 @@ export class ApiService {
 		return lastValueFrom(request).then(r => r.data);
 	}
 
-	getFullStatus(username: string): Promise<Contracts.FullStatus> {
-		return this.unwrapResponse(
+	async getFullStatus(username: string): Promise<FullStatusWithResults> {
+		const fullStatus = await this.unwrapResponse(
 			this.http.get<Contracts.SuccessResponse<Contracts.FullStatus>>(
 				`${environment.apiUrl}/opinions/${encodeURIComponent(username)}`
 			)
 		);
+		const results = await this.getResults(fullStatus);
+		return {
+			...fullStatus,
+			results,
+		};
+	}
+
+	private async getResults(fullStatus: Contracts.FullStatus): Promise<Contracts.Results | null> {
+		if(!fullStatus.resultsUrl) {
+			return null;
+		}
+		const response = await fetch(fullStatus.resultsUrl);
+		const object = await response.json();
+		return object;
 	}
 
 	getPendingJobStatus(username: string): Promise<Contracts.PendingJobStatus> {
