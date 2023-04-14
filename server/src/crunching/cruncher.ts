@@ -65,6 +65,7 @@ export function convertListEntryToContractAnime(listEntry: UserListAnimeEntry): 
 export async function crunchJob(job: PendingJob, animeList: Array<UserListAnimeEntry>, retrievedAnime: { [id: number]: AnimeDetails | undefined }): Promise<Contracts.Results> {
     console.log("Analysing anime");
     const analysedAnime: Array<AnalysedAnime> = [];
+    const analysedById: { [id: number]: AnalysedAnime } = {};
     for(const watched of animeList) {
         const anime = retrievedAnime[watched.node.id];
         if(!anime?.animeData) {
@@ -79,7 +80,7 @@ export async function crunchJob(job: PendingJob, animeList: Array<UserListAnimeE
         stats.scores.sort((a, b) => b.votes - a.votes);
         const scoreIndex = stats.scores.findIndex(s => s.score == watched.list_status.score);
 
-        analysedAnime.push({
+        const analysed: AnalysedAnime = {
             watched,
             details,
             stats,
@@ -92,11 +93,12 @@ export async function crunchJob(job: PendingJob, animeList: Array<UserListAnimeE
                 .concat(details.explicit_genres.map(g => g.name))
                 .concat(details.themes.map(t => t.name))
                 .concat(details.demographics.map(d => d.name)),
-        });
+        };
+        analysedAnime.push(analysed);
+        analysedById[analysed.details.mal_id] = analysed;
     }
 
     console.log("Crunching scores");
-
     const tooHighRated = [...analysedAnime].sort((a, b) => b.scoreDifference - a.scoreDifference).filter(a => a.scoreDifference > 2);
     const tooLowRated = [...analysedAnime].sort((a, b) => a.scoreDifference - b.scoreDifference).filter(a => a.scoreDifference < -2);
     const leastPopularScore = [...analysedAnime].sort((a, b) => a.scorePopularity - b.scorePopularity).filter(a => a.scorePopularity < 10);
