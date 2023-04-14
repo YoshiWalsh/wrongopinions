@@ -11,7 +11,7 @@ export function calculateBakaScore(analysedAnime: Array<AnalysedAnime>): number 
     const averageScoreIndex = jstat.mean(analysedAnime.map(a => a.scoreRank));
     const averageScoreMultiplier = averageScoreIndex / 9;
 
-    return Math.round(numberOfAnimeMultiplier * averageScoreMultiplier);
+    return !isNaN(averageScoreMultiplier) ? Math.round(numberOfAnimeMultiplier * averageScoreMultiplier) : 0;
 }
 
 
