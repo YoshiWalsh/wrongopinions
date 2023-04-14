@@ -85,6 +85,7 @@ export async function handler<T>(event: T, context: Context): Promise<any> {
             });
         } catch (ex) {
             const errorObject = convertExceptionToResponse(ex);
+            console.error(ex);
             return demand<APIGatewayProxyResultV2>({
                 statusCode: errorObject.code,
                 isBase64Encoded: false,
