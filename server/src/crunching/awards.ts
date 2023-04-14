@@ -23,7 +23,10 @@ function notNull<T>(value: T | null): value is T {
 
 export function getAwardedAwards(anime: Array<AnalysedAnime>, listedAnime: Array<UserListAnimeEntry>): Array<Contracts.AwardedAward> {
     const awarded: Array<Contracts.AwardedAward> = [];
-    return awards.map(a => a.getAward(anime, listedAnime)).filter(notNull);
+    return awards.map(a => {
+        console.log("Crunching award", a.name);
+        return a.getAward(anime, listedAnime)
+    }).filter(notNull);
 }
 
 abstract class BiasConfidenceAward extends Award {
@@ -614,4 +617,6 @@ const awards: Array<Award> = [
         commonality: 'of the same theme',
         getTags: a => a.details.themes.map(a => a.name),
     }),
+    // TODO: Award for people who have not rated any anime
+    // TODO: Award for people who have not rated most of the anime they've completed
 ];

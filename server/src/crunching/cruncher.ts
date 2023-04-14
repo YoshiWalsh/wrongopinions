@@ -63,6 +63,7 @@ export function convertListEntryToContractAnime(listEntry: UserListAnimeEntry): 
 }
 
 export async function crunchJob(job: PendingJob, animeList: Array<UserListAnimeEntry>, retrievedAnime: { [id: number]: AnimeDetails | undefined }): Promise<Contracts.Results> {
+    console.log("Analysing anime");
     const analysedAnime: Array<AnalysedAnime> = [];
     for(const watched of animeList) {
         const anime = retrievedAnime[watched.node.id];
@@ -94,16 +95,19 @@ export async function crunchJob(job: PendingJob, animeList: Array<UserListAnimeE
         });
     }
 
-    const analysedById = analysedAnime.reduce((acc, anime) => ({...acc, [anime.details.mal_id]: anime}), {});
+    console.log("Crunching scores");
 
     const tooHighRated = [...analysedAnime].sort((a, b) => b.scoreDifference - a.scoreDifference).filter(a => a.scoreDifference > 2);
     const tooLowRated = [...analysedAnime].sort((a, b) => a.scoreDifference - b.scoreDifference).filter(a => a.scoreDifference < -2);
     const leastPopularScore = [...analysedAnime].sort((a, b) => a.scorePopularity - b.scorePopularity).filter(a => a.scorePopularity < 10);
+    console.log("Crunching awards");
     const awarded = getAwardedAwards(analysedAnime, animeList);
 
+    console.log("Crunching baka score");
     const bakaScore = calculateBakaScore(analysedAnime);
     const bakaRank = getBakaRank(bakaScore);
 
+    console.log("Finished crunching");
     return {
         username: job.username,
         requested: Instant.ofEpochMilli(job.created).toString(),
