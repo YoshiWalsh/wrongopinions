@@ -22,6 +22,15 @@ const bakaRanks: Array<{
     {
         minimumScore: 0,
         rank: {
+            name: "Inanimate",
+            description: "You haven't rated any shows. We can't judge your taste if you don't have any.",
+            reason: "Awarded for having a baka score of zero.",
+            contributingAnime: [],
+        }
+    },
+    {
+        minimumScore: 1,
+        rank: {
             name: "NPC",
             description: "You know you're meant to pick your own scores, right? MAL isn't a game about trying to match the number.",
             reason: "Awarded for having an unrealistically low baka score.",

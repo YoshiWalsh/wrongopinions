@@ -18,6 +18,9 @@ export interface RankProperties {
 }
 
 const bakaRanks: {[name: string]: RankProperties} = {
+	"Inanimate": {
+		icon: '/assets/rank-icons/petrock.svg',
+	},
 	"NPC": {
 		icon: '/assets/rank-icons/aho.svg',
 	},
