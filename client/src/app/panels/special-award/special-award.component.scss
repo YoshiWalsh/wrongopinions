@@ -61,15 +61,19 @@
 .contributingAnime {
     position: absolute;
     
-    top: 0;
+    top: 5px;
     height: 85px;
     right: 5px;
     width: 80px;
 
+    display: flex;
+    flex-flow: column wrap-reverse;
+    gap: 0;
+
     overflow: hidden;
 
     .thumbnail {
-        float: right;
+        flex: none;
 
         height: 44px;
         width: 26px;
@@ -77,5 +81,49 @@
         background-size: cover;
         background-repeat: no-repeat;
         background-position: center;
+    }
+}
+
+.container.columns-2 {
+    .icon {    
+        width: 116px;
+        height: 116px;
+    }
+
+    .name {
+        left: 125px;
+        right: 250px;
+    }
+    
+    .description {
+        position: absolute;
+    
+        left: 125px;
+        top: 30px;
+        right: 250px;
+    }
+    
+    .reason {
+        position: absolute;
+    
+        left: 125px;
+        top: 92px;
+        right: 250px;
+    }
+
+    .contributingAnime {
+        height: 116px;
+        width: 238px;
+    
+        .thumbnail {
+            flex: none;
+    
+            height: 58px;
+            width: 34px;
+    
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
     }
 }

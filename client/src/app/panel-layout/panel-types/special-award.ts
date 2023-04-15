@@ -154,6 +154,12 @@ export class SpecialAwardPanel extends Panel {
                 rows: 1,
                 interest: interest,
                 baseInterest: interest
+            },
+            {
+                columns: 2,
+                rows: 1,
+                interest: interest * 1.01,
+                baseInterest: interest
             }
         ];
     }
