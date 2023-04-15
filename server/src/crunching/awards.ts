@@ -64,7 +64,8 @@ abstract class BiasConfidenceAward extends Award {
 
         if(confidence >= this.threshold && meanDifference * this.direction > 0) {
             matchingAnime.sort((a, b) => (a.scoreDifference - b.scoreDifference) * this.direction * -1);
-            const contributingAnime = matchingAnime.slice(0, matchingAnime.findIndex(a => a.scoreDifference * this.direction < 0));
+            const firstNonContributing = matchingAnime.findIndex(a => a.scoreDifference * this.direction < 0);
+            const contributingAnime = matchingAnime.slice(0, firstNonContributing !== -1 ? firstNonContributing : matchingAnime.length);
 
             return({
                 name: this.name,
