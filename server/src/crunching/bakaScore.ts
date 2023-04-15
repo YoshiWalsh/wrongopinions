@@ -22,7 +22,7 @@ const bakaRanks: Array<{
     {
         minimumScore: 0,
         rank: {
-            name: "Inanimate",
+            name: "Incorporeal",
             description: "You haven't rated any shows. We can't judge your taste if you don't have any.",
             reason: "Awarded for having a baka score of zero.",
             contributingAnime: [],
