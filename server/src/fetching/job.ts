@@ -10,7 +10,7 @@ import { QueueStatus } from "../model/QueueStatus";
 
 const MAL_PAGE_SIZE = 1000;
 const ESTIMATED_QUEUE_LATENCY = 5;
-const ESTIMATED_SECONDS_PER_ANIME = 3;
+const ESTIMATED_SECONDS_PER_ANIME = 4;
 const ESTIMATED_SECONDS_PER_JOB = 10;
 
 export async function initialiseJob(db: DB, queue: QueueDispatcher, username: string): Promise<Contracts.PendingJobStatus> {
