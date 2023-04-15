@@ -401,7 +401,7 @@ const awards: Array<Award> = [
         genre: 'Hentai',
         direction: 1,
         name: 'Tasteless',
-        description: 'When it comes to anime rating, you use your genitals more than your head. You don’t care about quality when it comes to art style, animation, voice acting, or writing. You might claim to be cultured, but with your undiscerning eye you’re just a porn addict.',
+        description: 'You don’t care about art style, animation, voice acting, or writing. You claim to be cultured, but with your undiscerning eye you’re just a porn addict.',
         threshold: 90,
     }),
     new GenreAward({
