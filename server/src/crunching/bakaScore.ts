@@ -77,7 +77,7 @@ const bakaRanks: Array<{
         minimumScore: 15000,
         rank: {
             name: "Cheater",
-            description: "You must have voted on anime with the specific intention of maximising your baka score. Congratulations, your results are statistically invalid.",
+            description: "Intentionally aiming for the highest baka score? Congratulations, your results are statistically invalid.",
             reason: "Awarded for your votes having no correlation with other votes.",
             contributingAnime: [],
         }

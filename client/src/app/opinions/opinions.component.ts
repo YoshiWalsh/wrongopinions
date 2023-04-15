@@ -37,7 +37,7 @@ const bakaRanks: {[name: string]: RankProperties} = {
 		icon: '/assets/rank-icons/9000.svg',
 	},
 	"Cheater": {
-		icon: '/assets/rank-icons/none.svg',
+		icon: '/assets/rank-icons/missing.svg',
 	},
 };
 

@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="128"
+   height="128"
+   viewBox="0 0 33.866666 33.866668"
+   version="1.1"
+   id="svg8"
+   inkscape:version="1.0.1 (3bc2e813f5, 2020-09-07)"
+   sodipodi:docname="missing.svg">
+  <defs
+     id="defs2">
+    <pattern
+       inkscape:collect="always"
+       xlink:href="#pattern2897"
+       id="pattern2907"
+       patternTransform="matrix(0.04694019,0,0,0.04703798,12.110071,12.234528)" />
+    <pattern
+       patternUnits="userSpaceOnUse"
+       width="64.000007"
+       height="64.000006"
+       patternTransform="translate(4.0576741e-6)"
+       id="pattern2897">
+      <rect
+         style="fill:#f102d5;fill-opacity:1;stroke:none;stroke-width:1.00157;stroke-linecap:round;stroke-linejoin:bevel;stroke-opacity:0.5;paint-order:stroke markers fill"
+         id="rect841"
+         width="32"
+         height="32"
+         x="0"
+         y="0" />
+      <rect
+         style="fill:#000000;fill-opacity:1;stroke:none;stroke-width:1.00157;stroke-linecap:round;stroke-linejoin:bevel;stroke-opacity:0.5;paint-order:stroke markers fill"
+         id="rect841-7"
+         width="32"
+         height="32"
+         x="32.000008"
+         y="0" />
+      <rect
+         style="fill:#000000;fill-opacity:1;stroke:none;stroke-width:1.00157;stroke-linecap:round;stroke-linejoin:bevel;stroke-opacity:0.5;paint-order:stroke markers fill"
+         id="rect841-7-3"
+         width="32"
+         height="32"
+         x="0"
+         y="32.000004" />
+      <rect
+         style="fill:#f102d5;fill-opacity:1;stroke:none;stroke-width:1.00157;stroke-linecap:round;stroke-linejoin:bevel;stroke-opacity:0.5;paint-order:stroke markers fill"
+         id="rect841-74"
+         width="32"
+         height="32"
+         x="31.999994"
+         y="32.000004" />
+    </pattern>
+  </defs>
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="5.6568543"
+     inkscape:cx="63.096705"
+     inkscape:cy="57.330387"
+     inkscape:document-units="px"
+     inkscape:current-layer="g3943"
+     inkscape:document-rotation="0"
+     showgrid="false"
+     units="px"
+     inkscape:window-width="2560"
+     inkscape:window-height="1346"
+     inkscape:window-x="-11"
+     inkscape:window-y="-11"
+     inkscape:window-maximized="1"
+     inkscape:snap-page="true" />
+  <metadata
+     id="metadata5">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <g
+       id="g1008"
+       transform="matrix(1.3821839,0,0,1.3793104,-6.4716482,-6.4229906)">
+      <g
+         id="g3943"
+         transform="matrix(2.7268771,0,0,2.7268771,-28.340482,-28.705387)">
+        <rect
+           style="fill:url(#pattern2907);stroke:none;stroke-width:0.0702721"
+           width="8.9854746"
+           height="9.0041933"
+           x="12.11007"
+           y="12.234529"
+           id="rect2903" />
+      </g>
+    </g>
+  </g>
+</svg>
