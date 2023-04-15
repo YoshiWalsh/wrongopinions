@@ -7,7 +7,7 @@ const output = process.argv[4];
 const files = fs.readdirSync(directory);
 const processedUsernames = {};
 for(const file of files) {
-    const match = /completed-([a-z0-9_\-]{2,16})\.json/.exec(file);
+    const match = /([a-z0-9_\-]{2,16})\.json/.exec(file);
     if(match) {
         processedUsernames[match[1]] = true;
     }

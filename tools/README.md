@@ -12,7 +12,7 @@ Takes in a file of usernames and submits each one for processing.
 
 ## awards.js
 
-Takes in a folder of the output JSON files from the server component. (These can be retrieved using `aws s3 sync s3://wrongopinions-data-bucket . --exclude * --include completed-*`)
+Takes in a folder of the output JSON files from the server component. (These can be retrieved using `aws s3 sync s3://wrongopinions-mirror-bucket/completed .`)
 
 Counts the number of times each award appears within these files.
 
