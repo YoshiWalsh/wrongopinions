@@ -621,6 +621,12 @@ const awards: Array<Award> = [
         commonality: 'of the same theme',
         getTags: a => a.details.themes.map(a => a.name),
     }),
-    // TODO: Award for people who have not rated any anime
-    // TODO: Award for people who have not rated most of the anime they've completed
+    new ProportionListedAward({
+        name: "Aloof",
+        description: "You're so scared that your opinions are wrong that you avoid offering any opinions at all.",
+        reason: "Awarded for finishing shows without rating them.",
+        widePredicate: a => ['completed'].includes(a.watched.list_status.status),
+        narrowPredicate: a => !a.watched.list_status.score,
+        threshold: 0.5
+    }),
 ];

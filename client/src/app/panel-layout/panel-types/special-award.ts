@@ -134,7 +134,11 @@ const specialAwards: {[name: string]: AwardProperties} = {
     "Creature of Habit": {
         icon: "/assets/special-award-icons/creatureofhabit.svg",
         interest: 1,
-    },    
+    },
+    "Aloof": {
+        icon: "/assets/special-award-icons/kuudere.svg",
+        interest: 1,
+    },
 };
 
 export class SpecialAwardPanel extends Panel {
