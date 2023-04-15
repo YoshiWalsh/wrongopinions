@@ -429,7 +429,8 @@ resource "aws_lambda_permission" "lambda_apigateway_permission_heavy" {
 
 
 # In order to compensate for transient issues AND extended MAL outages, we set up a tiered queue system.
-# Initially, the job is visible with no delay. After that, the job will be retried 2 more times, each time 2 minutes apart.
+# Initially, the job is visible with no delay. After that, we'll retry the job a few times quickly.
+# If it still doesn't work, we'll move it to a queue to continue retrying it slowly before finally failing it.
 resource "aws_sqs_queue" "fast_queue" {
     name = join("-", ["wrongopinions", random_id.environment_identifier.hex, "fast"])
     delay_seconds = 0
@@ -437,7 +438,7 @@ resource "aws_sqs_queue" "fast_queue" {
     sqs_managed_sse_enabled = true
     redrive_policy = jsonencode({
         deadLetterTargetArn = aws_sqs_queue.slow_queue.arn
-        maxReceiveCount = 3
+        maxReceiveCount = 10
     })
 }
 
@@ -454,11 +455,10 @@ resource "aws_lambda_event_source_mapping" "fast_queue_lambda" {
     ]
 }
 
-# After that, we wait 15 minutes until the next try. Then we try again every hour, 7 more times.
 resource "aws_sqs_queue" "slow_queue" {
     name = join("-", ["wrongopinions", random_id.environment_identifier.hex, "slow"])
-    delay_seconds = 900
-    visibility_timeout_seconds = 3600
+    delay_seconds = 120
+    visibility_timeout_seconds = 900
     sqs_managed_sse_enabled = true
     redrive_policy = jsonencode({
         deadLetterTargetArn = aws_sqs_queue.dead_queue.arn
@@ -709,9 +709,9 @@ resource "aws_cloudfront_distribution" "cf_distribution" {
         }
 
         viewer_protocol_policy = "redirect-to-https"
-        min_ttl = 3600
-        default_ttl = 3600
-        max_ttl = 86400
+        min_ttl = 0
+        default_ttl = 0
+        max_ttl = 0
 
         response_headers_policy_id = aws_cloudfront_response_headers_policy.response_headers.id
     }
