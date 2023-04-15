@@ -7,8 +7,9 @@ app-panel-outlines {
     position: relative;
     display: grid;
     margin: 5px;
-    grid-template-columns: repeat(var(--columns), 500px);
-    grid-template-rows: repeat(var(--rows), 130px);
+    margin-bottom: 10px;
+    grid-auto-columns: 500px;
+    grid-auto-rows: 130px;
     grid-gap: 10px;
 
     z-index: 0;
