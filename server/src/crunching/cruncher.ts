@@ -47,25 +47,21 @@ export function convertAnimeDetailsToContractAnime(animeDetails: IAnimeFull, pos
 
 export function convertAnalysedAnimeToContractScoredAnime(analysedAnime: AnalysedAnime): Contracts.ScoredAnime {
     return {
-        anime: convertAnimeDetailsToContractAnime(analysedAnime.details, analysedAnime.poster),
+        anime: convertAnalysedAnimeToContractAnime(analysedAnime),
         globalScore: analysedAnime.details.score,
         scorePopularity: analysedAnime.scorePopularity,
         userScore: analysedAnime.watched.list_status.score,
     }
 }
 
-export function convertListEntryToContractAnime(listEntry: UserListAnimeEntry): Contracts.Anime {
-    return {
-        defaultTitle: listEntry.node.title,
-        url: `https://myanimelist.net/anime/${listEntry.node.id}/`,
-        thumbnailUrl: null,
-    };
+export function convertAnalysedAnimeToContractAnime(analysedAnime: AnalysedAnime): Contracts.Anime {
+    return convertAnimeDetailsToContractAnime(analysedAnime.details, analysedAnime.poster);
 }
 
 export async function crunchJob(job: PendingJob, animeList: Array<UserListAnimeEntry>, retrievedAnime: { [id: number]: AnimeDetails | undefined }): Promise<Contracts.Results> {
     console.log("Analysing anime");
     const analysedAnime: Array<AnalysedAnime> = [];
-    const analysedById: { [id: number]: AnalysedAnime } = {};
+    const watchedAndRatedById: { [id: number]: AnalysedAnime } = {};
     for(const watched of animeList) {
         const anime = retrievedAnime[watched.node.id];
         if(!anime?.animeData) {
@@ -87,7 +83,7 @@ export async function crunchJob(job: PendingJob, animeList: Array<UserListAnimeE
             voiceActors,
             poster,
             scoreDifference: watched.list_status.score - details.score,
-            scorePopularity: stats.scores[scoreIndex].percentage,
+            scorePopularity: stats.scores[scoreIndex]?.percentage ?? 0,
             scoreRank: scoreIndex,
             tags: details.genres.map(g => g.name)
                 .concat(details.explicit_genres.map(g => g.name))
@@ -95,18 +91,28 @@ export async function crunchJob(job: PendingJob, animeList: Array<UserListAnimeE
                 .concat(details.demographics.map(d => d.name)),
         };
         analysedAnime.push(analysed);
-        analysedById[analysed.details.mal_id] = analysed;
+        if(watched.list_status.status === "completed" && watched.list_status.score) {
+            watchedAndRatedById[analysed.details.mal_id] = analysed;
+        }
     }
 
     console.log("Crunching scores");
-    const tooHighRated = [...analysedAnime].sort((a, b) => b.scoreDifference - a.scoreDifference).filter(a => a.scoreDifference > 2);
-    const tooLowRated = [...analysedAnime].sort((a, b) => a.scoreDifference - b.scoreDifference).filter(a => a.scoreDifference < -2);
-    const leastPopularScore = [...analysedAnime].sort((a, b) => a.scorePopularity - b.scorePopularity).filter(a => a.scorePopularity < 10);
+    const watchedRated = analysedAnime.filter(a => a.watched.list_status.status === "completed" && a.watched.list_status.score);
+
+    watchedRated.sort((a, b) => b.scoreDifference - a.scoreDifference); // Sort by overrating
+    const tooHighRated = watchedRated.filter(a => a.scoreDifference > 2);
+
+    watchedRated.reverse(); // Sort by underrating
+    const tooLowRated = watchedRated.filter(a => a.scoreDifference < -2);
+
+    watchedRated.sort((a, b) => a.scorePopularity - b.scorePopularity) // Sort by score unpopularity
+    const leastPopularScore = watchedRated.filter(a => a.scorePopularity < 10);
+
     console.log("Crunching awards");
-    const awarded = getAwardedAwards(analysedAnime, animeList);
+    const awarded = getAwardedAwards(analysedAnime);
 
     console.log("Crunching baka score");
-    const bakaScore = calculateBakaScore(analysedAnime);
+    const bakaScore = calculateBakaScore(watchedRated);
     const bakaRank = getBakaRank(bakaScore);
 
     console.log("Finished crunching");
@@ -120,7 +126,7 @@ export async function crunchJob(job: PendingJob, animeList: Array<UserListAnimeE
         mostUnderratedShows: tooLowRated.map(convertAnalysedAnimeToContractScoredAnime),
         leastPopularScores: leastPopularScore.map(convertAnalysedAnimeToContractScoredAnime),
         specialAwards: awarded,
-        seriesDirectionCorrelations: getSeriesDirectionCorrelations(analysedById),
+        seriesDirectionCorrelations: getSeriesDirectionCorrelations(watchedAndRatedById),
     };
 }
 

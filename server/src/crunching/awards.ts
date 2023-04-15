@@ -1,7 +1,6 @@
 import { ZonedDateTime } from '@js-joda/core';
 import * as jstat from 'jstat';
-import { UserListAnimeEntry } from 'myanimelist-api';
-import { AnalysedAnime, convertAnimeDetailsToContractAnime, convertListEntryToContractAnime } from "./cruncher";
+import { AnalysedAnime, convertAnalysedAnimeToContractAnime } from "./cruncher";
 import { Contracts } from "wrongopinions-common";
 
 export abstract class Award {
@@ -14,18 +13,18 @@ export abstract class Award {
         this.description = data.description;
     }
 
-    abstract getAward(anime: Array<AnalysedAnime>, listedAnime: Array<UserListAnimeEntry>): Contracts.AwardedAward | null;
+    abstract getAward(anime: Array<AnalysedAnime>): Contracts.AwardedAward | null;
 }
 
 function notNull<T>(value: T | null): value is T {
     return value !== null;
 }
 
-export function getAwardedAwards(anime: Array<AnalysedAnime>, listedAnime: Array<UserListAnimeEntry>): Array<Contracts.AwardedAward> {
+export function getAwardedAwards(anime: Array<AnalysedAnime>): Array<Contracts.AwardedAward> {
     const awarded: Array<Contracts.AwardedAward> = [];
     return awards.map(a => {
         console.log("Crunching award", a.name);
-        return a.getAward(anime, listedAnime)
+        return a.getAward(anime)
     }).filter(notNull);
 }
 
@@ -42,7 +41,8 @@ abstract class BiasConfidenceAward extends Award {
     }
 
     shouldAnimeBeSampled(anime: AnalysedAnime): boolean {
-        return true; // By default, include all anime
+        // By default, include all completed & rated anime
+        return anime.watched.list_status.status === "completed" && !!anime.watched.list_status.score;
     };
 
     abstract doesAnimeMatch(anime: AnalysedAnime): boolean;
@@ -70,7 +70,7 @@ abstract class BiasConfidenceAward extends Award {
                 name: this.name,
                 description: this.description,
                 reason: this.getReason(confidence),
-                contributingAnime: contributingAnime.map(a => convertAnimeDetailsToContractAnime(a.details, a.poster)),
+                contributingAnime: contributingAnime.map(a => convertAnalysedAnimeToContractAnime(a)),
             });
         }
 
@@ -112,7 +112,7 @@ class SubjectAward extends BiasConfidenceAward {
     }
 
     shouldAnimeBeSampled(anime: AnalysedAnime) {
-        return !this.genre || anime.tags.includes(this.genre);
+        return super.shouldAnimeBeSampled(anime) && (!this.genre || anime.tags.includes(this.genre));
     }
     
     doesAnimeMatch(anime: AnalysedAnime) {
@@ -154,7 +154,7 @@ class ShowAward extends Award {
                 name: this.name,
                 description: this.description,
                 reason: `Awarded because you rated ${show.details.title_japanese} ${this.direction > 0 ? 'highly' : 'poorly'}.`,
-                contributingAnime: [convertAnimeDetailsToContractAnime(show.details, show.poster)],
+                contributingAnime: [convertAnalysedAnimeToContractAnime(show)],
             });
         }
 
@@ -190,8 +190,9 @@ class ComparisonAward extends Award {
     }
 
     public getAward(anime: Array<AnalysedAnime>) {
-        const worseShows = this.getShowsMatchingIds(anime, this.worseShowIds);
-        const betterShows = this.getShowsMatchingIds(anime, this.betterShowIds);
+        const watchedAndRated = anime.filter(a => a.watched.list_status.status === "completed" && !!a.watched.list_status.score);
+        const worseShows = this.getShowsMatchingIds(watchedAndRated, this.worseShowIds);
+        const betterShows = this.getShowsMatchingIds(watchedAndRated, this.betterShowIds);
         const worseScore = this.getAverageScoreForShows(worseShows);
         const betterScore = this.getAverageScoreForShows(betterShows);
 
@@ -200,7 +201,7 @@ class ComparisonAward extends Award {
                 name: this.name,
                 description: this.description,
                 reason: this.reason,
-                contributingAnime: worseShows.concat(betterShows).map(s => convertAnimeDetailsToContractAnime(s.details, s.poster)),
+                contributingAnime: worseShows.concat(betterShows).map(s => convertAnalysedAnimeToContractAnime(s)),
             };
         }
 
@@ -223,14 +224,15 @@ class ProportionWatchedAward extends Award {
     }
 
     public getAward(anime: Array<AnalysedAnime>) {
-        const matchedShows = anime.filter(this.predicate);
+        const watchedAndRated = anime.filter(a => a.watched.list_status.status === "completed" && !!a.watched.list_status.score);
+        const matchedShows = watchedAndRated.filter(this.predicate);
         const ratio = matchedShows.length / anime.length;
         if(ratio > this.threshold) {
             return {
                 name: this.name,
                 description: this.description,
                 reason: this.reason,
-                contributingAnime: matchedShows.map(s => convertAnimeDetailsToContractAnime(s.details, s.poster)),
+                contributingAnime: matchedShows.map(s => convertAnalysedAnimeToContractAnime(s)),
             };
         }
 
@@ -241,11 +243,11 @@ class ProportionWatchedAward extends Award {
 class ProportionListedAward extends Award {
     public type = "proportion-listed";
     private reason: string;
-    private widePredicate: (anime: UserListAnimeEntry) => boolean;
-    private narrowPredicate: (anime: UserListAnimeEntry) => boolean;
+    private widePredicate: (anime: AnalysedAnime) => boolean;
+    private narrowPredicate: (anime: AnalysedAnime) => boolean;
     private threshold: number;
 
-    constructor(data: {name: string, description: string, reason: string, widePredicate: (anime: UserListAnimeEntry) => boolean, narrowPredicate: (anime: UserListAnimeEntry) => boolean, threshold: number}) {
+    constructor(data: {name: string, description: string, reason: string, widePredicate: (anime: AnalysedAnime) => boolean, narrowPredicate: (anime: AnalysedAnime) => boolean, threshold: number}) {
         super(data);
 
         this.reason = data.reason;
@@ -254,8 +256,8 @@ class ProportionListedAward extends Award {
         this.threshold = data.threshold;
     }
 
-    public getAward(anime: Array<AnalysedAnime>, listedAnime: Array<UserListAnimeEntry>) {
-        const includedShows = listedAnime.filter(this.widePredicate);
+    public getAward(anime: Array<AnalysedAnime>) {
+        const includedShows = anime.filter(this.widePredicate);
         const matchedShows = includedShows.filter(this.narrowPredicate);
         const ratio = matchedShows.length / includedShows.length;
         if(ratio > this.threshold) {
@@ -263,7 +265,7 @@ class ProportionListedAward extends Award {
                 name: this.name,
                 description: this.description,
                 reason: this.reason,
-                contributingAnime: matchedShows.map(s => convertListEntryToContractAnime(s)),
+                contributingAnime: matchedShows.map(s => convertAnalysedAnimeToContractAnime(s)),
             };
         }
 
@@ -274,10 +276,10 @@ class ProportionListedAward extends Award {
 class AmountListedAward extends Award {
     public type = "amount-listed";
     private reason: string;
-    private predicate: (anime: UserListAnimeEntry) => boolean;
+    private predicate: (anime: AnalysedAnime) => boolean;
     private threshold: number;
 
-    constructor(data: {name: string, description: string, reason: string, predicate: (anime: UserListAnimeEntry) => boolean, threshold: number}) {
+    constructor(data: {name: string, description: string, reason: string, predicate: (anime: AnalysedAnime) => boolean, threshold: number}) {
         super(data);
 
         this.reason = data.reason;
@@ -285,14 +287,14 @@ class AmountListedAward extends Award {
         this.threshold = data.threshold;
     }
 
-    public getAward(anime: Array<AnalysedAnime>, listedAnime: Array<UserListAnimeEntry>) {
-        const matchedShows = listedAnime.filter(this.predicate);
+    public getAward(anime: Array<AnalysedAnime>) {
+        const matchedShows = anime.filter(this.predicate);
         if(matchedShows.length > this.threshold) {
             return {
                 name: this.name,
                 description: this.description,
                 reason: this.reason,
-                contributingAnime: matchedShows.map(s => convertListEntryToContractAnime(s)),
+                contributingAnime: matchedShows.map(s => convertAnalysedAnimeToContractAnime(s)),
             };
         }
 
@@ -314,8 +316,9 @@ class UnbalancedAward extends Award {
         this.commonality = data.commonality;
     }
 
-    public getAward(anime: Array<AnalysedAnime>, listedAnime: Array<UserListAnimeEntry>) {
-        const allTagsList = anime.flatMap(this.getTags);
+    public getAward(anime: Array<AnalysedAnime>) {
+        const watched = anime.filter(a => a.watched.list_status.status === "completed");
+        const allTagsList = watched.flatMap(this.getTags);
         const tagCounts: {[genre: string]: number} = {};
         for(const tag of allTagsList) {
             tagCounts[tag] = (tagCounts[tag] ?? 0) + 1;
@@ -335,8 +338,8 @@ class UnbalancedAward extends Award {
             return {
                 name: this.name,
                 description: this.description,
-                reason: `Awarded for more than ${(this.threshold * 100).toFixed(0)}% of scored shows ${this.commonality}. (${leastBalancedTag})`,
-                contributingAnime: contributingAnime.map(a => convertAnimeDetailsToContractAnime(a.details, a.poster)),
+                reason: `Awarded for more than ${(this.threshold * 100).toFixed(0)}% of watched shows ${this.commonality}. (${leastBalancedTag})`,
+                contributingAnime: contributingAnime.map(a => convertAnalysedAnimeToContractAnime(a)),
             };
         }
         return null;
@@ -562,38 +565,38 @@ const awards: Array<Award> = [
         description: "You must be a precog or something, being able to judge a show without even watching an episode.",
         reason: "Awarded for scoring an anime in 'plan to watch' status.",
         widePredicate: a => true,
-        narrowPredicate: a => !!a.list_status.score && a.list_status.status == 'plan_to_watch',
+        narrowPredicate: a => !!a.watched.list_status.score && a.watched.list_status.status == 'plan_to_watch',
         threshold: 0
     }),
     new ProportionListedAward({
         name: "Hasty",
         description: "Aren't you a bit quick to judge?",
         reason: "Awarded for scoring shows without finishing them.",
-        widePredicate: a => !!a.list_status.score,
-        narrowPredicate: a => a.list_status.status != 'completed',
+        widePredicate: a => !!a.watched.list_status.score,
+        narrowPredicate: a => a.watched.list_status.status != 'completed',
         threshold: 0.1
     }),
     new ProportionListedAward({
         name: "Quitter",
         description: "When the going gets tough, you just give up.",
         reason: "Drop more than 20% of shows.",
-        widePredicate: a => a.list_status.status != 'plan_to_watch',
-        narrowPredicate: a => a.list_status.status == 'dropped',
+        widePredicate: a => a.watched.list_status.status != 'plan_to_watch',
+        narrowPredicate: a => a.watched.list_status.status == 'dropped',
         threshold: 0.2
     }),
     new ProportionListedAward({
         name: "Theoretical Weeb",
         description: "You like the idea of watching anime more than you like watching anime.",
         reason: "Have more shows in 'plan to watch' than 'completed'.",
-        widePredicate: a => ['plan_to_watch', 'completed'].includes(a.list_status.status),
-        narrowPredicate: a => a.list_status.status == 'plan_to_watch',
+        widePredicate: a => ['plan_to_watch', 'completed'].includes(a.watched.list_status.status),
+        narrowPredicate: a => a.watched.list_status.status == 'plan_to_watch',
         threshold: 0.5
     }),
     new AmountListedAward({
         name: "Cryostasis",
         description: "Be honest with yourself, are you ever going to resume those shows? Just mark them 'dropped' and move on with your life.",
         reason: "Have more than 50 shows in on-hold status.",
-        predicate: a => a.list_status.status == 'on_hold',
+        predicate: a => a.watched.list_status.status == 'on_hold',
         threshold: 50
     }),
     new UnbalancedAward({

@@ -42,7 +42,7 @@ export async function initialiseJob(db: DB, queue: QueueDispatcher, username: st
         offset += MAL_PAGE_SIZE;
     }
 
-    const requiredAnime = animeList.filter(a => a.list_status?.status === "completed" && a.list_status?.score).map(a => a.node.id);
+    const requiredAnime = animeList.map(a => a.node.id);
     
     console.log("Getting existing anime");
     const now = Date.now();
@@ -252,10 +252,9 @@ export async function processJob(db: DB, username: string): Promise<void> {
         console.log("Retrieving anime list");
         const animeList = await db.loadAnimeList(username);
 
-        const completedRatedAnime = animeList.filter(a => a.list_status.status === "completed" && a.list_status.score) as Array<UserListAnimeEntry>;
-
         console.log("Retrieving anime");
-        const retrievedAnime = await db.bulkGetAnime(completedRatedAnime.map(a => a.node.id), true, false);
+        const requiredAnime = animeList.map(a => a.node.id);
+        const retrievedAnime = await db.bulkGetAnime(requiredAnime, true, false);
 
         console.log("Crunching");
         const results = await crunchJob(job, animeList, retrievedAnime);
