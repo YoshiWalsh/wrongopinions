@@ -6,138 +6,143 @@ export interface AwardProperties {
     interest: number;
 }
 
+const lowInterest = 0.8;
+const mediumInterest = 1.1;
+const highInterest = 1.6;
+const veryHighInterest = 2;
+
 const specialAwards: {[name: string]: AwardProperties} = {
     "Small Brain": {
         icon: "/assets/special-award-icons/smallbrain.svg",
-        interest: 1,
+        interest: mediumInterest,
     },
     "Pretentious": {
         icon: "/assets/special-award-icons/pretentious.svg",
-        interest: 1,
+        interest: mediumInterest,
     },
     "Meathead": {
         icon: "/assets/special-award-icons/meathead.svg",
-        interest: 1,
+        interest: mediumInterest,
     },
     "Heartless": {
         icon: "/assets/special-award-icons/heartless.svg",
-        interest: 1,
+        interest: lowInterest,
     },
     "Bigamist": {
         icon: "/assets/special-award-icons/bigamist.svg",
-        interest: 1,
+        interest: mediumInterest,
     },
     "Boring": {
         icon: "/assets/special-award-icons/boring.svg",
-        interest: 1,
+        interest: mediumInterest,
     },
     "Prude": {
         icon: "/assets/special-award-icons/prude.svg",
-        interest: 1,
+        interest: lowInterest,
     },
     "Tasteless": {
         icon: "/assets/special-award-icons/tasteless.svg",
-        interest: 1,
+        interest: highInterest,
     },
     "Homophobe": {
         icon: "/assets/special-award-icons/homophobe.svg",
-        interest: 1,
+        interest: mediumInterest,
     },
     "Objectifier": {
         icon: "/assets/special-award-icons/objectifier.svg",
-        interest: 1,
+        interest: highInterest,
     },
     "Humourless": {
         icon: "/assets/special-award-icons/humourless.svg",
-        interest: 1,
+        interest: veryHighInterest,
     },
     "Sociopath": {
         icon: "/assets/special-award-icons/sociopath.svg",
-        interest: 1,
+        interest: veryHighInterest,
     },
     "Neo-Luddite": {
         icon: "/assets/special-award-icons/neoluddite.svg",
-        interest: 1,
+        interest: veryHighInterest,
     },
     "Yeagerist": {
         icon: "/assets/special-award-icons/yeagerist.svg",
-        interest: 1,
+        interest: lowInterest,
     },
     "Superficial": {
         icon: "/assets/special-award-icons/superficial.svg",
-        interest: 1,
+        interest: highInterest,
     },
     "Only Child": {
         icon: "/assets/special-award-icons/onlychild.svg",
-        interest: 1,
+        interest: highInterest,
     },
     "Hipster": {
         icon: "/assets/special-award-icons/hipster.svg",
-        interest: 1,
+        interest: lowInterest,
     },
     "Uncritical": {
         icon: "/assets/special-award-icons/uncritical.svg",
-        interest: 1,
+        interest: veryHighInterest,
     },
     "Jaded": {
         icon: "/assets/special-award-icons/jaded.svg",
-        interest: 1,
+        interest: mediumInterest,
     },
     "Whippersnapper": {
         icon: "/assets/special-award-icons/whippersnapper.svg",
-        interest: 1,
+        interest: lowInterest,
     },
     "Geriatric": {
         icon: "/assets/special-award-icons/geriatric.svg",
-        interest: 1,
+        interest: veryHighInterest,
     },
     "Bin Diver": {
         icon: "/assets/special-award-icons/bindiver.svg",
-        interest: 1,
+        interest: highInterest,
     },
     "Silver Spoon": {
         icon: "/assets/special-award-icons/silverspoon.svg",
-        interest: 1,
+        interest: highInterest,
     },
     "Loner": {
         icon: "/assets/special-award-icons/loner.svg",
-        interest: 1,
+        interest: veryHighInterest,
     },
     "Judging by the cover": {
         icon: "/assets/special-award-icons/judgingbythecover.svg",
-        interest: 1,
+        interest: mediumInterest,
     },
     "Hasty": {
         icon: "/assets/special-award-icons/hasty.svg",
-        interest: 1,
+        interest: lowInterest,
     },
     "Quitter": {
         icon: "/assets/special-award-icons/quitter.svg",
-        interest: 1,
+        interest: highInterest,
     },
     "Theoretical Weeb": {
         icon: "/assets/special-award-icons/theoreticalweeb.svg",
-        interest: 1,
+        interest: mediumInterest,
     },
     "Cryostasis": {
         icon: "/assets/special-award-icons/cryostasis.svg",
-        interest: 1,
+        interest: mediumInterest,
     },
     "Unbalanced": {
         icon: "/assets/special-award-icons/unbalanced.svg",
-        interest: 1,
+        interest: mediumInterest,
     },
     "Stan": {
         icon: "/assets/special-award-icons/stan.svg",
-        interest: 1,
+        interest: mediumInterest,
     },
     "Creature of Habit": {
         icon: "/assets/special-award-icons/creatureofhabit.svg",
-        interest: 1,
+        interest: mediumInterest,
     },
     "Aloof": {
         icon: "/assets/special-award-icons/kuudere.svg",
-        interest: 1,
+        interest: highInterest,
     },
 };
 
