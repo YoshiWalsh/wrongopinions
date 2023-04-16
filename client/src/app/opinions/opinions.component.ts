@@ -1,4 +1,5 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
+import { Title } from "@angular/platform-browser";
 import { default as sanitizeFilename } from 'sanitize-filename';
 import { ActivatedRoute } from '@angular/router';
 import { Contracts } from 'wrongopinions-common';
@@ -78,11 +79,13 @@ export class OpinionsComponent implements OnInit {
 	constructor(
 		private route: ActivatedRoute,
 		private api: ApiService,
+		private title: Title,
 	) {}
 
 	ngOnInit(): void {
 		this.route.paramMap.subscribe(params => {
 			this.username = params.get('username');
+			this.title.setTitle(`${this.username} | WrongOpinions.moe`)
 
 			this.initialiseOpinions();
 		});

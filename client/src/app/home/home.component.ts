@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { Title } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 
 @Component({
@@ -10,7 +11,9 @@ export class HomeComponent implements OnInit {
 
 	username: string = "";
 
-	constructor(private router: Router) { }
+	constructor(private router: Router, title: Title) {
+		title.setTitle("WrongOpinions.moe");
+	}
 
 	ngOnInit(): void {
 	}
