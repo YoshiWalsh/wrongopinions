@@ -61,12 +61,11 @@ export class PanelLayoutComponent implements OnInit, OnChanges {
 					((possibleSizes[index - 1]?.rows ?? 0) * (possibleSizes[index - 1]?.columns ?? 0)),
 			})).reverse();
 			const firstInterestingSizeIndex = assessedSizes.findIndex(s => s.additionalInterest > 0);
-			const interestingPossibleSizes = firstInterestingSizeIndex !== -1 ? assessedSizes.slice(firstInterestingSizeIndex) : [];
 			return {
 				panel: p,
-				possibleSizes: interestingPossibleSizes,
-				currentSizeIndex: 0,
-				currentSize: interestingPossibleSizes[0],
+				possibleSizes: assessedSizes,
+				currentSizeIndex: firstInterestingSizeIndex,
+				currentSize: assessedSizes[firstInterestingSizeIndex],
 			};
 		});
 
@@ -97,7 +96,7 @@ export class PanelLayoutComponent implements OnInit, OnChanges {
 		// times as there are empty cells in the last row, so the amount of time this
 		// can take is somewhat constrained.
 		const endRow = this.getEndRow(layout);
-		while(!this.isRowFull(layout, endRow - 1)) {
+		while(this.hasGaps(layout, endRow)) {
 			const newLayout = this.growPanels(potentialPanels, endRow);
 
 			if(!newLayout) {
@@ -122,8 +121,11 @@ export class PanelLayoutComponent implements OnInit, OnChanges {
 		return growablePanels.sort((a, b) => {
 			const aGrownSize = a.possibleSizes[a.currentSizeIndex - 1];
 			const bGrownSize = b.possibleSizes[b.currentSizeIndex - 1];
-			const aRatio = aGrownSize.additionalInterest / aGrownSize.additionalArea;
-			const bRatio = bGrownSize.additionalInterest / bGrownSize.additionalArea;
+			// We add a very small amount to the additionalInterest values so that if there are
+			// multiple growable panels with an additional interest of 0 then we will use whichever
+			// one requires the smallest amount of additional area.
+			const aRatio = (aGrownSize.additionalInterest + 0.001) / aGrownSize.additionalArea;
+			const bRatio = (bGrownSize.additionalInterest + 0.001) / bGrownSize.additionalArea;
 			return bRatio - aRatio;
 		});
 	}
@@ -152,22 +154,25 @@ export class PanelLayoutComponent implements OnInit, OnChanges {
 		this.sortGrowablePanels(growablePanels);
 
 		for(const growablePanel of growablePanels) {
-			growablePanel.currentSizeIndex--;
-			growablePanel.currentSize = growablePanel.possibleSizes[growablePanel.currentSizeIndex];
+			const initialSizeIndex = growablePanel.currentSizeIndex;
 
-			this.sortPanels(potentialPanels);
-			const panelsToPlace = potentialPanels.filter(p => p.currentSize);
-			const newLayout = this.layoutPanels(panelsToPlace);
-
-			if(newLayout.length < panelsToPlace.length || this.getEndRow(newLayout) > maximumEndRow) {
-				// Unable to grow this panel, shrink it back down and try another
-				growablePanel.currentSizeIndex++;
+			while(growablePanel.currentSizeIndex > 0) {
+				growablePanel.currentSizeIndex--;
 				growablePanel.currentSize = growablePanel.possibleSizes[growablePanel.currentSizeIndex];
-				continue;
-			} else {
-				// Grew a panel, return the new layout
-				return newLayout;
+
+				this.sortPanels(potentialPanels);
+				const panelsToPlace = potentialPanels.filter(p => p.currentSize);
+				const newLayout = this.layoutPanels(panelsToPlace);
+
+				if(newLayout.length >= panelsToPlace.length && this.getEndRow(newLayout) <= maximumEndRow) {
+					// Grew a panel, return the new layout
+					return newLayout;
+				}
 			}
+			// Unable to grow this panel, shrink it back down and try another
+			growablePanel.currentSizeIndex = initialSizeIndex;
+			growablePanel.currentSize = growablePanel.possibleSizes[growablePanel.currentSizeIndex];
+			continue;
 		}
 
 		// Wasn't able to grow any panels
@@ -242,12 +247,21 @@ export class PanelLayoutComponent implements OnInit, OnChanges {
 		const rowPanels = layout.filter(p => p.position.startRow <= row && p.position.endRow > row);
 
 		for(let i = 0; i < this.columns; i++) {
-			const panel = rowPanels.find(p => p.position.startRow <= i && p.position.endRow > i);
+			const panel = rowPanels.find(p => p.position.startColumn <= i && p.position.endColumn > i);
 			if(!panel) {
 				return false;
 			}
 		}
 		return true;
+	}
+
+	private hasGaps(layout: Array<PositionedPanel<Panel>>, rows: number): boolean {
+		for(let i = 0; i < rows; i++) {
+			if(!this.isRowFull(layout, i)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	ngOnInit(): void {
