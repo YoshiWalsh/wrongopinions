@@ -471,7 +471,11 @@ export class DB {
             await this.s3.send(new HeadObjectCommand(params)); // We don't care about the result, only that it doesn't throw
             return `https://${this.assetsDomain}/${key}`;
         } catch (ex) {
-            if(ex instanceof NoSuchKey) {
+            // GetObject returns NoSuchKey and HeadObject returns NotFound
+            // AWS value backwards compat so I'm sure they wouldn't change
+            // this, but the distinction is weird enough that I feel safer
+            // checking for both.
+            if(ex instanceof NoSuchKey || ex instanceof NotFound) {
                 return null;
             }
             throw ex;
