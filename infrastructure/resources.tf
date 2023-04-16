@@ -427,6 +427,22 @@ resource "aws_lambda_permission" "lambda_apigateway_permission_heavy" {
     source_arn = "${aws_apigatewayv2_api.api.execution_arn}/*/*/*"
 }
 
+resource "aws_apigatewayv2_domain_name" "api_domain" {
+    domain_name = "api.${var.domain}"
+
+    domain_name_configuration {
+        certificate_arn = aws_acm_certificate_validation.api_cert_validation.certificate_arn
+        endpoint_type   = "REGIONAL"
+        security_policy = "TLS_1_2"
+    }
+}
+
+resource "aws_apigatewayv2_api_mapping" "api" {
+    api_id      = aws_apigatewayv2_api.api.id
+    domain_name = aws_apigatewayv2_domain_name.api_domain.id
+    stage       = aws_apigatewayv2_stage.api_stage.id
+}
+
 
 # In order to compensate for transient issues AND extended MAL outages, we set up a tiered queue system.
 # Initially, the job is visible with no delay. After that, we'll retry the job a few times quickly.
@@ -540,6 +556,11 @@ resource "aws_acm_certificate" "cf_cert" {
     validation_method = "DNS"
 }
 
+resource "aws_acm_certificate" "api_cert" {
+    domain_name = join(".", ["api", var.domain])
+    validation_method = "DNS"
+}
+
 data "aws_route53_zone" "zone" {
     name = var.zone_name
     private_zone = false
@@ -548,6 +569,23 @@ data "aws_route53_zone" "zone" {
 resource "aws_route53_record" "cf_cert_validation_dns" {
     for_each = {
         for dvo in aws_acm_certificate.cf_cert.domain_validation_options : dvo.domain_name => {
+            name = dvo.resource_record_name
+            record = dvo.resource_record_value
+            type = dvo.resource_record_type
+        }
+    }
+
+    allow_overwrite = true
+    name = each.value.name
+    records = [each.value.record]
+    ttl = 60
+    type = each.value.type
+    zone_id = data.aws_route53_zone.zone.zone_id
+}
+
+resource "aws_route53_record" "api_cert_validation_dns" {
+    for_each = {
+        for dvo in aws_acm_certificate.api_cert.domain_validation_options : dvo.domain_name => {
             name = dvo.resource_record_name
             record = dvo.resource_record_value
             type = dvo.resource_record_type
@@ -578,11 +616,32 @@ resource "aws_route53_record" "cf_dns" {
     }
 }
 
+resource "aws_route53_record" "api_dns" {
+    for_each = toset(["A", "AAAA"])
+
+    zone_id = data.aws_route53_zone.zone.zone_id
+
+    allow_overwrite = true
+    name = "api.${var.domain}"
+    type = each.key
+
+    alias {
+        name = "${aws_apigatewayv2_domain_name.api_domain.domain_name_configuration[0].target_domain_name}"
+        zone_id = "${aws_apigatewayv2_domain_name.api_domain.domain_name_configuration[0].hosted_zone_id}"
+        evaluate_target_health = false
+    }
+}
+
 resource "aws_acm_certificate_validation" "cf_cert_validation" {
     provider = aws.global
 
     certificate_arn = aws_acm_certificate.cf_cert.arn
     validation_record_fqdns = [for record in aws_route53_record.cf_cert_validation_dns : record.fqdn]
+}
+
+resource "aws_acm_certificate_validation" "api_cert_validation" {
+    certificate_arn = aws_acm_certificate.api_cert.arn
+    validation_record_fqdns = [for record in aws_route53_record.api_cert_validation_dns : record.fqdn]
 }
 
 resource "aws_cloudfront_origin_access_control" "cf_oac" {
