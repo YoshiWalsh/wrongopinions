@@ -226,7 +226,8 @@ class ProportionWatchedAward extends Award {
 
     public getAward(anime: Array<AnalysedAnime>) {
         const watchedAndRated = anime.filter(a => a.watched.list_status.status === "completed" && !!a.watched.list_status.score);
-        const matchedShows = watchedAndRated.filter(this.predicate);
+        const matchedShows = watchedAndRated.filter(this.predicate);        
+        matchedShows.sort((a, b) => b.details.scored_by - a.details.scored_by);
         const ratio = matchedShows.length / anime.length;
         if(ratio > this.threshold) {
             return {
@@ -260,6 +261,7 @@ class ProportionListedAward extends Award {
     public getAward(anime: Array<AnalysedAnime>) {
         const includedShows = anime.filter(this.widePredicate);
         const matchedShows = includedShows.filter(this.narrowPredicate);
+        matchedShows.sort((a, b) => b.details.scored_by - a.details.scored_by);
         const ratio = matchedShows.length / includedShows.length;
         if(ratio > this.threshold) {
             return {
@@ -290,6 +292,7 @@ class AmountListedAward extends Award {
 
     public getAward(anime: Array<AnalysedAnime>) {
         const matchedShows = anime.filter(this.predicate);
+        matchedShows.sort((a, b) => b.details.scored_by - a.details.scored_by);
         if(matchedShows.length > this.threshold) {
             return {
                 name: this.name,
@@ -336,6 +339,7 @@ class UnbalancedAward extends Award {
         if(unbalancedTags.length > 0) {
             const leastBalancedTag = unbalancedTags[0];
             const contributingAnime = anime.filter(a => this.getTags(a).findIndex(t => t === leastBalancedTag) !== -1);
+            contributingAnime.sort((a, b) => b.details.scored_by - a.details.scored_by);
             return {
                 name: this.name,
                 description: this.description,
