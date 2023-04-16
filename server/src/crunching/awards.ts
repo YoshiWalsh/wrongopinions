@@ -515,8 +515,8 @@ const awards: Array<Award> = [
     new ProportionWatchedAward({
         name: "Uncritical",
         description: "As long as there are some pretty colours on the screen, you're happy.",
-        reason: "Awarded for mostly scoring anime 9 or 10.",
-        predicate: a => a.watched.list_status.score >= 9,
+        reason: "Awarded for mostly scoring anime 10.",
+        predicate: a => a.watched.list_status.score == 10,
         threshold: 0.5
     }),
     new ProportionWatchedAward({
@@ -575,7 +575,7 @@ const awards: Array<Award> = [
         reason: "Awarded for scoring shows without finishing them.",
         widePredicate: a => !!a.watched.list_status.score,
         narrowPredicate: a => a.watched.list_status.status != 'completed',
-        threshold: 0.1
+        threshold: 0.2
     }),
     new ProportionListedAward({
         name: "Quitter",
