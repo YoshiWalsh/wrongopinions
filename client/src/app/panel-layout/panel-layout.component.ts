@@ -27,6 +27,8 @@ export interface PositionedPanel<T extends Panel> {
 interface PotentialPanel<T extends Panel> {
 	panel: T;
 	possibleSizes: Array<PanelSize>;
+	currentSizeIndex: number;
+	currentSize: PanelSize;
 }
 
 @Component({
@@ -59,39 +61,71 @@ export class PanelLayoutComponent implements OnInit, OnChanges {
 					((possibleSizes[index - 1]?.rows ?? 0) * (possibleSizes[index - 1]?.columns ?? 0)),
 			})).reverse();
 			const firstInterestingSizeIndex = assessedSizes.findIndex(s => s.additionalInterest > 0);
+			const interestingPossibleSizes = firstInterestingSizeIndex !== -1 ? assessedSizes.slice(firstInterestingSizeIndex) : [];
 			return {
 				panel: p,
-				possibleSizes: firstInterestingSizeIndex !== -1 ? assessedSizes.slice(firstInterestingSizeIndex) : [],
+				possibleSizes: interestingPossibleSizes,
+				currentSizeIndex: 0,
+				currentSize: interestingPossibleSizes[0],
 			};
 		});
 
 
-		let panelsToPlace = [...potentialPanels];
+		// Repeatedly shrink the panel that's offering the least interest per cell
+		// until the panels fit within the available space. For users with lots of
+		// panels, this might need to shrink the panels many times, so to maintain
+		// performance we can't get too clever here.
 		let layout: Array<PositionedPanel<Panel>>;
 		while(true) {
-			panelsToPlace = this.trimPanels(panelsToPlace);
-			panelsToPlace = this.sortPanels(panelsToPlace);
+			this.sortPanels(potentialPanels);
+			const panelsToPlace = potentialPanels.filter(p => p.currentSize);
 			layout = this.layoutPanels(panelsToPlace);
 			
 			if(layout.length < panelsToPlace.length) {
-				this.shrinkPanels(panelsToPlace);
+				this.shrinkPanels(potentialPanels);
 			} else {
 				break;
+			}
+		}
+		// Due to the way panels within the layout interact, the changing sort order,
+		// and the fact that the next smaller size might be several cells smaller,
+		// the shrinking algorithm might shrink cells more than necessary and the
+		// layout might have an unsightly gap at the bottom.
+
+		// We will use a brute force tactic to try re-growing the panels into this space.
+		// Even though this is expensive, at maximum we'll only have to run this as many
+		// times as there are empty cells in the last row, so the amount of time this
+		// can take is somewhat constrained.
+		const endRow = this.getEndRow(layout);
+		while(!this.isRowFull(layout, endRow - 1)) {
+			const newLayout = this.growPanels(potentialPanels, endRow);
+
+			if(!newLayout) {
+				// If unable to grow any panels, give up
+				break;
+			} else {
+				layout = newLayout;
 			}
 		}
 
 		this.panelLayout = layout;
 	}
 
-	private trimPanels(potentialPanels: Array<PotentialPanel<Panel>>) {
-		return potentialPanels.filter(p => p.possibleSizes.length > 0);
-	}
-
 	private sortPanels(potentialPanels: Array<PotentialPanel<Panel>>) {
 		return potentialPanels.sort((a, b) =>
-			(b.possibleSizes[0].size.baseInterest + b.possibleSizes[0].size.interest) -
-			(a.possibleSizes[0].size.baseInterest + a.possibleSizes[0].size.interest)
+			(b.currentSize?.size?.baseInterest + b.currentSize?.size?.interest ?? 0) -
+			(a.currentSize?.size?.baseInterest + a.currentSize?.size?.interest ?? 0)
 		);
+	}
+
+	private sortGrowablePanels(growablePanels: Array<PotentialPanel<Panel>>) {
+		return growablePanels.sort((a, b) => {
+			const aGrownSize = a.possibleSizes[a.currentSizeIndex - 1];
+			const bGrownSize = b.possibleSizes[b.currentSizeIndex - 1];
+			const aRatio = aGrownSize.additionalInterest / aGrownSize.additionalArea;
+			const bRatio = bGrownSize.additionalInterest / bGrownSize.additionalArea;
+			return bRatio - aRatio;
+		});
 	}
 
 	private shrinkPanels(potentialPanels: Array<PotentialPanel<Panel>>) {
@@ -99,14 +133,45 @@ export class PanelLayoutComponent implements OnInit, OnChanges {
 		let worstPanel!: PotentialPanel<Panel>;
 
 		for(const panel of potentialPanels) {
-			const ratio = panel.possibleSizes[0].additionalInterest / panel.possibleSizes[0].additionalArea;
+			if(!panel.currentSize) {
+				continue;
+			}
+			const ratio = panel.currentSize.additionalInterest / panel.currentSize.additionalArea;
 			if(ratio < worstPanelRatio) {
 				worstPanelRatio = ratio;
 				worstPanel = panel;
 			}
 		}
 
-		worstPanel.possibleSizes.shift();
+		worstPanel.currentSizeIndex++;
+		worstPanel.currentSize = worstPanel.possibleSizes[worstPanel.currentSizeIndex];
+	}
+
+	private growPanels(potentialPanels: Array<PotentialPanel<Panel>>, maximumEndRow: number): Array<PositionedPanel<Panel>> | null {
+		const growablePanels = potentialPanels.filter(p => p.currentSizeIndex > 0);
+		this.sortGrowablePanels(growablePanels);
+
+		for(const growablePanel of growablePanels) {
+			growablePanel.currentSizeIndex--;
+			growablePanel.currentSize = growablePanel.possibleSizes[growablePanel.currentSizeIndex];
+
+			this.sortPanels(potentialPanels);
+			const panelsToPlace = potentialPanels.filter(p => p.currentSize);
+			const newLayout = this.layoutPanels(panelsToPlace);
+
+			if(newLayout.length < panelsToPlace.length || this.getEndRow(newLayout) > maximumEndRow) {
+				// Unable to grow this panel, shrink it back down and try another
+				growablePanel.currentSizeIndex++;
+				growablePanel.currentSize = growablePanel.possibleSizes[growablePanel.currentSizeIndex];
+				continue;
+			} else {
+				// Grew a panel, return the new layout
+				return newLayout;
+			}
+		}
+
+		// Wasn't able to grow any panels
+		return null;
 	}
 
 	private layoutPanels(potentialPanels: Array<PotentialPanel<Panel>>) {
@@ -124,7 +189,7 @@ export class PanelLayoutComponent implements OnInit, OnChanges {
 			const lastPossibleColumn = interferingPanels.length > 0 ? Math.min(...interferingPanels.map(p => p.position.startColumn)) : this.columns;
 			const maxWidth = lastPossibleColumn - currentColumn;
 			const maxHeight = this.rows - currentRow;
-			const panelIndex = remainingPanels.findIndex(p => p.possibleSizes[0].size.columns <= maxWidth && p.possibleSizes[0].size.rows <= maxHeight);
+			const panelIndex = remainingPanels.findIndex(p => p.currentSize.size.columns <= maxWidth && p.currentSize.size.rows <= maxHeight);
 			if(panelIndex !== -1) {
 				const panel = remainingPanels.splice(panelIndex, 1)[0];
 				const positionedPanel: PositionedPanel<Panel> = {
@@ -132,10 +197,10 @@ export class PanelLayoutComponent implements OnInit, OnChanges {
 					position: {
 						startRow: currentRow,
 						startColumn: currentColumn,
-						endRow: currentRow + panel.possibleSizes[0].size.rows,
-						endColumn: currentColumn + panel.possibleSizes[0].size.columns,
+						endRow: currentRow + panel.currentSize.size.rows,
+						endColumn: currentColumn + panel.currentSize.size.columns,
 					},
-					size: panel.possibleSizes[0].size,
+					size: panel.currentSize.size,
 				};
 				layout.push(positionedPanel);
 				workingLayout.push(positionedPanel);
@@ -167,6 +232,22 @@ export class PanelLayoutComponent implements OnInit, OnChanges {
 		}
 
 		return layout;
+	}
+
+	private getEndRow(layout: Array<PositionedPanel<Panel>>): number {
+		return layout.reduce((acc, cur) => Math.max(acc, cur.position.endRow), 0);
+	}
+
+	private isRowFull(layout: Array<PositionedPanel<Panel>>, row: number) {
+		const rowPanels = layout.filter(p => p.position.startRow <= row && p.position.endRow > row);
+
+		for(let i = 0; i < this.columns; i++) {
+			const panel = rowPanels.find(p => p.position.startRow <= i && p.position.endRow > i);
+			if(!panel) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	ngOnInit(): void {
