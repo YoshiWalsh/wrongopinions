@@ -61,13 +61,15 @@
 .contributingAnime {
     position: absolute;
     
-    top: 5px;
+    top: 0px;
     height: 85px;
     right: 5px;
     width: 80px;
 
     display: flex;
     flex-flow: column wrap-reverse;
+    justify-content: flex-start;
+    align-content: flex-start;
     gap: 0;
 
     overflow: hidden;
