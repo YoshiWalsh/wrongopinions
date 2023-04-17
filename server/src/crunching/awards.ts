@@ -453,7 +453,7 @@ const awards: Array<Award> = [
     new ComparisonAward({
         name: "Yeagerist",
         description: "You liked Attack on Titan when it was just about yelling and fighting, but not so much once it required you to think.",
-        reason: "Awarded for scoring Shingeki no Kyoujin S3/S4P1 lower than S1/S2.",
+        reason: "Awarded for scoring Shingeki no Kyoujin S3/S4 lower than S1/S2.",
         worseShowIds: [
             16498, // S1
             25777, // S2
@@ -462,6 +462,8 @@ const awards: Array<Award> = [
             35760, // S3P1
             38524, // S3P2
             40028, // S4P1
+            48583, // S4P2
+            51535, // S4P3
         ]
     }),
     new ComparisonAward({
