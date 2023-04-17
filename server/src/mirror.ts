@@ -33,6 +33,7 @@ export class Mirror {
                             Bucket: this.mirrorBucketName,
                             Key: key,
                             Body: response,
+                            ContentType: 'image/jpeg',
                         },
                     });
                     await uploader.done();
