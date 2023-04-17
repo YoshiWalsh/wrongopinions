@@ -65,12 +65,13 @@ abstract class BiasConfidenceAward extends Award {
         const nonMatchingScoreDifferences = nonMatchingAnime.map(a => a.scoreDifference);
 
         const pValue = jstat.tukeyhsd([nonMatchingScoreDifferences, matchingScoreDifferences])[0][1];
-        const meanDifference = jstat.mean(matchingScoreDifferences) - jstat.mean(nonMatchingScoreDifferences);
+        const averageNonMatchingScoreDifference = jstat.mean(nonMatchingScoreDifferences);
+        const meanDifference = jstat.mean(matchingScoreDifferences) - averageNonMatchingScoreDifference;
         const confidence = (1-pValue) * 100;
 
         if(confidence >= this.threshold && meanDifference * this.direction > 0) {
             matchingAnime.sort((a, b) => (a.scoreDifference - b.scoreDifference) * this.direction * -1);
-            const firstNonContributing = matchingAnime.findIndex(a => a.scoreDifference * this.direction < 0);
+            const firstNonContributing = matchingAnime.findIndex(a => (a.scoreDifference - averageNonMatchingScoreDifference) * this.direction < 0);
             const contributingAnime = matchingAnime.slice(0, firstNonContributing !== -1 ? firstNonContributing : matchingAnime.length);
 
             return({
