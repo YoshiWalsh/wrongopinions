@@ -144,6 +144,10 @@ const specialAwards: {[name: string]: AwardProperties} = {
         icon: "/assets/special-award-icons/kuudere.svg",
         interest: highInterest,
     },
+    "Egg": {
+        icon: "/assets/special-award-icons/egg.svg",
+        interest: mediumInterest,
+    },
 };
 
 export class SpecialAwardPanel extends Panel {

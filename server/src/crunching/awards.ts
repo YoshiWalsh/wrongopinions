@@ -509,6 +509,33 @@ const awards: Array<Award> = [
         ],
         threshold: 90,
     }),
+    new SubjectAward({
+        name: "Egg",
+        description: "Egg",
+        subject: "egg",
+        direction: 1,
+        animeWithSubject: [
+            37976, // Zombieland Saga
+            40174, // Zombieland Saga Revenge
+            50159, // Zombieland Saga Movie
+            43299, // Wonder Egg Prioriy
+            9253, // Steins;Gate
+            97244, // Shimanami Tasogare
+            11061, // Hunter x Hunter
+            2034, // Lovely★Complex
+            37972, // Stars Align
+            8426, // Hourou Musuko
+            424, // Dirty Pair
+            759, // Tokyo Godfathers
+            36266, // Mahou Shoujo Site
+            3332, // Stop!! Hibari-kun!
+            322, // Paradise Kiss
+            486, // Kino no Tabi
+            879, // Simoun
+            853, // Ouran Koukou Host Club
+        ],
+        threshold: 90,
+    }),
     new ProportionWatchedAward({
         name: "Hipster",
         description: "When people ask what your favourite anime is, you just say they've probably never heard of it.",
