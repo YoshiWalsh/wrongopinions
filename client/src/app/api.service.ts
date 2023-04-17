@@ -23,7 +23,12 @@ export class ApiService {
 	async getFullStatus(username: string): Promise<FullStatusWithResults> {
 		const fullStatus = await this.unwrapResponse(
 			this.http.get<Contracts.SuccessResponse<Contracts.FullStatus>>(
-				`${environment.apiUrl}/opinions/${encodeURIComponent(username)}`
+				`${environment.apiUrl}/opinions/${encodeURIComponent(username)}`,
+				{
+					params: {
+						'_': Math.random().toString().substring(2),
+					},
+				}
 			)
 		);
 		const results = await this.getResults(fullStatus);
@@ -37,7 +42,7 @@ export class ApiService {
 		if(!fullStatus.resultsUrl) {
 			return null;
 		}
-		const response = await fetch(fullStatus.resultsUrl);
+		const response = await fetch(`${fullStatus.resultsUrl}?_=${Math.random().toString().substring(2)}`);
 		const object = await response.json();
 		return object;
 	}
@@ -45,7 +50,12 @@ export class ApiService {
 	getPendingJobStatus(username: string): Promise<Contracts.PendingJobStatus> {
 		return this.unwrapResponse(
 			this.http.get<Contracts.SuccessResponse<Contracts.PendingJobStatus>>(
-				`${environment.apiUrl}/opinions/${encodeURIComponent(username)}/pending`
+				`${environment.apiUrl}/opinions/${encodeURIComponent(username)}/pending`,
+				{
+					params: {
+						'_': Math.random().toString().substring(2),
+					},
+				}
 			)
 		);
 	}
