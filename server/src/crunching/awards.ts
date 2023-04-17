@@ -53,6 +53,12 @@ abstract class BiasConfidenceAward extends Award {
         const sampleAnime = allWatchedAnime.filter(a => this.shouldAnimeBeSampled(a));
 
         const matchingAnime = sampleAnime.filter(a => this.doesAnimeMatch(a));
+        if(matchingAnime.length < 2) {
+            // A single anime shouldn't be able to indicate bias,
+            // no matter the score.
+            return null;
+        }
+
         const matchingScoreDifferences = matchingAnime.map(a => a.scoreDifference);
 
         const nonMatchingAnime = sampleAnime.filter(a => !this.doesAnimeMatch(a));
