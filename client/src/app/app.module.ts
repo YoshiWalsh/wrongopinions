@@ -3,6 +3,7 @@ import { HttpClientModule } from '@angular/common/http';
 import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BrowserModule } from '@angular/platform-browser';
+import { NgxGoogleAnalyticsModule, NgxGoogleAnalyticsRouterModule } from 'ngx-google-analytics';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
@@ -37,6 +38,8 @@ import { PanelOutlinesComponent } from './panel-outlines/panel-outlines.componen
 		AppRoutingModule,
 		FormsModule,
 		HttpClientModule,
+		NgxGoogleAnalyticsModule.forRoot('G-07TKM352JS'),
+		NgxGoogleAnalyticsRouterModule,
 	],
 	providers: [],
 	bootstrap: [AppComponent]

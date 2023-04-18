@@ -28,6 +28,7 @@
     "chart.js": "^3.9.1",
     "dom-to-image-more": "^3.1.0",
     "humanize-duration": "^3.28.0",
+    "ngx-google-analytics": "^14.0.1",
     "rxjs": "~7.5.0",
     "sanitize-filename": "^1.6.3",
     "string-algorithms": "^1.0.31",
