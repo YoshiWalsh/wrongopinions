@@ -7,6 +7,7 @@ import { QueueDispatcher } from "./queueDispatcher";
 import { Instant } from "@js-joda/core";
 import { crunchJob } from "../crunching/cruncher";
 import { QueueStatus } from "../model/QueueStatus";
+import { AxiosError } from "axios";
 
 const MAL_PAGE_SIZE = 1000;
 const ESTIMATED_QUEUE_LATENCY = 5;
@@ -28,18 +29,26 @@ export async function initialiseJob(db: DB, queue: QueueDispatcher, username: st
     console.log("Retrieving anime list");
     let animeList: Array<UserListAnimeEntry> = [];
     let offset = 0;
-    while(true) {
-        const result = await mal.user.listAnime(username, {
-            limit: MAL_PAGE_SIZE,
-            offset,
-            fields: 'list_status',
-            nsfw: true,
-        });
-        animeList = animeList.concat(result.data.data);
-        if(!result.data.paging.next) {
-            break;
+    try {
+        while(true) {
+            const result = await mal.user.listAnime(username, {
+                limit: MAL_PAGE_SIZE,
+                offset,
+                fields: 'list_status',
+                nsfw: true,
+            });
+            animeList = animeList.concat(result.data.data);
+            if(!result.data.paging.next) {
+                break;
+            }
+            offset += MAL_PAGE_SIZE;
         }
-        offset += MAL_PAGE_SIZE;
+    } catch (ex: any) {
+        if(ex.response) {
+            if(ex.response.status == 403) {
+                throw new Error("MAL profile is private");
+            }
+        }
     }
 
     const requiredAnime = animeList.map(a => a.node.id);
@@ -98,7 +107,7 @@ export async function initialiseJob(db: DB, queue: QueueDispatcher, username: st
             animeStatus: AnimeStatus.Pending,
             queuePosition: animeQueueStatus.queueLength,
             expires: null,
-            dependentJobs: new Set([username]),
+            dependentJobs: new Set([username.toLowerCase()]),
         });
         if(!result) {
             // If we can't add the anime, it means it's already added. We should add this job as a dependency instead.
@@ -117,7 +126,7 @@ export async function initialiseJob(db: DB, queue: QueueDispatcher, username: st
     await Promise.all(notQueued.map(async id => {
         console.log("Increment anime queue length: not queued anime", id);
         animeQueueStatus = await db.incrementQueueProperty("anime", "queueLength");
-        const result = await db.markAnimePending(id, username, animeQueueStatus.queueLength);
+        const result = await db.markAnimePending(id, username.toLowerCase(), animeQueueStatus.queueLength);
         if(!result) {
             // If we can't mark the anime as pending, it means it's already added. We should add this job as a dependency instead.
             queued.push(id);
@@ -133,7 +142,7 @@ export async function initialiseJob(db: DB, queue: QueueDispatcher, username: st
     }));
 
     await Promise.all(queued.map(async id => {
-        const result = await db.addDependentJobToAnime(id, username);
+        const result = await db.addDependentJobToAnime(id, username.toLowerCase());
         if(!result) {
             // If we can't add a job, it means the anime either failed or was successful. Either way, we won't re-request it in this request.
             cached.push(id);

@@ -1,4 +1,4 @@
-import { DynamoDB, ConditionalCheckFailedException, AttributeValue } from '@aws-sdk/client-dynamodb';
+import { DynamoDB, ConditionalCheckFailedException, AttributeValue, ConsumedCapacity } from '@aws-sdk/client-dynamodb';
 import { AdaptiveRetryStrategy } from '@aws-sdk/middleware-retry';
 import * as DynamoDBConverter from '@aws-sdk/util-dynamodb';
 import { AnimeData, AnimeDetails, AnimeMinimalDetails, AnimeStatus } from './model/AnimeDetails';
@@ -10,6 +10,8 @@ import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, NotF
 import { UserListAnimeEntry } from 'myanimelist-api';
 import { default as getStream } from 'get-stream';
 import { Readable } from 'stream';
+import { initialize as initializeMetrics, Metric } from 'cloudwatch-metrics';
+import goodbye from 'graceful-goodbye';
 
 const BATCH_READ_SIZE = 100;
 
@@ -24,13 +26,46 @@ const converterOptions = {
 const marshall = (data: Parameters<typeof DynamoDBConverter.marshall>[0]) => DynamoDBConverter.marshall(data, converterOptions) as any as Record<string, AttributeValue>;
 const unmarshall = (data: AttributeMap) => DynamoDBConverter.unmarshall(data, converterOptions);
 
+enum MetricUnit {
+    Seconds = "Seconds",
+    Microseconds = "Microseconds",
+    Milliseconds = "Milliseconds",
+    Bytes = "Bytes",
+    Kilobytes = "Kilobytes",
+    Megabytes = "Megabytes",
+    Gigabytes = "Gigabytes",
+    Terabytes = "Terabytes",
+    Bits = "Bits",
+    Kilobits = "Kilobits",
+    Megabits = "Megabits",
+    Gigabits = "Gigabits",
+    Terabits = "Terabits",
+    Percent = "Percent",
+    Count = "Count",
+    BytesPerSecond = "Bytes/Second",
+    KilobytesPerSecond = "Kilobytes/Second",
+    MegabytesPerSecond = "Megabytes/Second",
+    GigabytesPerSecond = "Gigabytes/Second",
+    TerabytesPerSecond = "Terabytes/Second",
+    BitsPerSecond = "Bits/Second",
+    KilobitsPerSecond = "Kilobits/Second",
+    MegabitsPerSecond = "Megabits/Second",
+    GigabitsPerSecond = "Gigabits/Second",
+    TerabitsPerSecond = "Terabits/Second",
+    CountPerSecond = "Count/Second",
+    None = "None",
+};
+
 export class DB {
     db: DynamoDB;
     s3: S3Client;
+    metric: Metric;
     tableName: string;
     dataBucketName: string;
     assetsBucketName: string;
     assetsDomain: string;
+
+    private shutdownCallback?: () => void;
 
     constructor() {
         this.db = new DynamoDB({
@@ -49,6 +84,32 @@ export class DB {
         this.dataBucketName = process.env.DATA_BUCKET_NAME as string;
         this.assetsBucketName = process.env.MIRROR_BUCKET_NAME as string;
         this.assetsDomain = process.env.DOMAIN as string;
+
+        initializeMetrics({
+            region: process.env.AWS_REGION as string,
+        });
+        this.metric = new Metric("WrongOpinions/DynamoDB", MetricUnit.Count, [{
+            Name: "Environment",
+            Value: process.env.ENVIRONMENT as string
+        }], {
+            enabled: !!process.env.ENVIRONMENT,
+            storageResolution: 60,
+            sendCallback: (err) => {
+                if(err) {
+                    console.warn("Failed to send metrics to CloudWatch", err);
+                }
+                this.shutdownCallback?.();
+            }
+        });
+
+        goodbye(() => {
+            const pending = this.metric.hasMetrics();
+            const shutdownPromise = pending ? new Promise<void>(resolve => {
+                this.shutdownCallback = () => {resolve()};
+            }) : Promise.resolve();
+            this.metric.shutdown();
+            return shutdownPromise;
+        });
     }
 
     private pk(key: string): AttributeMap {
@@ -58,9 +119,37 @@ export class DB {
             }
         };
     }
+
+    private async monitor<T extends {ConsumedCapacity?: ConsumedCapacity | Array<ConsumedCapacity>}> (operation: string, promise: Promise<T>): Promise<T> {
+        const result = await promise;
+        if(result.ConsumedCapacity) {
+            const consumptions = Array.isArray(result.ConsumedCapacity) ? result.ConsumedCapacity : [result.ConsumedCapacity];
+            for(const consumption of consumptions) {
+                const RCUs = consumption.ReadCapacityUnits ?? consumption.CapacityUnits ?? 0;
+                if(RCUs) {
+                    this.metric.summaryPut(RCUs, "ReadCapacityUnitsConsumed", MetricUnit.Count, [
+                        {
+                            Name: "Operation",
+                            Value: operation,
+                        }
+                    ]);
+                }
+                const WCUs = consumption.WriteCapacityUnits ?? 0;
+                if(WCUs) {
+                    this.metric.summaryPut(WCUs, "WriteCapacityUnitsConsumed", MetricUnit.Count, [
+                        {
+                            Name: "Operation",
+                            Value: operation,
+                        }
+                    ]);
+                }
+            }
+        }
+        return result;
+    }
     
     async incrementQueueProperty(queueName: string, property: "queueLength" | "processedItems", decrement?: boolean): Promise<QueueStatus> {
-        const result = await this.db.updateItem({
+        const result = await this.monitor("incrementQueueProperty", this.db.updateItem({
             TableName: this.tableName,
             Key: this.pk(`queue-status-${queueName}`),
             UpdateExpression: `ADD ${property} :q`,
@@ -68,17 +157,19 @@ export class DB {
                 ':q': decrement ? -1 : 1
             }),
             ReturnValues: 'ALL_NEW',
-        });
+            ReturnConsumedCapacity: 'TOTAL',
+        }));
 
         return unmarshall(result.Attributes as AttributeMap) as QueueStatus;
     }
 
     async getQueueStatus(queueName: string): Promise<QueueStatus> {
-        const result = await this.db.getItem({
+        const result = await this.monitor("getQueueStatus", this.db.getItem({
             ConsistentRead: false,
             TableName: this.tableName,
             Key: this.pk(`queue-status-${queueName}`),
-        });
+            ReturnConsumedCapacity: 'TOTAL',
+        }));
 
         return result.Item ? unmarshall(result.Item) as QueueStatus : {
             queueName,
@@ -99,11 +190,12 @@ export class DB {
     }
 
     async getAnime(id: number, stronglyConsistent: boolean): Promise<AnimeDetails | null> {
-        const result = await this.db.getItem({
+        const result = await this.monitor(`getAnime${stronglyConsistent ? "Consistent": ""}`, this.db.getItem({
             ConsistentRead: stronglyConsistent,
             TableName: this.tableName,
             Key: this.pk(`anime-${id}`),
-        });
+            ReturnConsumedCapacity: 'TOTAL',
+        }));
 
         return this.deserialiseAnime(result.Item);
     }
@@ -128,7 +220,7 @@ export class DB {
         if(ids.length < 1) {
             return {};
         }
-        const result = await this.db.batchGetItem({
+        const result = await this.monitor(`bulkGetAnime${ minimal ? "Minimal" : "Full" }${ stronglyConsistent ? "Consistent": "" }`, this.db.batchGetItem({
             RequestItems: {
                 [this.tableName]: {
                     ConsistentRead: stronglyConsistent,
@@ -138,7 +230,8 @@ export class DB {
                     } : {}),
                 },
             },
-        });
+            ReturnConsumedCapacity: 'TOTAL',
+        }));
 
         const retrievedAnime = result.Responses?.[this.tableName]?.map(item => this.deserialiseAnime(item)) ?? [];
         const keyed = retrievedAnime.reduce((acc, cur) => {
@@ -169,7 +262,7 @@ export class DB {
     // Returns true if successful, false if unsuccessful
     async addAnime(anime: AnimeDetails): Promise<boolean> {
         try {
-            await this.db.putItem({
+            await this.monitor("addAnime", this.db.putItem({
                 TableName: this.tableName,
                 Item: {
                     ...this.pk(`anime-${anime.id}`),
@@ -177,7 +270,8 @@ export class DB {
                 },
                 ConditionExpression: 'attribute_not_exists(PK)',
                 ReturnValues: 'ALL_OLD',
-            });
+                ReturnConsumedCapacity: 'TOTAL',
+            }));
 
             return true;
         } catch (ex) {
@@ -190,7 +284,7 @@ export class DB {
 
     async markAnimePending(id: number, username: string, queuePosition: number) {
         try {
-            await this.db.updateItem({
+            await this.monitor("markAnimePending", this.db.updateItem({
                 TableName: this.tableName,
                 Key: this.pk(`anime-${id}`),
                 UpdateExpression: `SET animeStatus = :s, queuePosition = :p, dependentJobs = :j`,
@@ -206,7 +300,8 @@ export class DB {
                         "SS": [ "", username.toLowerCase() ],
                     },
                 },
-            });
+                ReturnConsumedCapacity: 'TOTAL',
+            }));
 
             return true;
         } catch (ex) {
@@ -219,7 +314,7 @@ export class DB {
 
     async addDependentJobToAnime(id: number, username: string): Promise<number | null> {
         try {
-            const result = await this.db.updateItem({
+            const result = await this.monitor("addDependentJobToAnime", this.db.updateItem({
                 TableName: this.tableName,
                 Key: this.pk(`anime-${id}`),
                 UpdateExpression: `ADD dependentJobs :j`,
@@ -233,7 +328,8 @@ export class DB {
                     },
                 },
                 ReturnValues: 'ALL_NEW',
-            });
+                ReturnConsumedCapacity: 'TOTAL',
+            }));
 
             const anime = unmarshall(result.Attributes as AttributeMap) as AnimeDetails;
 
@@ -248,7 +344,7 @@ export class DB {
 
     async markAnimeSuccessful(id: number, data: AnimeData, expires: LocalDate): Promise<AnimeDetails> {
         try {
-            const results = await this.db.updateItem({
+            const results = await this.monitor("markAnimeSuccessful", this.db.updateItem({
                 TableName: this.tableName,
                 Key: this.pk(`anime-${id}`),
                 UpdateExpression: 'SET animeStatus = :s, animeData = :d, expires = :e REMOVE dependentJobs',
@@ -268,7 +364,8 @@ export class DB {
                 },
                 ConditionExpression: 'attribute_not_exists(PK) OR animeStatus = :p', // If this anime is not pending, fail the update in order to avoid double-incrementing the queue progress
                 ReturnValues: 'ALL_OLD',
-            });
+                ReturnConsumedCapacity: 'TOTAL',
+            }));
 
             return this.deserialiseAnime(results.Attributes) as AnimeDetails;
         } catch (ex) {
@@ -278,7 +375,7 @@ export class DB {
     }
 
     async markAnimeFailed(id: number): Promise<AnimeDetails> {
-        const results = await this.db.updateItem({
+        const results = await this.monitor("markAnimeFailed", this.db.updateItem({
             TableName: this.tableName,
             Key: this.pk(`anime-${id}`),
             UpdateExpression: 'SET animeStatus = :s',
@@ -288,7 +385,8 @@ export class DB {
                 },
             },
             ReturnValues: 'ALL_OLD',
-        });
+            ReturnConsumedCapacity: 'TOTAL',
+        }));
 
         return this.deserialiseAnime(results.Attributes) as AnimeDetails;
     }
@@ -303,24 +401,26 @@ export class DB {
     }
 
     async getJob(username: string, stronglyConsistent: boolean): Promise<PendingJob | null> {
-        const result = await this.db.getItem({
+        const result = await this.monitor(`getJob${ stronglyConsistent ? "Consistent" : "" }`, this.db.getItem({
             ConsistentRead: stronglyConsistent,
             TableName: this.tableName,
             Key: this.pk(`job-${username.toLowerCase()}`),
-        });
+            ReturnConsumedCapacity: 'TOTAL',
+        }));
 
         return this.deserialiseJob(result.Item);
     }
 
     async addJob(job: PendingJob): Promise<boolean> {
         try {
-            await this.db.putItem({
+            await this.monitor("addJob", this.db.putItem({
                 TableName: this.tableName,
                 Item: {
                     ...this.pk(`job-${job.username.toLowerCase()}`),
                     ...marshall(job),
                 },
-            })
+                ReturnConsumedCapacity: 'TOTAL',
+            }));
             return true;
         } catch (ex) {
             throw ex;
@@ -328,7 +428,7 @@ export class DB {
     }
 
     async updateJobWaiting(username: string, animeIdsToRemove: Array<string>, lastDependencyQueuePosition: number): Promise<PendingJob> {
-        const results = await this.db.updateItem({
+        const results = await this.monitor("updateJobWaiting", this.db.updateItem({
             TableName: this.tableName,
             Key: this.pk(`job-${username.toLowerCase()}`),
             UpdateExpression: `SET jobStatus = :s, initialised = :t, lastDependencyQueuePosition = :p${ animeIdsToRemove.length ? ` DELETE dependsOn :a` : '' }`,
@@ -351,14 +451,15 @@ export class DB {
                 ),
             },
             ReturnValues: 'ALL_NEW',
-        });
+            ReturnConsumedCapacity: 'TOTAL',
+        }));
 
         const job = unmarshall(results.Attributes as AttributeMap) as PendingJob;
         return job;
     }
 
     async updateJobQueued(username: string, queuePosition: number): Promise<PendingJob> {
-        const results = await this.db.updateItem({
+        const results = await this.monitor("updateJobQueued", this.db.updateItem({
             TableName: this.tableName,
             Key: this.pk(`job-${username.toLowerCase()}`),
             UpdateExpression: `SET jobStatus = :s, queued = :t, processingQueuePosition = :p`,
@@ -374,14 +475,15 @@ export class DB {
                 },
             },
             ReturnValues: 'ALL_NEW',
-        });
+            ReturnConsumedCapacity: 'TOTAL',
+        }));
 
         const job = unmarshall(results.Attributes as AttributeMap) as PendingJob;
         return job;
     }
 
     async updateJobProcessing(username: string): Promise<PendingJob> {
-        const results = await this.db.updateItem({
+        const results = await this.monitor("updateJobProcessing", this.db.updateItem({
             TableName: this.tableName,
             Key: this.pk(`job-${username.toLowerCase()}`),
             UpdateExpression: `SET jobStatus = :s, processingStarted = :t`,
@@ -394,13 +496,14 @@ export class DB {
                 },
             },
             ReturnValues: 'ALL_NEW',
-        });
+            ReturnConsumedCapacity: 'TOTAL',
+        }));
 
         return this.deserialiseJob(results.Attributes) as PendingJob;
     }
 
     async updateJobProcessingRetry(username: string): Promise<PendingJob> {
-        const results = await this.db.updateItem({
+        const results = await this.monitor("updateJobProcessingRetry", this.db.updateItem({
             TableName: this.tableName,
             Key: this.pk(`job-${username.toLowerCase()}`),
             UpdateExpression: `SET jobStatus = :s REMOVE processingStarted`,
@@ -410,13 +513,14 @@ export class DB {
                 },
             },
             ReturnValues: 'ALL_NEW',
-        });
+            ReturnConsumedCapacity: 'TOTAL',
+        }));
 
         return this.deserialiseJob(results.Attributes) as PendingJob;
     }
 
     async updateJobProcessingFailed(username: string): Promise<PendingJob> {
-        const results = await this.db.updateItem({
+        const results = await this.monitor("updateJobProcessingFailed", this.db.updateItem({
             TableName: this.tableName,
             Key: this.pk(`job-${username.toLowerCase()}`),
             UpdateExpression: `SET jobStatus = :s, failed = :t`,
@@ -429,13 +533,14 @@ export class DB {
                 },
             },
             ReturnValues: 'ALL_NEW',
-        });
+            ReturnConsumedCapacity: 'TOTAL',
+        }));
 
         return this.deserialiseJob(results.Attributes) as PendingJob;
     }
 
     async removeAnimeFromJob(username: string, animeId: number): Promise<PendingJob> {
-        const results = await this.db.updateItem({
+        const results = await this.monitor("removeAnimeFromJob", this.db.updateItem({
             TableName: this.tableName,
             Key: this.pk(`job-${username.toLowerCase()}`),
             UpdateExpression: `DELETE dependsOn :a`,
@@ -445,17 +550,19 @@ export class DB {
                 }
             },
             ReturnValues: 'ALL_NEW',
-        });
+            ReturnConsumedCapacity: 'TOTAL',
+        }));
 
         const job = unmarshall(results.Attributes as AttributeMap) as PendingJob;
         return job;
     }
 
     async removeJob(username: string): Promise<void> {
-        await this.db.deleteItem({
+        await this.monitor("removeJob", this.db.deleteItem({
             TableName: this.tableName,
             Key: this.pk(`job-${username.toLowerCase()}`),
-        });
+            ReturnConsumedCapacity: 'TOTAL',
+        }));
     }
 
 

@@ -237,6 +237,26 @@ resource "aws_iam_role_policy" "function_role_dynamodb" {
     })
 }
 
+resource "aws_iam_role_policy" "function_role_cloudwatch" {
+    name = join("-", ["wrongopinions", random_id.environment_identifier.hex, "cloudwatch"])
+    role = aws_iam_role.function_role.id
+
+    policy = jsonencode({
+        Version = "2012-10-17"
+        Statement = [
+            {
+                Action = [
+                    "cloudwatch:PutMetricData",
+                ],
+                Effect   = "Allow",
+                Resource = [
+                    "*"
+                ]
+            },
+        ]
+    })
+}
+
 resource "aws_lambda_function" "function_limited" {
     function_name = join("-", ["wrongopinions", random_id.environment_identifier.hex, "limited"])
     role = aws_iam_role.function_role.arn
@@ -264,6 +284,7 @@ resource "aws_lambda_function" "function_limited" {
             MAL_CLIENT_ID = var.mal_client_id
             MAL_CLIENT_SECRET = var.mal_client_secret # I know, I know, I should use Secrets Manager.
             NODE_OPTIONS = "--enable-source-maps"
+            ENVIRONMENT = random_id.environment_identifier.hex
         }
     }
 }
@@ -292,6 +313,7 @@ resource "aws_lambda_function" "function_heavyweight" {
             MAL_CLIENT_ID = var.mal_client_id
             MAL_CLIENT_SECRET = var.mal_client_secret # I know, I know, I should use Secrets Manager.
             NODE_OPTIONS = "--enable-source-maps"
+            ENVIRONMENT = random_id.environment_identifier.hex
         }
     }
 }
@@ -320,6 +342,7 @@ resource "aws_lambda_function" "function_lightweight" {
             MAL_CLIENT_ID = var.mal_client_id
             MAL_CLIENT_SECRET = var.mal_client_secret # I know, I know, I should use Secrets Manager.
             NODE_OPTIONS = "--enable-source-maps"
+            ENVIRONMENT = random_id.environment_identifier.hex
         }
     }
 }
