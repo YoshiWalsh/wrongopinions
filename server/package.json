@@ -7,9 +7,9 @@
     "build": "webpack"
   },
   "author": {
-    "name": "Joshua Walsh",
-    "email": "josh@ymindustries.com",
-    "url": "https://joshwalsh.me"
+    "name": "Yoshi Walsh",
+    "email": "yoshi@yoshiwalsh.me",
+    "url": "https://www.yoshiwalsh.me"
   },
   "private": "true",
   "license": "GPL",
