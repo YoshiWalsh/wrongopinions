@@ -8,7 +8,7 @@ async function work() {
     for(const username of usernames) {
         await new Promise((resolve, reject) => {
             console.log("Requesting", username);
-            https.request(`https://mzrcrqisa7.execute-api.us-east-2.amazonaws.com/PROD/opinions/${username}`, {
+            https.request(`https://api.wrongopinions.moe/opinions/${username}`, {
                 method: 'POST',
             }, (data) => {
                 resolve();
