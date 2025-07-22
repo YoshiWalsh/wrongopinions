@@ -29,6 +29,7 @@ export async function loadAnime(db: DB, mirror: Mirror, queue: QueueDispatcher, 
     let stats: IAnimeStats;
     let characters: IAnimeCharacters;
     console.log("Loading anime", id);
+    const fetched: LocalDate = LocalDate.now(ZoneOffset.UTC);
     // Allow one request per second, even if the previous one is still running.
     // We go in this order because stats and characters seem to take longer to load than details.
     await ratelimit(1);
@@ -59,11 +60,11 @@ export async function loadAnime(db: DB, mirror: Mirror, queue: QueueDispatcher, 
     let expires: LocalDate;
 
     if(details.status != "Finished Airing") { // If the show is still airing / not yet aired
-        expires = LocalDate.now(ZoneOffset.UTC).plusWeeks(1);
+        expires = fetched.plusWeeks(1);
     } else if(details.aired.to > ZonedDateTime.now(ZoneOffset.UTC).minusYears(1).toString()) { // If the show finished airing within the past year
-        expires = LocalDate.now(ZoneOffset.UTC).plusMonths(1);
+        expires = fetched.plusMonths(1);
     } else { // If the show finished airing more than a year ago
-        expires = LocalDate.now(ZoneOffset.UTC).plusMonths(3);
+        expires = fetched.plusMonths(3);
     }
 
     const isHentai = details.rating === "Rx - Hentai"; // Avoid rehosting hentai posters
@@ -77,7 +78,7 @@ export async function loadAnime(db: DB, mirror: Mirror, queue: QueueDispatcher, 
         stats,
         voiceActors,
         poster: poster,
-    }, expires);
+    }, fetched, expires);
 
     console.log("Loaded anime", id, details.title);
 
@@ -100,5 +101,37 @@ export async function loadAnime(db: DB, mirror: Mirror, queue: QueueDispatcher, 
     }));
 
     console.log("Increment anime processed items: processed anime", id);
+    await db.incrementQueueProperty('anime', 'processedItems');
+}
+
+export async function markAnimeFailed(db: DB, queue: QueueDispatcher, id: number): Promise<void> {
+    console.log("Marking anime failed", id);
+    
+    const now = LocalDate.now(ZoneOffset.UTC);
+    const expires = now.plusDays(1);
+
+    const animeDetails = await db.markAnimeFailed(id, now, expires);
+
+    console.log("Marked anime failed", id);
+
+    await Promise.all(Array.from(animeDetails.dependentJobs?.values() ?? []).filter(a => a).map(async username => {
+        try {
+            const pendingJob = await db.removeAnimeFromJob(username, id);
+            const remainingAnime = pendingJob.dependsOn.size - 1;
+            console.log("Removed anime", id, "from job", username, ",", remainingAnime, "remaining");
+            if(remainingAnime < 1) {
+                await queue.queueProcessing(username);
+                console.log("Increment job queue length: processed all requisite anime", username);
+                const jobQueueStatus = await db.incrementQueueProperty("job", "queueLength");
+                await db.updateJobQueued(username, jobQueueStatus.queueLength);
+
+                console.log("Queued processing for job", username);
+            }
+        } catch (ex) {
+            console.warn(ex);
+        }
+    }));
+
+    console.log("Increment anime processed items: failed processing anime", id);
     await db.incrementQueueProperty('anime', 'processedItems');
 }

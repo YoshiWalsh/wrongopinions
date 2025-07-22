@@ -4,7 +4,7 @@ import { demand } from 'ts-demand';
 import { SQSEvent, Context, SQSBatchResponse, APIGatewayProxyEventV2WithRequestContext, APIGatewayEventRequestContextV2, APIGatewayProxyResultV2 } from 'aws-lambda';
 import { DB } from './db';
 import { QueueDispatcher, QueueMessage, QueueMessageType } from './fetching/queueDispatcher';
-import { loadAnime } from './fetching/anime';
+import { loadAnime, markAnimeFailed } from './fetching/anime';
 import { initialiseJob, getPendingJobStatus, getFullStatus, processJob, markJobFailed } from './fetching/job';
 import { convertExceptionToResponse } from './error';
 import { Contracts } from 'wrongopinions-common';
@@ -33,13 +33,19 @@ export async function handler<T>(event: T, context: Context): Promise<any> {
         const results = await Promise.all(event.Records.map(async item => {
             try {
                 const message = JSON.parse(item.body) as QueueMessage;
+
+                const isFailed = item.eventSourceARN === process.env.SQS_FAILED_QUEUE_ARN;
                 
                 switch(message.type) {
                     case QueueMessageType.Anime:
-                        await loadAnime(db, mirror, queue, message.id);
+                        if(isFailed) {
+                            await markAnimeFailed(db, queue, message.id);
+                        } else {
+                            await loadAnime(db, mirror, queue, message.id);
+                        }
                         break;
                     case QueueMessageType.Processing:
-                        if(item.eventSourceARN === process.env.SQS_FAILED_QUEUE_ARN) {
+                        if(isFailed) {
                             await markJobFailed(db, message.username);
                         } else {
                             await processJob(db, message.username);

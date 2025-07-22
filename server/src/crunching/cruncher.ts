@@ -10,6 +10,7 @@ import { PendingJob } from "../model/PendingJob";
 import { getAwardedAwards } from "./awards";
 import { calculateBakaScore, getBakaRank } from "./bakaScore";
 import { getSeriesDirectionCorrelations } from "./seriesDirection";
+import { UnfetchedAnime } from "wrongopinions-common/dist/contracts/results";
 
 export interface AnalysedAnime {
     watched: UserListAnimeEntry;
@@ -62,11 +63,25 @@ export async function crunchJob(job: PendingJob, animeList: Array<UserListAnimeE
     console.log("Analysing anime");
     const analysedAnime: Array<AnalysedAnime> = [];
     const watchedAndRatedById: { [id: number]: AnalysedAnime } = {};
+    
+    const animeMissingData: Array<UnfetchedAnime> = [];
+    const animeWithOutdatedData: Array<UnfetchedAnime> = [];
+    let oldestData: number | null = null;
     for(const watched of animeList) {
         const anime = retrievedAnime[watched.node.id];
         if(!anime?.animeData) {
+            animeMissingData.push({id: watched.node.id, title: watched.node.title});
             continue;
         }
+
+        if(anime.failedFetch) {
+            animeWithOutdatedData.push({id: watched.node.id, title: watched.node.title});
+            
+            if(anime.lastSuccessfulFetch && (!oldestData || anime.lastSuccessfulFetch < oldestData)) {
+                oldestData = anime.lastSuccessfulFetch;
+            }
+        }
+
         const { details, stats, voiceActors, poster } = anime.animeData;
 
         if(!details || !stats || !details.score) {
@@ -120,6 +135,9 @@ export async function crunchJob(job: PendingJob, animeList: Array<UserListAnimeE
         username: job.username,
         requested: Instant.ofEpochMilli(job.created).toString(),
         completed: Instant.now().toString(),
+        animeMissingData,
+        animeWithOutdatedData,
+        oldestData: oldestData ? Instant.ofEpochMilli(oldestData).toString() : null,
         bakaScore,
         bakaRank,
         mostOverratedShows: tooHighRated.map(convertAnalysedAnimeToContractScoredAnime),

@@ -247,10 +247,14 @@ export class OpinionsComponent implements OnInit {
 		return bakaRanks[this.results?.bakaRank?.name as string].icon;
 	}
 
+	getLocalisedDate(timestamp: string): string {
+		return (new Date(timestamp)).toLocaleString();
+	}
+
 	getStatusDescription(): string {
 		if(!this.pendingJob) {
 			if(this.results) {
-				return `Current as of ${(new Date(this.results.requested)).toLocaleString()}`;
+				return `Processing completed.`;
 			}
 			return "";
 		}
@@ -280,7 +284,7 @@ export class OpinionsComponent implements OnInit {
 			return "Crunching the numbers...";
 		}
 		
-		return "Unknown";
+		return "Unknown status";
 	}
 
 	async imageRendered(newUrl: string) {

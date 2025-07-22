@@ -1,5 +1,3 @@
-import { Contracts } from "wrongopinions-common";
-
 export enum JobStatus {
     Creating = "creating",
     Waiting = "waiting",

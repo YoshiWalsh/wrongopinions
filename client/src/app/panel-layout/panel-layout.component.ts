@@ -112,8 +112,8 @@ export class PanelLayoutComponent implements OnInit, OnChanges {
 
 	private sortPanels(potentialPanels: Array<PotentialPanel<Panel>>) {
 		return potentialPanels.sort((a, b) =>
-			(b.currentSize?.size?.baseInterest + b.currentSize?.size?.interest ?? 0) -
-			(a.currentSize?.size?.baseInterest + a.currentSize?.size?.interest ?? 0)
+			(b.currentSize?.size?.baseInterest + b.currentSize?.size?.interest || 0) -
+			(a.currentSize?.size?.baseInterest + a.currentSize?.size?.interest || 0)
 		);
 	}
 

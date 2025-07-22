@@ -34,7 +34,7 @@ override.tf.json
 terraform.rc
 
 # Don't commit backend configuration
-# This is not for security purposes (you should NOT store AWS credentials in the config,
+# This is not for security purposes (you should NOT store AWS credentials in the config),
 # rather it's just to make it easy for forks to use different backends.
 backend.tf
 

@@ -16,6 +16,8 @@ export interface AnimeDetails {
     id: number;
     animeStatus: AnimeStatus;
     expires: number | null;
+    lastSuccessfulFetch: number | null;
+    failedFetch: number | null;
     queuePosition?: number;
     dependentJobs?: Set<string>;
     animeData?: AnimeData;

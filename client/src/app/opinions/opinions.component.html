@@ -7,6 +7,27 @@
         <span class="eta" *ngIf="pendingJob && pendingJob.completed && pendingJob.now">~{{loadingEstimatedCompletionTime}}</span>
         <button [disabled]="loading" (click)="startJob()">{{ pendingJob ? 'Resubmit' : 'Update'}}</button>
     </div>
+    <span class="errors" *ngIf="results && (results.animeMissingData.length || results.animeWithOutdatedData.length)">
+        <p>Several errors occurred while fetching data.</p>
+        <p>
+            <details class="error" *ngIf="results.animeMissingData.length">
+                <summary>Failed to retrieve data for {{results.animeMissingData.length}} anime.</summary>
+                <ul>
+                    <li *ngFor="let anime of results.animeMissingData">{{anime.id}}: {{anime.title}}</li>
+                </ul>
+            </details>
+            <details class="error" *ngIf="results.animeWithOutdatedData.length">
+                <summary>
+                    Using outdated data for {{results.animeWithOutdatedData.length}} anime.
+                    <span *ngIf="results.oldestData">Oldest data is from {{getLocalisedDate(results.oldestData)}}.</span>
+                </summary>
+                <ul>
+                    <li *ngFor="let anime of results.animeWithOutdatedData">{{anime.id}}: {{anime.title}}</li>
+                </ul>
+            </details>
+        </p>
+        <p>Results below are based on incomplete data. Please try again tomorrow.</p>
+    </span>
     <app-dom-image>
         <div class="container" *ngIf="results">
             <span class="fineprint">WrongOpinions.moe</span>
@@ -41,6 +62,9 @@
         </div>
     </app-dom-image>
     <img [hidden]="!dataUrl" [src]="dataUrl" class="renderedImage" />
+    <div class="metadata" *ngIf="results">
+        <span class="generated">Generated at {{getLocalisedDate(results.requested)}}.</span>
+    </div>
     <div class="sharing" *ngIf="dataUrl">
         <a class="button" download [href]="dataUrl">Save</a>
         <a class="button" *ngIf="canShare" (click)="share()">Share</a>

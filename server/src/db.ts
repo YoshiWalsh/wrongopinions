@@ -342,12 +342,12 @@ export class DB {
         }
     }
 
-    async markAnimeSuccessful(id: number, data: AnimeData, expires: LocalDate): Promise<AnimeDetails> {
+    async markAnimeSuccessful(id: number, data: AnimeData, fetched: LocalDate, expires: LocalDate): Promise<AnimeDetails> {
         try {
             const results = await this.monitor("markAnimeSuccessful", this.db.updateItem({
                 TableName: this.tableName,
                 Key: this.pk(`anime-${id}`),
-                UpdateExpression: 'SET animeStatus = :s, animeData = :d, expires = :e REMOVE dependentJobs',
+                UpdateExpression: 'SET animeStatus = :s, animeData = :d, expires = :e, lastSuccessfulFetch = :o, failedFetch = :f REMOVE dependentJobs',
                 ExpressionAttributeValues: {
                     ':s': {
                         'S': AnimeStatus.Cached,
@@ -358,9 +358,15 @@ export class DB {
                     ':e': {
                         'N': convert(expires).toEpochMilli().toString(),
                     },
+                    ':o': {
+                        'N': convert(fetched).toEpochMilli().toString(),
+                    },
                     ':p': {
                         'S': AnimeStatus.Pending,
-                    }
+                    },
+                    ':f': {
+                        'NULL': true,
+                    },
                 },
                 ConditionExpression: 'attribute_not_exists(PK) OR animeStatus = :p', // If this anime is not pending, fail the update in order to avoid double-incrementing the queue progress
                 ReturnValues: 'ALL_OLD',
@@ -374,21 +380,36 @@ export class DB {
         }
     }
 
-    async markAnimeFailed(id: number): Promise<AnimeDetails> {
-        const results = await this.monitor("markAnimeFailed", this.db.updateItem({
-            TableName: this.tableName,
-            Key: this.pk(`anime-${id}`),
-            UpdateExpression: 'SET animeStatus = :s',
-            ExpressionAttributeValues: {
-                ':s': {
-                    'S': AnimeStatus.Failed,
+    async markAnimeFailed(id: number, attempted: LocalDate, expires: LocalDate): Promise<AnimeDetails> {
+        try {
+            const results = await this.monitor("markAnimeFailed", this.db.updateItem({
+                TableName: this.tableName,
+                Key: this.pk(`anime-${id}`),
+                UpdateExpression: 'SET animeStatus = :s, expires = :e, failedFetch = :f',
+                ExpressionAttributeValues: {
+                    ':s': {
+                        'S': AnimeStatus.Failed,
+                    },
+                    ':e': {
+                        'N': convert(expires).toEpochMilli().toString(),
+                    },
+                    ':f': {
+                        'N': convert(attempted).toEpochMilli().toString(),
+                    },
+                    ':p': {
+                        'S': AnimeStatus.Pending,
+                    },
                 },
-            },
-            ReturnValues: 'ALL_OLD',
-            ReturnConsumedCapacity: 'TOTAL',
-        }));
+                ConditionExpression: 'attribute_not_exists(PK) OR animeStatus = :p', // If this anime is not pending, fail the update in order to avoid double-incrementing the queue progress
+                ReturnValues: 'ALL_OLD',
+                ReturnConsumedCapacity: 'TOTAL',
+            }));
 
-        return this.deserialiseAnime(results.Attributes) as AnimeDetails;
+            return this.deserialiseAnime(results.Attributes) as AnimeDetails;
+        } catch (ex) {
+            console.log(ex);
+            throw ex;
+        }
     }
 
 

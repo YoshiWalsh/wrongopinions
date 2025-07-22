@@ -326,7 +326,7 @@ resource "aws_lambda_function" "function_lightweight" {
     architectures = [ "arm64" ]
     runtime = "nodejs16.x"
     memory_size = "256"
-    timeout = "30"
+    timeout = "120"
 
     source_code_hash = data.archive_file.lambda_zip.output_base64sha256
 
@@ -500,7 +500,7 @@ resource "aws_sqs_queue" "slow_queue" {
     visibility_timeout_seconds = 900
     sqs_managed_sse_enabled = true
     redrive_policy = jsonencode({
-        deadLetterTargetArn = aws_sqs_queue.dead_queue.arn
+        deadLetterTargetArn = aws_sqs_queue.failed_queue.arn
         maxReceiveCount = 8
     })
 }
@@ -516,15 +516,6 @@ resource "aws_lambda_event_source_mapping" "slow_queue_lambda" {
     depends_on = [
         aws_iam_role_policy.function_role_sqs
     ]
-}
-
-# Finally, we move the job into the DLQ for manual inspection / redriving
-resource "aws_sqs_queue" "dead_queue" {
-    name = join("-", ["wrongopinions", random_id.environment_identifier.hex, "dead"])
-    delay_seconds = 0
-    visibility_timeout_seconds = 0
-    message_retention_seconds = 1209600
-    sqs_managed_sse_enabled = true
 }
 
 resource "aws_sqs_queue" "processing_queue" {

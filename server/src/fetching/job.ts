@@ -108,6 +108,8 @@ export async function initialiseJob(db: DB, queue: QueueDispatcher, username: st
             queuePosition: animeQueueStatus.queueLength,
             expires: null,
             dependentJobs: new Set([username.toLowerCase()]),
+            lastSuccessfulFetch: null,
+            failedFetch: null,
         });
         if(!result) {
             // If we can't add the anime, it means it's already added. We should add this job as a dependency instead.
