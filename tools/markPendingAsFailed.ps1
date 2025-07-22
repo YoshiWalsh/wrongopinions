@@ -29,7 +29,7 @@ $PendingAnime = (Invoke-DDBScan `
 #             "S" = "pending"
 #         }
 #     }
-# ) | ConvertFrom-DDBItem
+# )
 
 # $PendingAnime = (Invoke-DDBQuery `
 #     -Region us-east-2 `
@@ -41,7 +41,7 @@ $PendingAnime = (Invoke-DDBScan `
 #         }
 #     } `
 #     -ProjectionExpression "id"
-# ) | ConvertFrom-DDBItem
+# )
 
 # $PendingAnime.id | Write-Host
 
