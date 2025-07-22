@@ -40,15 +40,16 @@ export class SeriesDirectionPanel extends Panel {
             .replace(normaliseRegex, " ")
             .toLowerCase()
         );
-        const longestCommonStringPopularities = {
-            [longestCommonSubstring(normalisedNames)]: 1
-        };
+        const longestCommonStringPopularities: {[substring: string]: number} = {};
+        longestCommonSubstring(normalisedNames).forEach(substring => longestCommonStringPopularities[substring] = 1);
         // We make the assumption that the first instalment should represent the series name,
         // and compare each other instalment to it.
         for(let i = 1; i < normalisedNames.length; i++) {
-            const lcs = longestCommonSubstring([normalisedNames[0], normalisedNames[i]]);
+            const lcs = longestCommonSubstring([normalisedNames[0], normalisedNames[i]]).filter(s => s.length > 1);
 
-            longestCommonStringPopularities[lcs] = (longestCommonStringPopularities[lcs] ?? 0) + 1;
+            lcs.forEach(substring => {
+                longestCommonStringPopularities[substring] = (longestCommonStringPopularities[substring] ?? 0) + 1
+            });
         }
 
         const normalisedSeriesName = Object.entries(longestCommonStringPopularities)
@@ -64,6 +65,10 @@ export class SeriesDirectionPanel extends Panel {
             if(stylisedSeriesName) {
                 seriesNameStylisationPopularities[stylisedSeriesName] = (seriesNameStylisationPopularities[stylisedSeriesName] ?? 0) + 1;
             }
+        }
+
+        if(!Object.entries(seriesNameStylisationPopularities).length) {
+            return this.seriesDirection.sequence[0].anime.defaultTitle;
         }
 
         return Object.entries(seriesNameStylisationPopularities)
