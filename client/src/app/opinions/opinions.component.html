@@ -7,8 +7,8 @@
         <span class="eta" *ngIf="pendingJob && pendingJob.completed && pendingJob.now">~{{loadingEstimatedCompletionTime}}</span>
         <button [disabled]="loading" (click)="startJob()">{{ pendingJob ? 'Resubmit' : 'Update'}}</button>
     </div>
-    <span class="errors" *ngIf="results && (results.animeMissingData.length || results.animeWithOutdatedData.length)">
-        <p>Several errors occurred while fetching data.</p>
+    <div class="errors" *ngIf="results && (results.animeMissingData.length || results.animeWithOutdatedData.length)">
+        <p>Several errors occurred while fetching data:</p>
         <p>
             <details class="error" *ngIf="results.animeMissingData.length">
                 <summary>Failed to retrieve data for {{results.animeMissingData.length}} anime.</summary>
@@ -26,8 +26,16 @@
                 </ul>
             </details>
         </p>
-        <p>Results below are based on incomplete data. Please try again tomorrow.</p>
-    </span>
+        <p>
+            Showing results with incomplete data.
+            <span *ngIf="!results.lastFailedExpiry || isInPast(results.lastFailedExpiry)">
+                Click "Update" to retry.
+            </span>
+            <span *ngIf="results.lastFailedExpiry && !isInPast(results.lastFailedExpiry)">
+                Wait until {{getLocalisedDate(results.lastFailedExpiry)}} and try again.
+            </span>
+        </p>
+    </div>
     <app-dom-image>
         <div class="container" *ngIf="results">
             <span class="fineprint">WrongOpinions.moe</span>

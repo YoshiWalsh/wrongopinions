@@ -20,6 +20,18 @@ h1, h2 {
     }
 }
 
+.errors {
+    background: #FDD;
+    padding: 10px;
+
+    border: 1px solid #F99;
+    border-radius: 4px;
+
+    p {
+        margin: 4px 0;
+    }
+}
+
 app-dom-image {
     margin-top: 20px;
     display: block;

@@ -67,10 +67,15 @@ export async function crunchJob(job: PendingJob, animeList: Array<UserListAnimeE
     const animeMissingData: Array<UnfetchedAnime> = [];
     const animeWithOutdatedData: Array<UnfetchedAnime> = [];
     let oldestData: number | null = null;
+    let lastFailedExpiry: number | null = null;
     for(const watched of animeList) {
         const anime = retrievedAnime[watched.node.id];
         if(!anime?.animeData) {
             animeMissingData.push({id: watched.node.id, title: watched.node.title});
+
+            if(anime?.expires && (!lastFailedExpiry || anime.expires > lastFailedExpiry)) {
+                lastFailedExpiry = anime.expires;
+            }
             continue;
         }
 
@@ -79,6 +84,10 @@ export async function crunchJob(job: PendingJob, animeList: Array<UserListAnimeE
             
             if(anime.lastSuccessfulFetch && (!oldestData || anime.lastSuccessfulFetch < oldestData)) {
                 oldestData = anime.lastSuccessfulFetch;
+            }
+
+            if(anime.expires && (!lastFailedExpiry || anime.expires > lastFailedExpiry)) {
+                lastFailedExpiry = anime.expires;
             }
         }
 
@@ -138,6 +147,7 @@ export async function crunchJob(job: PendingJob, animeList: Array<UserListAnimeE
         animeMissingData,
         animeWithOutdatedData,
         oldestData: oldestData ? Instant.ofEpochMilli(oldestData).toString() : null,
+        lastFailedExpiry: lastFailedExpiry ? Instant.ofEpochMilli(lastFailedExpiry).toString() : null,
         bakaScore,
         bakaRank,
         mostOverratedShows: tooHighRated.map(convertAnalysedAnimeToContractScoredAnime),

@@ -69,14 +69,14 @@ export async function initialiseJob(db: DB, queue: QueueDispatcher, username: st
             continue;
         }
 
-        if(retrieved.animeStatus === AnimeStatus.Cached && retrieved.expires && retrieved.expires > now) {
-            cached.push(id);
-            continue;
-        }
-
         if(retrieved.animeStatus === AnimeStatus.Pending) {
             queued.push(id);
             continue
+        }
+
+        if(retrieved.expires && retrieved.expires > now) {
+            cached.push(id);
+            continue;
         }
 
         notQueued.push(id);

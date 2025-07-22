@@ -5,7 +5,7 @@ import { AnimeData, AnimeDetails, AnimeMinimalDetails, AnimeStatus } from './mod
 import { Contracts } from 'wrongopinions-common';
 import { JobStatus, PendingJob } from './model/PendingJob';
 import { QueueStatus } from './model/QueueStatus';
-import { convert, LocalDate } from '@js-joda/core';
+import { convert, LocalDateTime } from '@js-joda/core';
 import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, NotFound, NoSuchKey, HeadObjectCommand } from '@aws-sdk/client-s3';
 import { UserListAnimeEntry } from 'myanimelist-api';
 import { default as getStream } from 'get-stream';
@@ -342,7 +342,7 @@ export class DB {
         }
     }
 
-    async markAnimeSuccessful(id: number, data: AnimeData, fetched: LocalDate, expires: LocalDate): Promise<AnimeDetails> {
+    async markAnimeSuccessful(id: number, data: AnimeData, fetched: LocalDateTime, expires: LocalDateTime): Promise<AnimeDetails> {
         try {
             const results = await this.monitor("markAnimeSuccessful", this.db.updateItem({
                 TableName: this.tableName,
@@ -380,7 +380,7 @@ export class DB {
         }
     }
 
-    async markAnimeFailed(id: number, attempted: LocalDate, expires: LocalDate): Promise<AnimeDetails> {
+    async markAnimeFailed(id: number, attempted: LocalDateTime, expires: LocalDateTime): Promise<AnimeDetails> {
         try {
             const results = await this.monitor("markAnimeFailed", this.db.updateItem({
                 TableName: this.tableName,

@@ -5,6 +5,7 @@ export interface Results {
     animeMissingData: Array<UnfetchedAnime>;
     animeWithOutdatedData: Array<UnfetchedAnime>;
     oldestData: string | null; // ISO8601 timestamp
+    lastFailedExpiry: string | null; // ISO8601 timestamp
     
     bakaScore: number;
     bakaRank: AwardedAward;

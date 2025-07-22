@@ -1,6 +1,6 @@
 import { DB } from "../db";
 import { QueueDispatcher } from "./queueDispatcher";
-import { LocalDate, ZonedDateTime, ZoneOffset } from '@js-joda/core';
+import { LocalDateTime, ZonedDateTime, ZoneOffset } from '@js-joda/core';
 import { Anime as MarikaAnime, IAnimeFull, IAnimeStats, IAnimeCharacters } from '@shineiichijo/marika';
 import { ratelimit, retry } from '../utils';
 import { Mirror } from "../mirror";
@@ -29,7 +29,7 @@ export async function loadAnime(db: DB, mirror: Mirror, queue: QueueDispatcher, 
     let stats: IAnimeStats;
     let characters: IAnimeCharacters;
     console.log("Loading anime", id);
-    const fetched: LocalDate = LocalDate.now(ZoneOffset.UTC);
+    const fetched: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC);
     // Allow one request per second, even if the previous one is still running.
     // We go in this order because stats and characters seem to take longer to load than details.
     await ratelimit(1);
@@ -57,7 +57,7 @@ export async function loadAnime(db: DB, mirror: Mirror, queue: QueueDispatcher, 
         throw new Error(`Failed to get characters for anime ${id}`);
     }
 
-    let expires: LocalDate;
+    let expires: LocalDateTime;
 
     if(details.status != "Finished Airing") { // If the show is still airing / not yet aired
         expires = fetched.plusWeeks(1);
@@ -107,7 +107,7 @@ export async function loadAnime(db: DB, mirror: Mirror, queue: QueueDispatcher, 
 export async function markAnimeFailed(db: DB, queue: QueueDispatcher, id: number): Promise<void> {
     console.log("Marking anime failed", id);
     
-    const now = LocalDate.now(ZoneOffset.UTC);
+    const now = LocalDateTime.now(ZoneOffset.UTC);
     const expires = now.plusDays(1);
 
     const animeDetails = await db.markAnimeFailed(id, now, expires);

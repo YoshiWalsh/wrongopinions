@@ -251,6 +251,12 @@ export class OpinionsComponent implements OnInit {
 		return (new Date(timestamp)).toLocaleString();
 	}
 
+	isInPast(timestamp: string): boolean {
+		const time = new Date(timestamp);
+		const now = new Date();
+		return time <= now;
+	}
+
 	getStatusDescription(): string {
 		if(!this.pendingJob) {
 			if(this.results) {
